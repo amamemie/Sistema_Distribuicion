@@ -72,3 +72,294 @@ export const NOMBRE_TIPO_UBICACION: Record<TipoUbicacion, string> = {
   DEPOSITO: 'Depósito',
   SUCURSAL: 'Sucursal',
 }
+
+// ---------------------------------------------------------------- Fase 1: catálogo e inventario
+// Los decimales llegan como texto desde la API (precisión exacta); se formatean al mostrarlos.
+export type Decimal = string
+
+export interface Referencia {
+  id: string
+  nombre: string
+}
+
+export interface Categoria {
+  id: string
+  nombre: string
+  activo: boolean
+}
+export type Marca = Categoria
+
+export interface Presentacion {
+  id: string
+  nombre: string
+  factor: Decimal
+  codigo_barras: string | null
+  activo: boolean
+}
+
+export interface Producto {
+  id: string
+  sku: string
+  nombre: string
+  descripcion: string | null
+  categoria: Categoria
+  marca: Marca | null
+  unidad_base: string
+  codigo_barras: string | null
+  controla_vencimiento: boolean
+  activo: boolean
+  presentaciones: Presentacion[]
+}
+
+export interface Limite {
+  ubicacion_id: string
+  minimo: Decimal | null
+  maximo: Decimal | null
+}
+
+export interface ProductoDetalle extends Producto {
+  limites: Limite[]
+}
+
+export interface Proveedor {
+  id: string
+  nombre: string
+  nit: string | null
+  telefono: string | null
+  correo: string | null
+  direccion: string | null
+  contacto: string | null
+  activo: boolean
+  productos: { id: string; sku: string; nombre: string }[]
+}
+
+export interface SucursalCliente {
+  id: string
+  nombre: string
+  direccion: string | null
+  telefono: string | null
+  contacto: string | null
+  activo: boolean
+}
+
+export interface Cadena {
+  id: string
+  nombre: string
+  nit: string | null
+  telefono: string | null
+  correo: string | null
+  contacto: string | null
+  activo: boolean
+  sucursales: SucursalCliente[]
+}
+
+export interface CompraResumen {
+  id: string
+  numero: number
+  fecha: string
+  numero_documento: string | null
+  proveedor: Referencia
+  ubicacion: Referencia
+  estado: 'REGISTRADA' | 'ANULADA'
+  total: Decimal
+  usuario_nombre: string
+  created_at: string
+}
+
+export interface CompraLinea {
+  producto_id: string
+  producto_sku: string
+  producto_nombre: string
+  unidad_base: string
+  presentacion_nombre: string
+  factor: Decimal
+  cantidad: Decimal
+  precio_presentacion: Decimal
+  subtotal: Decimal
+  prorrateo: Decimal
+  cantidad_base: Decimal
+  costo_unitario_base: Decimal
+  lote_codigo: string | null
+  lote_vencimiento: string | null
+}
+
+export interface CompraDetalle extends CompraResumen {
+  subtotal: Decimal
+  costos_adicionales: Decimal
+  observaciones: string | null
+  lineas: CompraLinea[]
+  costos: { concepto: string; monto: Decimal }[]
+  anulacion_motivo: string | null
+  anulado_at: string | null
+}
+
+export interface StockEnUbicacion {
+  ubicacion_id: string
+  ubicacion_nombre: string
+  ubicacion_tipo: TipoUbicacion
+  fisico: Decimal
+  comprometido: Decimal
+  disponible: Decimal
+  desglose: string
+  minimo: Decimal | null
+  maximo: Decimal | null
+  bajo_minimo: boolean
+  cpp: Decimal | null
+  valor: Decimal | null
+}
+
+export interface StockProducto {
+  producto_id: string
+  sku: string
+  nombre: string
+  categoria: string
+  unidad_base: string
+  controla_vencimiento: boolean
+  ubicaciones: StockEnUbicacion[]
+  total_fisico: Decimal
+  total_disponible: Decimal
+  total_desglose: string
+  valor_total: Decimal | null
+}
+
+export interface LoteEnStock {
+  lote_id: string
+  ubicacion_id: string
+  ubicacion_nombre: string
+  codigo: string | null
+  vencimiento: string | null
+  vencido: boolean
+  dias_para_vencer: number | null
+  cantidad: Decimal
+  fecha_ingreso: string
+  costo_unitario: Decimal | null
+}
+
+export type TipoMovimiento =
+  | 'COMPRA'
+  | 'VENTA'
+  | 'TRANSFERENCIA_SALIDA'
+  | 'TRANSFERENCIA_ENTRADA'
+  | 'AJUSTE_POSITIVO'
+  | 'AJUSTE_NEGATIVO'
+  | 'DEVOLUCION_CLIENTE'
+  | 'DEVOLUCION_PROVEEDOR'
+  | 'ANULACION'
+
+export interface MovimientoKardex {
+  id: number
+  fecha: string
+  tipo: TipoMovimiento
+  ubicacion: Referencia
+  documento: string
+  origen_tipo: string
+  origen_id: string
+  lote_codigo: string | null
+  entrada: Decimal | null
+  salida: Decimal | null
+  saldo: Decimal
+  usuario_nombre: string
+  motivo: string | null
+  costo_unitario: Decimal | null
+  costo_total: Decimal | null
+  cpp_despues: Decimal | null
+}
+
+export interface LineaDocumento {
+  producto_id: string
+  producto_sku: string
+  producto_nombre: string
+  unidad_base: string
+  presentacion_nombre: string
+  factor: Decimal
+  cantidad: Decimal
+  cantidad_base: Decimal
+  costo_unitario: Decimal | null
+}
+
+export interface Transferencia {
+  id: string
+  numero: number
+  fecha: string
+  origen: Referencia
+  destino: Referencia
+  estado: 'REALIZADA' | 'ANULADA'
+  observaciones: string | null
+  usuario_nombre: string
+  lineas: LineaDocumento[]
+  anulacion_motivo: string | null
+}
+
+export type MotivoAjuste = 'MERMA' | 'ROTURA' | 'VENCIMIENTO' | 'CONTEO_FISICO' | 'CORRECCION' | 'OTRO'
+export type EstadoAjuste = 'PENDIENTE' | 'APLICADO' | 'RECHAZADO'
+
+export interface AjusteLinea extends LineaDocumento {
+  sentido: 'AUMENTO' | 'DISMINUCION'
+  lote_codigo: string | null
+  lote_vencimiento: string | null
+  valor: Decimal | null
+}
+
+export interface Ajuste {
+  id: string
+  numero: number
+  fecha: string
+  ubicacion: Referencia
+  motivo: MotivoAjuste
+  observacion: string
+  estado: EstadoAjuste
+  valor_total: Decimal | null
+  solicitado_por: string
+  resuelto_por: string | null
+  resuelto_at: string | null
+  resolucion_nota: string | null
+  conteo_id: string | null
+  lineas: AjusteLinea[]
+}
+
+export interface ConteoLinea {
+  producto_id: string
+  producto_sku: string
+  producto_nombre: string
+  unidad_base: string
+  controla_vencimiento: boolean
+  cantidad_sistema: Decimal
+  cantidad_contada: Decimal | null
+  diferencia: Decimal | null
+  vencimiento: string | null
+  valor_diferencia: Decimal | null
+}
+
+export interface Conteo {
+  id: string
+  numero: number
+  fecha: string
+  ubicacion: Referencia
+  estado: 'ABIERTO' | 'APROBADO' | 'ANULADO'
+  observaciones: string | null
+  usuario_nombre: string
+  aprobado_at: string | null
+  ajuste_id: string | null
+  lineas: ConteoLinea[]
+}
+
+export const NOMBRE_MOTIVO: Record<MotivoAjuste, string> = {
+  MERMA: 'Merma',
+  ROTURA: 'Rotura / mal estado',
+  VENCIMIENTO: 'Vencimiento',
+  CONTEO_FISICO: 'Conteo físico',
+  CORRECCION: 'Corrección',
+  OTRO: 'Otro',
+}
+
+export const NOMBRE_MOVIMIENTO: Record<TipoMovimiento, string> = {
+  COMPRA: 'Compra',
+  VENTA: 'Venta',
+  TRANSFERENCIA_SALIDA: 'Transferencia (salida)',
+  TRANSFERENCIA_ENTRADA: 'Transferencia (entrada)',
+  AJUSTE_POSITIVO: 'Ajuste (+)',
+  AJUSTE_NEGATIVO: 'Ajuste (−)',
+  DEVOLUCION_CLIENTE: 'Devolución de cliente',
+  DEVOLUCION_PROVEEDOR: 'Devolución a proveedor',
+  ANULACION: 'Anulación',
+}

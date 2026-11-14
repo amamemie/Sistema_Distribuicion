@@ -1,18 +1,38 @@
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { StrictMode } from 'react'
+import { lazy, StrictMode, Suspense, type ComponentType, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, Link, RouterProvider } from 'react-router'
+import { RequierePermiso, RequiereSesion } from './components/Guardias'
 import { Layout } from './components/Layout'
 import './index.css'
 import { ErrorApi } from './lib/api'
-import { RequierePermiso, RequiereSesion } from './components/Guardias'
 import { CLAVE_YO } from './lib/sesion'
-import { Auditoria } from './pages/Auditoria'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
-import { Roles } from './pages/Roles'
-import { Ubicaciones } from './pages/Ubicaciones'
-import { Usuarios } from './pages/Usuarios'
+
+/** Carga diferida de páginas con exportación con nombre. */
+function perezosa<M extends Record<string, unknown>>(cargar: () => Promise<M>, nombre: keyof M) {
+  return lazy(() => cargar().then((m) => ({ default: m[nombre] as ComponentType })))
+}
+
+const Usuarios = perezosa(() => import('./pages/Usuarios'), 'Usuarios')
+const Roles = perezosa(() => import('./pages/Roles'), 'Roles')
+const Ubicaciones = perezosa(() => import('./pages/Ubicaciones'), 'Ubicaciones')
+const Auditoria = perezosa(() => import('./pages/Auditoria'), 'Auditoria')
+const Productos = perezosa(() => import('./pages/catalogo/Productos'), 'Productos')
+const Proveedores = perezosa(() => import('./pages/catalogo/Proveedores'), 'Proveedores')
+const Clientes = perezosa(() => import('./pages/catalogo/Clientes'), 'Clientes')
+const Stock = perezosa(() => import('./pages/inventario/Stock'), 'Stock')
+const Kardex = perezosa(() => import('./pages/inventario/Kardex'), 'Kardex')
+const Compras = perezosa(() => import('./pages/inventario/Compras'), 'Compras')
+const NuevaCompra = perezosa(() => import('./pages/inventario/Compras'), 'NuevaCompra')
+const DetalleCompra = perezosa(() => import('./pages/inventario/Compras'), 'DetalleCompra')
+const Transferencias = perezosa(() => import('./pages/inventario/Transferencias'), 'Transferencias')
+const NuevaTransferencia = perezosa(() => import('./pages/inventario/Transferencias'), 'NuevaTransferencia')
+const Ajustes = perezosa(() => import('./pages/inventario/Ajustes'), 'Ajustes')
+const NuevoAjuste = perezosa(() => import('./pages/inventario/Ajustes'), 'NuevoAjuste')
+const Conteos = perezosa(() => import('./pages/inventario/Conteos'), 'Conteos')
+const DetalleConteo = perezosa(() => import('./pages/inventario/Conteos'), 'DetalleConteo')
 
 /** Si cualquier petición responde 401, la sesión expiró: se vuelve al login. */
 function alExpirarSesion(error: unknown) {
@@ -32,6 +52,14 @@ const queryClient = new QueryClient({
   },
 })
 
+function conPermiso(permiso: string, pagina: ReactNode) {
+  return (
+    <RequierePermiso permiso={permiso}>
+      <Suspense fallback={<p className="text-sm text-slate-500">Cargando…</p>}>{pagina}</Suspense>
+    </RequierePermiso>
+  )
+}
+
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
   {
@@ -42,38 +70,24 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Inicio /> },
-      {
-        path: 'usuarios',
-        element: (
-          <RequierePermiso permiso="usuarios.ver">
-            <Usuarios />
-          </RequierePermiso>
-        ),
-      },
-      {
-        path: 'roles',
-        element: (
-          <RequierePermiso permiso="roles.ver">
-            <Roles />
-          </RequierePermiso>
-        ),
-      },
-      {
-        path: 'ubicaciones',
-        element: (
-          <RequierePermiso permiso="ubicaciones.gestionar">
-            <Ubicaciones />
-          </RequierePermiso>
-        ),
-      },
-      {
-        path: 'auditoria',
-        element: (
-          <RequierePermiso permiso="auditoria.ver">
-            <Auditoria />
-          </RequierePermiso>
-        ),
-      },
+      { path: 'inventario', element: conPermiso('inventario.ver', <Stock />) },
+      { path: 'inventario/kardex/:productoId', element: conPermiso('inventario.ver', <Kardex />) },
+      { path: 'compras', element: conPermiso('compras.registrar', <Compras />) },
+      { path: 'compras/nueva', element: conPermiso('compras.registrar', <NuevaCompra />) },
+      { path: 'compras/:compraId', element: conPermiso('compras.registrar', <DetalleCompra />) },
+      { path: 'transferencias', element: conPermiso('inventario.ver', <Transferencias />) },
+      { path: 'transferencias/nueva', element: conPermiso('inventario.transferir', <NuevaTransferencia />) },
+      { path: 'ajustes', element: conPermiso('inventario.ver', <Ajustes />) },
+      { path: 'ajustes/nuevo', element: conPermiso('inventario.ajustar', <NuevoAjuste />) },
+      { path: 'conteos', element: conPermiso('inventario.ver', <Conteos />) },
+      { path: 'conteos/:conteoId', element: conPermiso('inventario.ver', <DetalleConteo />) },
+      { path: 'productos', element: conPermiso('catalogo.ver', <Productos />) },
+      { path: 'proveedores', element: conPermiso('catalogo.ver', <Proveedores />) },
+      { path: 'clientes', element: conPermiso('catalogo.ver', <Clientes />) },
+      { path: 'usuarios', element: conPermiso('usuarios.ver', <Usuarios />) },
+      { path: 'roles', element: conPermiso('roles.ver', <Roles />) },
+      { path: 'ubicaciones', element: conPermiso('ubicaciones.gestionar', <Ubicaciones />) },
+      { path: 'auditoria', element: conPermiso('auditoria.ver', <Auditoria />) },
       {
         path: '*',
         element: (

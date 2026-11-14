@@ -29,3 +29,14 @@ describe('formatearFecha', () => {
     expect(formatearFecha('2026-11-14T16:30:00Z')).toContain('12:30')
   })
 })
+
+describe('formatos numéricos', () => {
+  it('formatea cantidades y bolivianos al estilo boliviano', async () => {
+    const { formatearCantidad, formatearBs, formatearDia } = await import('./formato')
+    expect(formatearCantidad('1200.000')).toBe('1.200')
+    expect(formatearCantidad('2.500')).toBe('2,5')
+    expect(formatearBs('1234.5')).toBe('Bs 1.234,50')
+    expect(formatearCantidad(null)).toBe('—')
+    expect(formatearDia('2026-11-01')).toContain('2026')
+  })
+})

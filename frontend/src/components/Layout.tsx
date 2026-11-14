@@ -1,16 +1,23 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
+  ArrowLeftRight,
   Boxes,
+  ChartLine,
+  ClipboardCheck,
   ClipboardList,
   History,
   House,
-  LogOut,
-  Menu,
-  MapPin,
-  ChartLine,
-  ShieldCheck,
-  Users,
   KeyRound,
+  LogOut,
+  MapPin,
+  Menu,
+  Package,
+  ShieldCheck,
+  ShoppingCart,
+  SlidersHorizontal,
+  Store,
+  Truck,
+  Users,
   type LucideIcon,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -28,15 +35,37 @@ interface Enlace {
   proximamente?: boolean
 }
 
-const ENLACES: Enlace[] = [
-  { a: '/', texto: 'Inicio', icono: House },
-  { a: '/inventario', texto: 'Inventario', icono: Boxes, proximamente: true },
-  { a: '/pedidos', texto: 'Pedidos', icono: ClipboardList, proximamente: true },
-  { a: '/reportes', texto: 'Reportes', icono: ChartLine, proximamente: true },
-  { a: '/usuarios', texto: 'Usuarios', icono: Users, permiso: 'usuarios.ver' },
-  { a: '/roles', texto: 'Roles y permisos', icono: ShieldCheck, permiso: 'roles.ver' },
-  { a: '/ubicaciones', texto: 'Ubicaciones', icono: MapPin, permiso: 'ubicaciones.gestionar' },
-  { a: '/auditoria', texto: 'Auditoría', icono: History, permiso: 'auditoria.ver' },
+const SECCIONES: { titulo?: string; enlaces: Enlace[] }[] = [
+  { enlaces: [{ a: '/', texto: 'Inicio', icono: House }] },
+  {
+    titulo: 'Operación',
+    enlaces: [
+      { a: '/inventario', texto: 'Stock', icono: Boxes, permiso: 'inventario.ver' },
+      { a: '/compras', texto: 'Compras', icono: ShoppingCart, permiso: 'compras.registrar' },
+      { a: '/transferencias', texto: 'Transferencias', icono: ArrowLeftRight, permiso: 'inventario.ver' },
+      { a: '/ajustes', texto: 'Ajustes', icono: SlidersHorizontal, permiso: 'inventario.ver' },
+      { a: '/conteos', texto: 'Conteos físicos', icono: ClipboardCheck, permiso: 'inventario.ver' },
+      { a: '/pedidos', texto: 'Pedidos', icono: ClipboardList, proximamente: true },
+    ],
+  },
+  {
+    titulo: 'Catálogo',
+    enlaces: [
+      { a: '/productos', texto: 'Productos', icono: Package, permiso: 'catalogo.ver' },
+      { a: '/proveedores', texto: 'Proveedores', icono: Truck, permiso: 'catalogo.ver' },
+      { a: '/clientes', texto: 'Clientes', icono: Store, permiso: 'catalogo.ver' },
+    ],
+  },
+  { titulo: 'Análisis', enlaces: [{ a: '/reportes', texto: 'Reportes', icono: ChartLine, proximamente: true }] },
+  {
+    titulo: 'Administración',
+    enlaces: [
+      { a: '/usuarios', texto: 'Usuarios', icono: Users, permiso: 'usuarios.ver' },
+      { a: '/roles', texto: 'Roles y permisos', icono: ShieldCheck, permiso: 'roles.ver' },
+      { a: '/ubicaciones', texto: 'Ubicaciones', icono: MapPin, permiso: 'ubicaciones.gestionar' },
+      { a: '/auditoria', texto: 'Auditoría', icono: History, permiso: 'auditoria.ver' },
+    ],
+  },
 ]
 
 export function Layout() {
@@ -56,11 +85,16 @@ export function Layout() {
     },
   })
 
-  const enlaces = ENLACES.filter((e) => !e.permiso || puede(e.permiso))
+  const secciones = SECCIONES.map((s) => ({ ...s, enlaces: s.enlaces.filter((e) => !e.permiso || puede(e.permiso)) })).filter(
+    (s) => s.enlaces.length > 0,
+  )
 
   const navegacion = (
-    <nav className="flex flex-col gap-1 p-3">
-      {enlaces.map((e) =>
+    <nav className="flex flex-col gap-1 overflow-y-auto p-3">
+      {secciones.map((s) => (
+        <div key={s.titulo ?? 'inicio'} className="mb-2">
+          {s.titulo && <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-slate-400 uppercase">{s.titulo}</div>}
+      {s.enlaces.map((e) =>
         e.proximamente ? (
           <span
             key={e.a}
@@ -88,6 +122,8 @@ export function Layout() {
           </NavLink>
         ),
       )}
+        </div>
+      ))}
     </nav>
   )
 
@@ -95,8 +131,8 @@ export function Layout() {
     <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
       {/* Barra lateral (escritorio) / cajón (móvil) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 transform border-r border-slate-200 bg-white
-          transition-transform lg:static lg:translate-x-0 ${menuAbierto ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 transform flex-col border-r border-slate-200 bg-white
+          transition-transform lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 ${menuAbierto ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex h-16 items-center gap-2 border-b border-slate-200 px-5">
           <img src="/icono.svg" alt="" className="size-8" />
@@ -149,7 +185,7 @@ export function Layout() {
             </Boton>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
+        <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6">
           <Outlet />
         </main>
       </div>

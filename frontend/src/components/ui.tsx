@@ -216,3 +216,39 @@ export function Casilla({
     </label>
   )
 }
+
+export function Paginador({
+  pagina,
+  total,
+  tamano,
+  onCambio,
+}: {
+  pagina: number
+  total: number
+  tamano: number
+  onCambio: (pagina: number) => void
+}) {
+  const paginas = Math.max(1, Math.ceil(total / tamano))
+  return (
+    <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+      <span>{total} registros</span>
+      <div className="flex items-center gap-2">
+        <Boton variante="secundario" disabled={pagina <= 1} onClick={() => onCambio(pagina - 1)}>
+          Anterior
+        </Boton>
+        <span>
+          {pagina} / {paginas}
+        </span>
+        <Boton variante="secundario" disabled={pagina >= paginas} onClick={() => onCambio(pagina + 1)}>
+          Siguiente
+        </Boton>
+      </div>
+    </div>
+  )
+}
+
+export function Vacio({ children }: { children: ReactNode }) {
+  return <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">{children}</div>
+}
+
+export const CABECERA_TABLA = 'border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500'
