@@ -27,6 +27,17 @@ celular, y **los navegadores solo permiten usar la cámara en páginas servidas 
 **Recomendación preliminar:** Tailscale, por ser gratuito, no exponer el sistema a internet y
 funcionar desde cualquier lugar.
 
+## Estado actual (2026-11-14)
+
+- La red Wi-Fi de pruebas aísla a los clientes entre sí: los celulares no llegan a la PC por la IP
+  local. Confirmado con una captura de tráfico.
+- Para las pruebas se usa **Tailscale Funnel**, elegido por el usuario: publica el sistema en
+  `https://<equipo>.<tailnet>.ts.net` con HTTPS y sin instalar nada en los celulares.
+  - Contrapartida: el sistema es accesible desde internet. Se protege con contraseñas, bloqueo
+    por intentos fallidos y `COOKIE_SEGURA=true`.
+  - Activar: `sudo tailscale funnel --bg 8080` · Desactivar: `sudo tailscale funnel --https=443 off`.
+- Para la producción en la oficina sigue pendiente elegir entre Funnel y Tailscale privado.
+
 ## Riesgos
 
 - Si la PC de la oficina se apaga o falla, nadie puede trabajar. Mitigación: respaldos fuera del

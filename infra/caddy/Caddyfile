@@ -1,3 +1,11 @@
+{
+	servers {
+		# Confía en X-Forwarded-For de proxies de la red privada (Docker, Tailscale) para que
+		# la auditoría registre la IP real del cliente.
+		trusted_proxies static private_ranges
+	}
+}
+
 # SITIO_DIRECCION: ":80" sirve HTTP en la red local. Con un dominio (p. ej. inventario.midominio.bo)
 # Caddy obtiene certificados HTTPS automáticamente. Ver docs/adr/0002-despliegue-en-oficina.md.
 {$SITIO_DIRECCION::80} {
