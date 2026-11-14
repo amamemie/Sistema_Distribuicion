@@ -101,6 +101,8 @@ def cmd_demo() -> None:
                 )
             else:
                 print("El catálogo ya tenía productos: no se cargó inventario de ejemplo.")
+            if demo.cargar_pedidos(db, ctx):
+                print("Pedidos de ejemplo cargados (entregado, confirmado y un borrador).")
     print(f"Datos de demostración cargados. Contraseña de los usuarios demo: {PASSWORD_DEMO}")
 
 

@@ -363,3 +363,126 @@ export const NOMBRE_MOVIMIENTO: Record<TipoMovimiento, string> = {
   DEVOLUCION_PROVEEDOR: 'Devolución a proveedor',
   ANULACION: 'Anulación',
 }
+
+// ---------------------------------------------------------------- pedidos
+
+export type EstadoPedido = 'BORRADOR' | 'CONFIRMADO' | 'ALISTADO' | 'ENTREGADO' | 'ANULADO'
+
+export const NOMBRE_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
+  BORRADOR: 'Borrador',
+  CONFIRMADO: 'Confirmado',
+  ALISTADO: 'Alistado',
+  ENTREGADO: 'Entregado',
+  ANULADO: 'Anulado',
+}
+
+export interface PedidoResumen {
+  id: string
+  numero: number
+  estado: EstadoPedido
+  numero_oc: string | null
+  fecha_oc: string | null
+  fecha_entrega: string | null
+  cadena: Referencia | null
+  sucursal_cliente: Referencia | null
+  ubicacion: Referencia
+  responsable_id: string
+  responsable_nombre: string
+  total_oc: Decimal | null
+  total_calculado: Decimal
+  lineas: number
+  documentos: number
+  created_at: string
+  ganancia: Decimal | null
+  margen: Decimal | null
+}
+
+export interface Validacion {
+  nivel: 'error' | 'aviso'
+  mensaje: string
+  linea_id: string | null
+}
+
+export interface DocumentoPedido {
+  id: string
+  nombre: string
+  tipo_mime: string
+  tamano: number
+}
+
+export interface LotePedido {
+  lote_id: string
+  codigo: string | null
+  vencimiento: string | null
+  cantidad: Decimal
+  devuelta: Decimal
+}
+
+export interface PedidoLinea {
+  id: string
+  orden: number
+  codigo_cliente: string | null
+  descripcion_cliente: string
+  producto: Producto | null
+  cantidad_oc: Decimal
+  precio_oc: Decimal
+  total_linea_oc: Decimal | null
+  total_calculado: Decimal
+  cantidad_confirmada: Decimal
+  cantidad_alistada: Decimal | null
+  cantidad_merma: Decimal
+  cantidad_devuelta: Decimal
+  disponible: Decimal | null
+  disponible_depositos: Decimal | null
+  precio_anterior: Decimal | null
+  precio_anterior_fecha: string | null
+  precio_anterior_pedido: number | null
+  lotes: LotePedido[]
+  costo_unitario: Decimal | null
+  costo_total: Decimal | null
+  ingreso: Decimal | null
+  ganancia: Decimal | null
+  margen: Decimal | null
+}
+
+export interface EventoPedido {
+  tipo: string
+  usuario_nombre: string
+  fecha: string
+  detalle: Record<string, unknown> | null
+}
+
+export interface DevolucionPedido {
+  id: string
+  numero: number
+  fecha: string
+  motivo: string
+  usuario_nombre: string
+  lineas: { linea_id: string; descripcion: string; cantidad: Decimal }[]
+}
+
+export interface PedidoDetalle extends PedidoResumen {
+  emisor: string | null
+  observaciones: string | null
+  detalle_lineas: PedidoLinea[]
+  detalle_documentos: DocumentoPedido[]
+  eventos: EventoPedido[]
+  validaciones: Validacion[]
+  mermas: { id: string; numero: number; estado: EstadoAjuste }[]
+  devoluciones: DevolucionPedido[]
+  anulacion_motivo: string | null
+  anulado_desde: EstadoPedido | null
+  receptor_nombre: string | null
+  entrega_observacion: string | null
+  constancia_foto_id: string | null
+  constancia_firma_id: string | null
+  entregado_at: string | null
+  ingreso: Decimal | null
+  costo: Decimal | null
+}
+
+export interface Sugerencia {
+  producto: Producto
+  fuente: 'equivalencia' | 'codigo' | 'similitud'
+  puntaje: number
+}

@@ -169,6 +169,7 @@ class PedidoResumen(BaseModel):
     cadena: Referencia | None
     sucursal_cliente: Referencia | None
     ubicacion: Referencia
+    responsable_id: uuid.UUID
     responsable_nombre: str
     total_oc: Decimal | None
     total_calculado: Decimal

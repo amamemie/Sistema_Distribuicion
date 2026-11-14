@@ -7,7 +7,7 @@ import { RequierePermiso, RequiereSesion } from './components/Guardias'
 import { Layout } from './components/Layout'
 import './index.css'
 import { ErrorApi } from './lib/api'
-import { CLAVE_YO } from './lib/sesion'
+import { CLAVE_YO, PERMISOS_PEDIDOS } from './lib/sesion'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
 
@@ -46,6 +46,9 @@ const Transferencias = perezosa(() => import('./pages/inventario/Transferencias'
 const NuevaTransferencia = perezosa(() => import('./pages/inventario/Transferencias'), 'NuevaTransferencia')
 const Ajustes = perezosa(() => import('./pages/inventario/Ajustes'), 'Ajustes')
 const NuevoAjuste = perezosa(() => import('./pages/inventario/Ajustes'), 'NuevoAjuste')
+const Pedidos = perezosa(() => import('./pages/pedidos/Pedidos'), 'Pedidos')
+const NuevoPedido = perezosa(() => import('./pages/pedidos/Pedidos'), 'NuevoPedido')
+const DetallePedido = perezosa(() => import('./pages/pedidos/DetallePedido'), 'DetallePedido')
 const Conteos = perezosa(() => import('./pages/inventario/Conteos'), 'Conteos')
 const DetalleConteo = perezosa(() => import('./pages/inventario/Conteos'), 'DetalleConteo')
 
@@ -67,7 +70,7 @@ const queryClient = new QueryClient({
   },
 })
 
-function conPermiso(permiso: string, pagina: ReactNode) {
+function conPermiso(permiso: string | string[], pagina: ReactNode) {
   return (
     <RequierePermiso permiso={permiso}>
       <Suspense fallback={<p className="text-sm text-slate-500">Cargando…</p>}>{pagina}</Suspense>
@@ -85,6 +88,9 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Inicio /> },
+      { path: 'pedidos', element: conPermiso(PERMISOS_PEDIDOS, <Pedidos />) },
+      { path: 'pedidos/nuevo', element: conPermiso('pedidos.escanear', <NuevoPedido />) },
+      { path: 'pedidos/:pedidoId', element: conPermiso(PERMISOS_PEDIDOS, <DetallePedido />) },
       { path: 'inventario', element: conPermiso('inventario.ver', <Stock />) },
       { path: 'inventario/kardex/:productoId', element: conPermiso('inventario.ver', <Kardex />) },
       { path: 'compras', element: conPermiso('compras.registrar', <Compras />) },

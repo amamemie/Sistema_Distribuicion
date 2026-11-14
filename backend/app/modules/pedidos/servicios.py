@@ -1180,6 +1180,7 @@ def resumen(p: Pedido, ctx: Contexto) -> PedidoResumen:
         cadena=_ref(p.cadena),
         sucursal_cliente=_ref(p.sucursal_cliente),
         ubicacion=ubicacion,
+        responsable_id=p.responsable_id,
         responsable_nombre=p.responsable.nombre_completo,
         total_oc=p.total_oc,
         total_calculado=sum(
