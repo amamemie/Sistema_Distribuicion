@@ -14,6 +14,11 @@ os.environ["DATABASE_URL"] = os.environ.get(
 os.environ["ENTORNO"] = "pruebas"
 os.environ["COOKIE_SEGURA"] = "false"
 
+import tempfile
+
+# Los archivos subidos en las pruebas van a una carpeta temporal.
+os.environ["ARCHIVOS_DIR"] = tempfile.mkdtemp(prefix="inventario-archivos-")
+
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path

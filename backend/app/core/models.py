@@ -19,6 +19,8 @@ CONVENCION_NOMBRES = {
 CANTIDAD = Numeric(14, 3)  # cantidades en unidad base
 COSTO_UNITARIO = Numeric(18, 6)  # costo por unidad base
 DINERO = Numeric(14, 2)  # importes en bolivianos
+PRECIO = Numeric(14, 4)  # precio de venta por unidad (las OC pueden traer más de 2 decimales)
+PORCENTAJE = Numeric(9, 2)
 VALOR = Numeric(16, 4)  # valoraciones internas (cantidad x costo) antes de redondear
 
 

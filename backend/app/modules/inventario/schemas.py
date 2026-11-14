@@ -187,6 +187,7 @@ class AjusteSalida(BaseModel):
     resuelto_at: datetime | None
     resolucion_nota: str | None
     conteo_id: uuid.UUID | None
+    pedido_id: uuid.UUID | None
     lineas: list[AjusteLineaSalida]
 
 

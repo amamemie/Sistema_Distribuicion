@@ -73,10 +73,14 @@ def escenario() -> Iterator[dict[str, uuid.UUID]]:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE auditoria DISABLE TRIGGER USER"))
         conn.execute(text("ALTER TABLE movimiento DISABLE TRIGGER USER"))
+        conn.execute(text("ALTER TABLE archivo DISABLE TRIGGER USER"))
+        conn.execute(text("ALTER TABLE pedido_evento DISABLE TRIGGER USER"))
         tablas = ", ".join(t.name for t in Base.metadata.sorted_tables)
         conn.execute(text(f"TRUNCATE {tablas} RESTART IDENTITY CASCADE"))
         conn.execute(text("ALTER TABLE auditoria ENABLE TRIGGER USER"))
         conn.execute(text("ALTER TABLE movimiento ENABLE TRIGGER USER"))
+        conn.execute(text("ALTER TABLE archivo ENABLE TRIGGER USER"))
+        conn.execute(text("ALTER TABLE pedido_evento ENABLE TRIGGER USER"))
 
 
 def test_dos_salidas_simultaneas_no_dejan_stock_negativo(escenario: dict[str, uuid.UUID]) -> None:
@@ -118,6 +122,97 @@ def test_dos_salidas_simultaneas_no_dejan_stock_negativo(escenario: dict[str, uu
             )
         }
         assert saldos == {escenario["deposito"]: 100, escenario["sucursal"]: 200}
+        usuario = db.get(Usuario, escenario["usuario"])
+        assert usuario is not None
+        assert consultas.verificar(db, Contexto(usuario=usuario, ip=None, user_agent=None)).correcto
+
+
+def test_dos_confirmaciones_simultaneas_no_reservan_de_mas(
+    escenario: dict[str, uuid.UUID],
+) -> None:
+    """Dos pedidos de 200 compiten por 300 unidades de la sucursal: solo uno se confirma."""
+    from app.core.tiempo import hoy
+    from app.modules.clientes import servicios as clientes
+    from app.modules.clientes.schemas import CadenaEntrada, SucursalClienteEntrada
+    from app.modules.pedidos import servicios as pedidos
+    from app.modules.pedidos.schemas import PedidoBorradorEntrada, PedidoCrear, PedidoLineaEntrada
+
+    with Session(engine, expire_on_commit=False) as db:
+        usuario = db.get(Usuario, escenario["usuario"])
+        assert usuario is not None
+        ctx = Contexto(usuario=usuario, ip=None, user_agent=None)
+        inventario.transferir(
+            db,
+            ctx,
+            TransferenciaEntrada(
+                origen_id=escenario["deposito"],
+                destino_id=escenario["sucursal"],
+                lineas=[
+                    TransferenciaLineaEntrada(producto_id=escenario["producto"], cantidad=D(300))
+                ],
+            ),
+        )
+        cadena = clientes.crear(db, ctx, CadenaEntrada(nombre="Ketal"))
+        sucursal = clientes.crear_sucursal(
+            db, ctx, cadena.id, SucursalClienteEntrada(nombre="Calacoto")
+        )
+        ids = []
+        for numero in ("C-1", "C-2"):
+            pedido = pedidos.crear(db, ctx, PedidoCrear(ubicacion_id=escenario["sucursal"]))
+            pedidos.agregar_documentos(db, ctx, pedido.id, [(b"%PDF-1.4 oc", "oc.pdf")])
+            pedidos.guardar_borrador(
+                db,
+                ctx,
+                pedido.id,
+                PedidoBorradorEntrada(
+                    ubicacion_id=escenario["sucursal"],
+                    cadena_id=cadena.id,
+                    sucursal_cliente_id=sucursal.id,
+                    numero_oc=numero,
+                    fecha_oc=hoy(),
+                    lineas=[
+                        PedidoLineaEntrada(
+                            descripcion_cliente="Guante",
+                            producto_id=escenario["producto"],
+                            cantidad_oc=D(200),
+                            precio_oc=D(2),
+                        )
+                    ],
+                ),
+            )
+            ids.append(pedido.id)
+
+    barrera = threading.Barrier(2)
+    resultados: list[str] = []
+
+    def confirmar(pedido_id: uuid.UUID) -> None:
+        with Session(engine, expire_on_commit=False) as db:
+            usuario = db.get(Usuario, escenario["usuario"])
+            assert usuario is not None
+            ctx = Contexto(usuario=usuario, ip=None, user_agent=None)
+            barrera.wait()
+            try:
+                pedidos.confirmar(db, ctx, pedido_id)
+                resultados.append("ok")
+            except ReglaNegocio:
+                db.rollback()
+                resultados.append("rechazada")
+
+    hilos = [threading.Thread(target=confirmar, args=(i,)) for i in ids]
+    for h in hilos:
+        h.start()
+    for h in hilos:
+        h.join(timeout=30)
+
+    assert sorted(resultados) == ["ok", "rechazada"]
+    with Session(engine) as db:
+        saldo = db.scalars(
+            select(StockUbicacion).where(
+                StockUbicacion.ubicacion_id == escenario["sucursal"],
+                StockUbicacion.producto_id == escenario["producto"],
+            )
+        ).one()
+        assert (saldo.fisico, saldo.comprometido) == (D(300), D(200))
         usuario = db.get(Usuario, escenario["usuario"])
         assert usuario is not None
         assert consultas.verificar(db, Contexto(usuario=usuario, ip=None, user_agent=None)).correcto

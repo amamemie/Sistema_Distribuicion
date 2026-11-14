@@ -61,3 +61,14 @@ def requiere(*permisos: str) -> Callable[[Contexto], Contexto]:
         return ctx
 
     return _verificar
+
+
+def requiere_alguno(*permisos: str) -> Callable[[Contexto], Contexto]:
+    """Exige que el usuario tenga AL MENOS UNO de los permisos indicados."""
+
+    def _verificar(ctx: Contexto = Depends(usuario_actual)) -> Contexto:
+        if not set(permisos) & ctx.usuario.permisos:
+            raise SinPermiso("No tiene permiso para realizar esta acción.")
+        return ctx
+
+    return _verificar

@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # Solo necesario si el frontend se sirve desde otro origen
     cors_origenes: list[str] = []
 
+    # Archivos subidos (OC, constancias de entrega). En Docker es un volumen respaldado.
+    archivos_dir: str = "/datos/archivos"
+    archivo_max_mb: int = 15
+
     log_nivel: str = "INFO"
 
 

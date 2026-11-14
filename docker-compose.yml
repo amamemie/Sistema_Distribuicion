@@ -45,6 +45,8 @@ services:
 
   backend:
     <<: *backend
+    volumes:
+      - archivos:/datos/archivos
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/salud')"]
       interval: 10s
@@ -75,3 +77,4 @@ services:
 volumes:
   db_datos:
   caddy_datos:
+  archivos:
