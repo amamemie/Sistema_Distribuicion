@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import { z } from 'zod'
 import { Aviso, Boton, Campo, Entrada, Tarjeta } from '../components/ui'
-import { api, mensajeError } from '../lib/api'
+import { api, ErrorApi, mensajeError } from '../lib/api'
 import { CLAVE_YO, useYo } from '../lib/sesion'
 import type { UsuarioYo } from '../lib/tipos'
 
@@ -23,7 +23,25 @@ export function Login() {
 
   const form = useForm<Datos>({ resolver: zodResolver(esquema) })
   const ingresar = useMutation({
-    mutationFn: (d: Datos) => api<UsuarioYo>('/auth/login', { metodo: 'POST', cuerpo: d }),
+    mutationFn: async (d: Datos) => {
+      const usuario = await api<UsuarioYo>('/auth/login', { metodo: 'POST', cuerpo: d })
+      // La cookie de sesión es "Secure": si se entra por http (p. ej. la IP de la red local),
+      // el navegador la descarta y cada pantalla volvería al login. Se comprueba aquí.
+      try {
+        await api<UsuarioYo>('/auth/yo')
+      } catch (e) {
+        if (e instanceof ErrorApi && e.status === 401) {
+          throw new ErrorApi(
+            400,
+            'sesion_no_guardada',
+            'El navegador no guardó la sesión porque esta dirección no es segura (http). ' +
+              'Ingrese por el enlace https del sistema.',
+          )
+        }
+        throw e
+      }
+      return usuario
+    },
     onSuccess: (usuario) => {
       queryClient.setQueryData(CLAVE_YO, usuario)
       navegar(destino, { replace: true })
