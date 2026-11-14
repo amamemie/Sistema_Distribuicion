@@ -20,6 +20,9 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | D-13 | Transferencias | Se mueven **al instante** (llegan el mismo día) y llega lo que se envió: no se usa el estado "en tránsito" ni se registran diferencias de recepción. | 2026-11-14 |
 | D-14 | Infraestructura | El sistema corre en **un equipo de la oficina** y se usa desde 4–5 dispositivos (PC y celulares). Se busca costo de servidor cero o mínimo. | 2026-11-14 |
 | D-15 | Volumen | Hasta ~10 OC por día en el peor caso; varias cadenas con formatos distintos. | 2026-11-14 |
+| D-16 | Cantidad de la OC (Hipermaxi) | La cantidad del pedido es **"Cant. OC"** (lo que piden). "Cant. Dpcho." normalmente es igual y no se usa. | 2026-11-14 |
+| D-17 | Unidad de medida en la OC | La columna U/M ("PCE") siempre significa **unidades**: no hay conversión de paquetes (confirma D-10). | 2026-11-14 |
+| D-18 | Anotaciones del supermercado | La columna "Recepción" (escrita a mano por el encargado del supermercado) no es relevante: la lectura la ignora. | 2026-11-14 |
 
 ## Decisiones técnicas tomadas en la Fase 1 (a confirmar con el cliente)
 
