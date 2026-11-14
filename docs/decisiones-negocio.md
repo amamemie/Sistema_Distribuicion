@@ -21,6 +21,15 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | D-14 | Infraestructura | El sistema corre en **un equipo de la oficina** y se usa desde 4–5 dispositivos (PC y celulares). Se busca costo de servidor cero o mínimo. | 2026-11-14 |
 | D-15 | Volumen | Hasta ~10 OC por día en el peor caso; varias cadenas con formatos distintos. | 2026-11-14 |
 
+## Decisiones técnicas tomadas en la Fase 1 (a confirmar con el cliente)
+
+| # | Tema | Implementado | Cómo cambiarlo |
+|---|---|---|---|
+| T-01 | Ajustes "sensibles" | Todo ajuste de alguien sin permiso de aprobación queda pendiente (umbral Bs 0). | Configurar `umbral_ajuste_bs` en la empresa para que los ajustes menores se apliquen solos. |
+| T-02 | Stock negativo | No se permite en ningún caso. | La especificación pide que el dueño pueda habilitarlo; queda pendiente porque complica la trazabilidad por lotes. Se implementará si el cliente lo necesita. |
+| T-03 | Acceso por ubicación | Encargados operan solo en sus ubicaciones asignadas; Dueño y Administrador en todas (`ubicaciones.todas`). Todos ven el stock de todas las ubicaciones. | Desde Roles y permisos. |
+| T-04 | Transferencias de lotes vencidos | No se transfieren unidades vencidas; se dan de baja con un ajuste por vencimiento. | — |
+
 ## Pendientes de validar
 
 - Acceso desde celulares fuera de la red de la oficina y cómo obtener HTTPS (necesario para la cámara). Ver [ADR 0002](adr/0002-despliegue-en-oficina.md).

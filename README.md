@@ -4,8 +4,9 @@ Sistema web para una distribuidora que compra en unidades grandes, almacena en d
 fracciona en sucursales y despacha pedidos a supermercados. Controla el stock por ubicación, los
 pedidos que llegan en órdenes de compra (OC), quién hizo cada operación y cuánto se ganó.
 
-> **Estado:** Fase 0 completada (base del sistema: usuarios, roles, permisos, ubicaciones,
-> auditoría). Ver el [plan por fases](docs/arquitectura.md#plan-por-fases).
+> **Estado:** Fases 0 y 1 completadas: base del sistema (usuarios, roles, permisos, ubicaciones,
+> auditoría) y núcleo de inventario (catálogo, compras, transferencias, ajustes, conteos, kardex).
+> Ver el [plan por fases](docs/arquitectura.md#plan-por-fases).
 
 ## Requisitos
 
@@ -29,7 +30,9 @@ e ingrese con `DUENO_CORREO` / `DUENO_PASSWORD` del `.env`.
 docker compose exec backend python -m app.cli demo
 ```
 
-Crea 2 depósitos, 2 sucursales y estos usuarios (contraseña `Demo-12345`):
+Crea 2 depósitos, 2 sucursales, productos de limpieza y consumo con sus presentaciones (algunos con
+vencimiento), proveedores, cadenas de supermercados con sus sucursales, dos compras y dos
+transferencias de ejemplo, y estos usuarios (contraseña `Demo-12345`):
 
 | Correo | Rol |
 |---|---|

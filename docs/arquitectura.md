@@ -22,11 +22,13 @@ backend/app/
 ├── modules/
 │   ├── identidad/     usuarios, roles, permisos, sesiones, auditoría        ✅ Fase 0
 │   ├── organizacion/  empresa, ubicaciones (depósito/sucursal)              ✅ Fase 0
-│   ├── catalogo/      categorías, marcas, productos, presentaciones         Fase 1
-│   ├── proveedores/   proveedores, historial de precios de compra           Fase 1
-│   ├── clientes/      cadenas, sucursales de supermercado, precios, equivalencias  Fase 1
-│   ├── compras/       compras, costos prorrateados, lotes                   Fase 1
-│   ├── inventario/    libro de movimientos, saldos, CPP, reservas, kardex   Fase 1
+│   ├── catalogo/      categorías, marcas, productos, presentaciones         ✅ Fase 1
+│   ├── proveedores/   proveedores y productos que proveen                   ✅ Fase 1
+│   ├── clientes/      cadenas y sucursales de supermercado                  ✅ Fase 1
+│   │                  (precios por cadena y equivalencias: Fase 2)
+│   ├── compras/       compras, costos prorrateados, historial de precios    ✅ Fase 1
+│   ├── inventario/    motor, libro, saldos, CPP, lotes, transferencias,     ✅ Fase 1
+│   │                  ajustes, conteos, kardex, verificación
 │   ├── pedidos/       OC → pedido, estados, rentabilidad                    Fase 2a
 │   ├── documentos/    archivos, extractores, plantillas por cadena          Fase 2b
 │   ├── reportes/      consultas de solo lectura, exportación                Fase 3
@@ -47,11 +49,13 @@ Cada módulo sigue la misma forma:
 
 ## Principios
 
-1. **El stock solo cambia a través de `InventarioService`** (Fase 1), que en una transacción
-   bloquea el saldo (`SELECT … FOR UPDATE`), valida, escribe el movimiento, actualiza saldo/CPP/lote
-   y audita.
-2. **Libro de movimientos inmutable.** Nada se edita ni se borra: se anula con un movimiento de
-   reverso y motivo. Un proceso de verificación recalcula el stock desde el libro.
+1. **El stock solo cambia a través de `app/modules/inventario/motor.py`**, que bloquea el saldo
+   (`SELECT … FOR UPDATE`, en orden determinista para evitar bloqueos cruzados), valida, escribe el
+   movimiento y actualiza saldo, CPP y lote. El servicio que lo llama audita y hace `commit`.
+   Una prueba con dos transacciones simultáneas verifica que no se puede vender dos veces lo mismo.
+2. **Libro de movimientos inmutable** (trigger en PostgreSQL). Nada se edita ni se borra: se anula
+   con movimientos de reverso (mismo lote y costo). `GET /api/inventario/verificacion` recalcula los
+   saldos desde el libro y los compara con los materializados.
 3. **Bitácora de auditoría inmutable**, protegida por un trigger de PostgreSQL (ni la aplicación
    puede modificarla). Guarda usuario, acción, entidad, antes/después, IP y fecha.
 4. **Permisos granulares.** Los permisos se definen en código
@@ -60,8 +64,9 @@ Cada módulo sigue la misma forma:
 5. **Multiempresa desde el inicio:** las tablas de negocio llevan `empresa_id`.
 6. **Tipos exactos:** dinero `NUMERIC(14,2)`, costo unitario `NUMERIC(18,6)`, cantidades
    `NUMERIC(14,3)` en unidad base, fechas `timestamptz` (zona America/La_Paz en la interfaz).
-7. **Eventos de dominio** (`CompraRegistrada`, `PedidoAlistado`…) en una tabla *outbox* para que
-   alertas, ML y finanzas se suscriban sin acoplarse (desde la Fase 1).
+7. **Eventos de dominio** en la tabla `evento_dominio` (*outbox*): `CompraRegistrada`,
+   `CompraAnulada`, `TransferenciaRealizada`, `AjusteAplicado`. Alertas, ML y finanzas los
+   consumirán sin acoplarse a quien los produjo.
 8. **Mensajes al usuario en español**, nunca trazas técnicas. Logs estructurados en JSON.
 
 ## Seguridad (Fase 0)
@@ -79,6 +84,30 @@ Cada módulo sigue la misma forma:
 
 Implementado en la Fase 0: `empresa`, `ubicacion`, `usuario`, `rol`, `permiso`, `rol_permiso`,
 `usuario_rol`, `usuario_ubicacion`, `sesion`, `intento_login`, `auditoria`.
+
+Implementado en la Fase 1: `categoria`, `marca`, `producto`, `presentacion`, `limite_stock`,
+`proveedor`, `proveedor_producto`, `cadena`, `sucursal_cliente`, `compra`, `compra_linea`,
+`compra_costo`, `lote`, `stock_ubicacion`, `stock_lote`, `movimiento`, `transferencia`,
+`transferencia_linea`, `ajuste`, `ajuste_linea`, `conteo_fisico`, `conteo_linea`, `evento_dominio`.
+
+### Reglas de inventario implementadas (Fase 1)
+
+- Cantidades siempre en **unidad base**; cada línea congela su presentación y factor.
+- **Costo de compra por unidad** = (subtotal de la línea + su parte de los costos adicionales) ÷
+  unidades base. Los adicionales se prorratean según el importe de cada línea.
+- **CPP por ubicación** (D-04): las entradas lo recalculan; las salidas no lo cambian y se valoran a él.
+- **Lotes para todos los productos**: cada compra o ajuste positivo crea un lote. Las salidas toman
+  el lote indicado o, si no, FEFO y luego FIFO. Las transferencias no envían unidades vencidas.
+- **Disponible = físico − comprometido.** Transferencias y ajustes solo usan el disponible
+  (las reservas de pedidos llegan en la Fase 2).
+- **Acceso por ubicación**: se opera solo en las ubicaciones asignadas, salvo con el permiso
+  `ubicaciones.todas` (Dueño y Administrador por defecto). Ver stock es global.
+- **Ajustes**: se aplican al instante si quien los registra tiene `inventario.aprobar_ajuste` o si
+  el valor no supera `empresa.configuracion.umbral_ajuste_bs` (por defecto 0); si no, quedan
+  pendientes de aprobación. Merma, rotura y vencimiento solo disminuyen.
+- **Conteo físico**: se cuenta, se ven las diferencias contra el stock actual y al aprobar se
+  genera un ajuste aplicado.
+- **Anulaciones** de compras y transferencias: solo si la mercadería sigue disponible donde ingresó.
 
 Diagrama previsto (las fases siguientes pueden ajustarlo):
 
@@ -175,7 +204,7 @@ erDiagram
 | Fase | Contenido | Estado |
 |---|---|---|
 | 0 · Base | Monorepo, Docker Compose, BD, autenticación, roles/permisos, ubicaciones, auditoría, CI, PWA base, respaldos | ✅ |
-| 1 · Inventario | Catálogo, presentaciones, proveedores, cadenas y sucursales de supermercado, compras con prorrateo, lotes, CPP por ubicación, transferencias, ajustes, conteos, kardex, stock físico/comprometido/disponible | Pendiente |
+| 1 · Inventario | Catálogo, presentaciones, proveedores, cadenas y sucursales de supermercado, compras con prorrateo, lotes, CPP por ubicación, transferencias, ajustes, conteos, kardex, stock físico/comprometido/disponible | ✅ |
 | 2a · Pedidos | OC adjunta (foto/PDF) con carga manual, revisión, validación aritmética, equivalencias, reserva, alistado con FEFO, rentabilidad, entrega con constancia, anulación, duplicados, PWA con cámara y cola de subida | Pendiente |
 | 2b · Lectura automática | PDF con texto, OCR de fotos, plantillas por cadena, confianza, emparejamiento automático, métricas de precisión | Pendiente (requiere OC reales) |
 | 3 · Reportes | Dashboard y métricas, exportación Excel/PDF | Pendiente |

@@ -51,8 +51,12 @@ Antes de dar una tarea por terminada: formato, lint, tipos y pruebas en verde, e
   `api.py`. Las rutas son delgadas; la lógica va en servicios, la lógica pura en `dominio.py`.
 - **Una transacción por caso de uso:** el servicio valida, modifica, audita
   (`auditoria.registrar_ctx`) y hace `commit` al final. Nunca hagas commit a medias.
-- **Inventario:** el stock solo cambia a través del servicio de inventario, con bloqueo de fila.
-  El libro de movimientos es inmutable: las correcciones se hacen con movimientos de reverso.
+- **Inventario:** el stock solo cambia a través de `app/modules/inventario/motor.py`
+  (`entrada`, `salida`, `revertir`), llamando antes a `motor.bloquear()` con todos los pares
+  (ubicación, producto) del documento. El libro de movimientos es inmutable (trigger): las
+  correcciones se hacen con movimientos de reverso. Tras tocar el motor, la verificación
+  (`consultas.verificar`) debe seguir cuadrando en las pruebas.
+- **Tablas nuevas:** registre el módulo en `app/modelos.py` para que Alembic y SQLAlchemy lo vean.
 - **Nada se borra físicamente:** se desactiva o se anula con motivo. La tabla `auditoria` tiene
   un trigger que impide UPDATE/DELETE.
 - **Dinero y cantidades:** `Decimal`/`NUMERIC`, nunca `float`. Costo y precio por unidad base.
