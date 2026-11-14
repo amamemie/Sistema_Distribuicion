@@ -10,11 +10,13 @@ import sys
 
 from sqlalchemy import select
 
+from app import demo
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.security import hash_password
+from app.modules.identidad.contexto import Contexto
 from app.modules.identidad.models import Rol, Usuario
-from app.modules.identidad.permisos import ROL_ADMINISTRADOR, ROL_ENCARGADO
+from app.modules.identidad.permisos import ROL_ADMINISTRADOR, ROL_DUENO, ROL_ENCARGADO
 from app.modules.identidad.semilla import inicializar
 from app.modules.organizacion.models import Empresa, TipoUbicacion, Ubicacion
 
@@ -84,6 +86,21 @@ def cmd_demo() -> None:
                     )
                 )
         db.commit()
+
+        dueno = db.scalar(
+            select(Usuario)
+            .join(Usuario.roles)
+            .where(Usuario.empresa_id == empresa.id, Rol.nombre == ROL_DUENO)
+            .limit(1)
+        )
+        if dueno is not None:
+            ctx = Contexto(usuario=dueno, ip=None, user_agent="cli demo")
+            if demo.cargar(db, ctx):
+                print(
+                    "Catálogo, proveedores, cadenas, compras y transferencias de ejemplo cargados."
+                )
+            else:
+                print("El catálogo ya tenía productos: no se cargó inventario de ejemplo.")
     print(f"Datos de demostración cargados. Contraseña de los usuarios demo: {PASSWORD_DEMO}")
 
 

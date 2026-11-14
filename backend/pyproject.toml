@@ -45,6 +45,9 @@ extend-exclude = ["migrations/versions"]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
 ignore = ["B008"]  # Depends() en argumentos por defecto es el patrón de FastAPI
 
+[tool.ruff.lint.per-file-ignores]
+"**/models.py" = ["RUF012"]  # __mapper_args__ es configuración declarativa de SQLAlchemy
+
 [tool.mypy]
 python_version = "3.13"
 strict = true

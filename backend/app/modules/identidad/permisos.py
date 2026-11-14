@@ -22,6 +22,11 @@ PERMISOS: tuple[DefPermiso, ...] = (
     DefPermiso("roles.ver", "Administración", "Ver roles y permisos"),
     DefPermiso("roles.gestionar", "Administración", "Crear y editar roles"),
     DefPermiso("ubicaciones.gestionar", "Administración", "Crear y editar depósitos y sucursales"),
+    DefPermiso(
+        "ubicaciones.todas",
+        "Administración",
+        "Operar en todas las ubicaciones (sin estar asignado a ellas)",
+    ),
     DefPermiso("configuracion.gestionar", "Administración", "Cambiar la configuración general"),
     DefPermiso("auditoria.ver", "Administración", "Consultar la bitácora de auditoría"),
     # Catálogo y terceros
@@ -63,6 +68,7 @@ ROLES_INICIALES: dict[str, tuple[str, frozenset[str]]] = {
         frozenset(
             {
                 "usuarios.ver",
+                "ubicaciones.todas",
                 "catalogo.ver",
                 "catalogo.gestionar",
                 "proveedores.gestionar",

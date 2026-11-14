@@ -25,6 +25,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app import modelos as _modelos  # noqa: F401
 from app.core.db import engine, get_db
 from app.core.security import hash_password
 from app.main import app

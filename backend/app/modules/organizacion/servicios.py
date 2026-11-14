@@ -4,7 +4,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.errors import Conflicto, NoEncontrado
+from app.core.errors import Conflicto, NoEncontrado, ReglaNegocio, SinPermiso
 from app.modules.identidad import auditoria
 from app.modules.identidad.contexto import Contexto
 from app.modules.organizacion.models import Ubicacion
@@ -19,6 +19,29 @@ def _foto(u: Ubicacion) -> dict[str, Any]:
         "telefono": u.telefono,
         "activo": u.activo,
     }
+
+
+def obtener(db: Session, ctx: Contexto, ubicacion_id: uuid.UUID) -> Ubicacion:
+    ubicacion = db.get(Ubicacion, ubicacion_id)
+    if ubicacion is None or ubicacion.empresa_id != ctx.empresa_id:
+        raise NoEncontrado("La ubicación no existe.")
+    return ubicacion
+
+
+def tiene_acceso(ctx: Contexto, ubicacion_id: uuid.UUID) -> bool:
+    return ctx.puede("ubicaciones.todas") or any(
+        u.id == ubicacion_id for u in ctx.usuario.ubicaciones
+    )
+
+
+def operable(db: Session, ctx: Contexto, ubicacion_id: uuid.UUID) -> Ubicacion:
+    """Ubicación activa en la que el usuario puede registrar operaciones de inventario."""
+    ubicacion = obtener(db, ctx, ubicacion_id)
+    if not ubicacion.activo:
+        raise ReglaNegocio(f"La ubicación «{ubicacion.nombre}» está inactiva.")
+    if not tiene_acceso(ctx, ubicacion_id):
+        raise SinPermiso(f"No tiene acceso a la ubicación «{ubicacion.nombre}».")
+    return ubicacion
 
 
 def listar(db: Session, ctx: Contexto, solo_activas: bool = False) -> list[Ubicacion]:

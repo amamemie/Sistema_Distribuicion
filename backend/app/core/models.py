@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, MetaData, func
+from sqlalchemy import DateTime, ForeignKey, MetaData, Numeric, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 CONVENCION_NOMBRES = {
@@ -13,6 +13,13 @@ CONVENCION_NOMBRES = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
     "pk": "pk_%(table_name)s",
 }
+
+
+# Tipos numéricos exactos usados en todo el sistema (nunca float).
+CANTIDAD = Numeric(14, 3)  # cantidades en unidad base
+COSTO_UNITARIO = Numeric(18, 6)  # costo por unidad base
+DINERO = Numeric(14, 2)  # importes en bolivianos
+VALOR = Numeric(16, 4)  # valoraciones internas (cantidad x costo) antes de redondear
 
 
 class Base(DeclarativeBase):
