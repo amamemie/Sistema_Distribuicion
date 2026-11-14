@@ -2,6 +2,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@ta
 import { lazy, StrictMode, Suspense, type ComponentType, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, Link, RouterProvider } from 'react-router'
+import { registerSW } from 'virtual:pwa-register'
 import { RequierePermiso, RequiereSesion } from './components/Guardias'
 import { Layout } from './components/Layout'
 import './index.css'
@@ -9,6 +10,20 @@ import { ErrorApi } from './lib/api'
 import { CLAVE_YO } from './lib/sesion'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
+
+// Al publicarse una versión nueva, el service worker se activa y la página se recarga sola.
+// Además se busca actualización cada hora y al volver a la app, para no quedar con una versión vieja.
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, registro) {
+    if (!registro) return
+    const revisar = () => void registro.update().catch(() => undefined)
+    setInterval(revisar, 60 * 60 * 1000)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') revisar()
+    })
+  },
+})
 
 /** Carga diferida de páginas con exportación con nombre. */
 function perezosa<M extends Record<string, unknown>>(cargar: () => Promise<M>, nombre: keyof M) {
