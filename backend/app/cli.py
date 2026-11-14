@@ -60,6 +60,11 @@ def cmd_demo() -> None:
             u.nombre: u
             for u in db.scalars(select(Ubicacion).where(Ubicacion.empresa_id == empresa.id))
         }
+        if existentes and not set(existentes) & set(ubicaciones):
+            sys.exit(
+                "La empresa ya tiene ubicaciones reales: no se cargan datos de demostración para "
+                "no mezclarlos con los datos de trabajo."
+            )
         for nombre, tipo in ubicaciones.items():
             if nombre not in existentes:
                 existentes[nombre] = Ubicacion(empresa_id=empresa.id, nombre=nombre, tipo=tipo)
