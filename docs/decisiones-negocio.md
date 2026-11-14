@@ -30,6 +30,20 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | T-03 | Acceso por ubicación | Encargados operan solo en sus ubicaciones asignadas; Dueño y Administrador en todas (`ubicaciones.todas`). Todos ven el stock de todas las ubicaciones. | Desde Roles y permisos. |
 | T-04 | Transferencias de lotes vencidos | No se transfieren unidades vencidas; se dan de baja con un ajuste por vencimiento. | — |
 
+## Decisiones técnicas tomadas en la Fase 2a (a confirmar con el cliente)
+
+| # | Tema | Implementado | Cómo cambiarlo |
+|---|---|---|---|
+| T-05 | Stock vencido | Al confirmar solo se reserva stock de lotes no vencidos; al alistar nunca sale un lote vencido. | — |
+| T-06 | Merma al alistar | Sigue la regla de ajustes (T-01): si la registra un encargado queda pendiente hasta que el dueño la apruebe. | Umbral `umbral_ajuste_bs`. |
+| T-07 | Avisos de la revisión | Diferencias aritméticas y precio distinto del último **avisan pero no bloquean** (la OC impresa puede tener redondeos). Bloquean: falta la OC, datos de cabecera, producto sin elegir, stock insuficiente, OC duplicada. | — |
+| T-08 | Quién anula | El encargado puede descartar su propio borrador; anular un pedido confirmado o alistado requiere `pedidos.anular` (Dueño y Administrador). | Desde Roles y permisos. |
+| T-09 | Devoluciones | Las registra quien tiene `pedidos.anular`. Lo devuelto vuelve al stock y se descuenta del ingreso; si llegó dañado se registra luego como merma. | — |
+| T-10 | Visibilidad | El encargado ve solo los pedidos que él cargó (D-05); con `pedidos.ver_todos` se ven todos. | Desde Roles y permisos. |
+| T-11 | Documentos | Se guardan en el disco del equipo de la oficina y entran en el respaldo diario. Máximo 15 MB por archivo y 20 archivos por pedido. | Variables `ARCHIVO_MAX_MB`. |
+
 ## Pendientes de validar
+
+- Muestras reales de OC de cada cadena (D-09) para la lectura automática (Fase 2b).
 
 - Acceso desde celulares fuera de la red de la oficina y cómo obtener HTTPS (necesario para la cámara). Ver [ADR 0002](adr/0002-despliegue-en-oficina.md).

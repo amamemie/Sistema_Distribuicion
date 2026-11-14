@@ -29,8 +29,8 @@ backend/app/
 │   ├── compras/       compras, costos prorrateados, historial de precios    ✅ Fase 1
 │   ├── inventario/    motor, libro, saldos, CPP, lotes, transferencias,     ✅ Fase 1
 │   │                  ajustes, conteos, kardex, verificación
-│   ├── pedidos/       OC → pedido, estados, rentabilidad                    Fase 2a
-│   ├── documentos/    archivos, extractores, plantillas por cadena          Fase 2b
+│   ├── pedidos/       OC → pedido, estados, rentabilidad, equivalencias     ✅ Fase 2a
+│   ├── documentos/    archivos (✅ 2a); extractores y plantillas por cadena  Fase 2b
 │   ├── reportes/      consultas de solo lectura, exportación                Fase 3
 │   ├── alertas/       reglas y notificaciones                               Fase 4
 │   └── ml/            pronóstico, reposición, anomalías                     Fase 4
@@ -199,13 +199,31 @@ erDiagram
 - Cantidades y precios de la OC siempre por unidad base (D-10).
 - `cantidad_confirmada ≤ disponible` al confirmar (D-02); `cantidad_alistada ≤ confirmada` (D-11).
 
+### Reglas de pedidos implementadas (Fase 2a)
+
+| Paso | Qué hace |
+|---|---|
+| Nuevo | Se elige la sucursal que despacha y se adjuntan fotos/PDF de la OC. Las fotos se reducen en el celular; si no hay señal, quedan en el dispositivo (IndexedDB) y se suben solas al volver la conexión. |
+| Borrador | Todo es editable (D-06). La revisión muestra el documento al lado, valida `cantidad × precio = total` y `suma = total OC`, avisa precios distintos del último de la cadena, muestra el disponible en la sucursal y en depósitos (con atajo para transferir) y sugiere el producto: equivalencia aprendida → código → parecido del nombre (pg_trgm). |
+| Confirmar | Exige OC adjunta, cadena, sucursal de supermercado, número, fecha y productos en las líneas con cantidad. Bloquea OC duplicadas por cadena (índice único). Reserva solo stock **vigente** y guarda las equivalencias usadas. |
+| Alistar | Libera la reserva y descuenta lo alistado (≤ confirmado) de lotes vigentes: FEFO o los lotes elegidos. Congela el costo (CPP de la sucursal) y calcula ingreso, costo, ganancia y margen por línea y total. La merma va a un ajuste ROTURA vinculado al pedido, con la regla de aprobación de ajustes. |
+| Entregar | Constancia opcional: quién recibe, foto y firma en pantalla. |
+| Anular | Borrador: nada. Confirmado: libera la reserva. Alistado: reverso en los mismos lotes y costo. Entregado: no se anula (D-03). |
+| Devolución | Solo después de entregar (D-12): vuelve al stock en los mismos lotes y costo y recalcula la ganancia. |
+
+- El stock reservado está protegido: transferencias y ajustes no pueden tomar unidades vigentes
+  comprometidas. La verificación compara el comprometido con los pedidos confirmados.
+- Archivos: en disco del servidor (volumen `archivos`, incluido en `scripts/respaldo.sh`),
+  validados por contenido (JPG, PNG, WebP, PDF), 15 MB por archivo, 20 por pedido. La tabla
+  `archivo` y la historia del pedido son inmutables (trigger).
+
 ## Plan por fases
 
 | Fase | Contenido | Estado |
 |---|---|---|
 | 0 · Base | Monorepo, Docker Compose, BD, autenticación, roles/permisos, ubicaciones, auditoría, CI, PWA base, respaldos | ✅ |
 | 1 · Inventario | Catálogo, presentaciones, proveedores, cadenas y sucursales de supermercado, compras con prorrateo, lotes, CPP por ubicación, transferencias, ajustes, conteos, kardex, stock físico/comprometido/disponible | ✅ |
-| 2a · Pedidos | OC adjunta (foto/PDF) con carga manual, revisión, validación aritmética, equivalencias, reserva, alistado con FEFO, rentabilidad, entrega con constancia, anulación, duplicados, PWA con cámara y cola de subida | Pendiente |
+| 2a · Pedidos | OC adjunta (foto/PDF) con carga manual, revisión, validación aritmética, equivalencias, reserva, alistado con FEFO, rentabilidad, entrega con constancia, anulación, devoluciones, duplicados, PWA con cámara y cola de subida | ✅ |
 | 2b · Lectura automática | PDF con texto, OCR de fotos, plantillas por cadena, confianza, emparejamiento automático, métricas de precisión | Pendiente (requiere OC reales) |
 | 3 · Reportes | Dashboard y métricas, exportación Excel/PDF | Pendiente |
 | 4 · Alertas y ML | Alertas, pronóstico, reposición en dos niveles, anomalías | Pendiente |
