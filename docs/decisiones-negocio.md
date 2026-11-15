@@ -31,6 +31,11 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | D-24 | Entrega del proveedor | El proveedor entrega en **1 a 3 días**: se usan 3 días por defecto; se puede ajustar por proveedor. | 2026-11-15 |
 | D-25 | Cobertura de stock | Al reponer, la sucursal apunta a **1 semana** de venta y el depósito a **1 mes**. Si un producto tiene mínimo/máximo cargado, manda ese valor. | 2026-11-15 |
 | D-26 | Margen bajo | Un pedido con margen **menor al 10 %** genera aviso; el margen negativo genera alerta crítica. | 2026-11-15 |
+| D-27 | Cobro de las cadenas | Los supermercados pagan a **30-40 días**, por **transferencia bancaria**, y pagan **todo lo de un mes junto**. Se registra lo que deben y lo que pagaron; lo pagado queda como cuenta saldada. | 2026-11-15 |
+| D-28 | Pagos con diferencia | Si la cadena encuentra un error (en la nota o la factura) deposita **menos** y lo notifica; la diferencia debe quedar registrada con su motivo. | 2026-11-15 |
+| D-29 | Compras al contado | La empresa compra **al contado** casi siempre; el crédito con proveedores es excepcional. | 2026-11-15 |
+| D-30 | Impuestos | La empresa quiere contabilizar el **IVA (13 %)** y el **IT (3 %)** de sus facturas. | 2026-11-15 |
+| D-31 | Gastos operativos | Se registran: gasolina del vehículo, taxis, sueldos de los empleados, luz y agua (sucursales La Paz y Cochabamba) y alquiler de los depósitos (La Paz, sobre todo, y Cochabamba). | 2026-11-15 |
 
 ## Decisiones técnicas tomadas en la Fase 1 (a confirmar con el cliente)
 
