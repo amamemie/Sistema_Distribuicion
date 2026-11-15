@@ -177,7 +177,7 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
   const conDocumento = pedido.detalle_documentos.length > 0
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="space-y-2 lg:sticky lg:top-4 lg:self-start">
         {conDocumento ? (
           <VisorDocumentos pedidoId={pedido.id} documentos={pedido.detalle_documentos} onQuitar={(id) => quitarDocumento.mutate(id)} />

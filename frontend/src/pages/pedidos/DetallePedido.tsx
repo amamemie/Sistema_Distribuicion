@@ -106,7 +106,7 @@ function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
   const conCostos = p.costo !== null
   const alistado = p.detalle_lineas.some((l) => l.cantidad_alistada !== null)
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="space-y-5">
         {p.estado === 'ANULADO' && (
           <Aviso>
