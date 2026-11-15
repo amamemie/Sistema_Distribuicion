@@ -27,6 +27,10 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | D-20 | Pedidos a mano | **Reemplaza a D-06.** Además de subir la nota (PDF o foto), se puede crear un pedido a mano, sin documento, escribiendo cadena, sucursal, fecha y productos. El N.º de O/C es opcional; si se escribe, se sigue controlando que no se repita. | 2026-11-15 |
 | D-21 | Cálculos automáticos | El usuario solo escribe cantidad y precio: el total de cada línea (cantidad × precio), el subtotal y el total (subtotal − descuento) se calculan solos. El descuento no tiene columna propia: es la diferencia entre la suma de las líneas y el total guardado. | 2026-11-15 |
 | D-22 | Códigos de producto | El código (SKU) de cada producto es su **código de fábrica** de la nota de recepción; el nombre, la descripción tal cual figura en la nota. Los precios de compra los dará el cliente más adelante. | 2026-11-15 |
+| D-23 | Canal de avisos | Las alertas se ven **solo dentro del sistema** (campanita y centro de notificaciones). Queda lista la interfaz para sumar correo, WhatsApp o Telegram. | 2026-11-15 |
+| D-24 | Entrega del proveedor | El proveedor entrega en **1 a 3 días**: se usan 3 días por defecto; se puede ajustar por proveedor. | 2026-11-15 |
+| D-25 | Cobertura de stock | Al reponer, la sucursal apunta a **1 semana** de venta y el depósito a **1 mes**. Si un producto tiene mínimo/máximo cargado, manda ese valor. | 2026-11-15 |
+| D-26 | Margen bajo | Un pedido con margen **menor al 10 %** genera aviso; el margen negativo genera alerta crítica. | 2026-11-15 |
 
 ## Decisiones técnicas tomadas en la Fase 1 (a confirmar con el cliente)
 
@@ -64,8 +68,19 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 |---|---|---|---|
 | T-16 | Qué es una venta y su fecha | Pedidos ALISTADOS o ENTREGADOS, con la **fecha del pedido** (la de la nota de recepción). Cifras de las líneas, netas de devoluciones. | Usar la fecha de alistado o de entrega: un cambio en `reportes/consultas.py`. |
 | T-17 | Rotación y días de inventario | Rotación = unidades vendidas en el período ÷ stock actual. Días de inventario = stock actual ÷ venta diaria promedio del período. | Con inventario promedio histórico (reconstruido del libro de movimientos) si el cliente lo prefiere. |
-| T-18 | Sin movimiento | Con stock y sin ventas ni transferencias de salida desde esa ubicación en los últimos N días (30 por defecto, elegible). | — |
+| T-18 | Sin movimiento | Con stock y sin ventas ni transferencias de salida desde esa ubicación en los últimos N días (30 por defecto, elegible). Lo que nunca salió se cuenta desde que ingresó (lo recién comprado no es "inmovilizado"). | — |
 | T-19 | Quién ve qué | `reportes.operativos` (Administrador): unidades, facturación, rankings, inventario en unidades, usuarios. `reportes.rentabilidad` (Dueño, asignable a otros roles): además costos, ganancias, márgenes, valor a costo, mermas en Bs y precios de compra. | Desde Roles y permisos. |
+
+## Decisiones técnicas tomadas en la Fase 4 (a confirmar con el cliente)
+
+| # | Tema | Implementado | Cómo cambiarlo |
+|---|---|---|---|
+| T-20 | Pronóstico | Por sucursal y producto, con las unidades alistadas por semana (hasta 52). Se prueban promedio, promedio móvil (4 semanas) y suavizado exponencial y se usa el de menor error en las últimas semanas. Menos de 4 semanas: promedio y confianza baja. Se recalcula cada lunes 03:00 y con el botón «Recalcular». | Parámetros en `alertas/dominio.py`. |
+| T-21 | Demanda del depósito | Es la suma de la de las sucursales que abastece. El depósito de cada sucursal es el **origen más frecuente de sus transferencias** (hoy: Cochabamba → Sucursal Cochabamba, La Paz → Sucursal Central); sin historial, el depósito con más stock. | Se elige otro origen al crear la transferencia. |
+| T-22 | Stock de seguridad | 95 % de nivel de servicio: 1,65 × desviación de la demanda × √(días de reposición). Punto de reorden = demanda durante la reposición + seguridad. | `Z_SERVICIO` en `alertas/dominio.py`. |
+| T-23 | Fardos y cajas | La sugerencia se redondea hacia arriba a la presentación más grande que no supere lo sugerido; si ninguna cabe, en unidades. | — |
+| T-24 | Ruido con poco historial | El sobre-stock calculado por pronóstico solo avisa con confianza media o alta (o si se superó un máximo cargado). El stock bajo y el quiebre avisan siempre. | — |
+| T-25 | Anomalías | Valor atípico = se aparta más de 3,5 desviaciones robustas (mediana y MAD) de la historia de esa cadena y producto (pedidos), del producto (compras) o del motivo (mermas). Hace falta un mínimo de historia (5; 3 en compras). | `atipico()` en `alertas/dominio.py`. |
 
 ## Pendientes de validar
 

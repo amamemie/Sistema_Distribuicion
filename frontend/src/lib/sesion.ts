@@ -25,6 +25,9 @@ export function usePuede(): (permiso: string) => boolean {
   return (permiso) => data?.permisos.includes(permiso) ?? false
 }
 
+/** Sugerencias de reposición: transferir a sucursales o comprar al proveedor. */
+export const PERMISOS_REPOSICION = ['inventario.transferir', 'compras.registrar']
+
 /** Cualquiera de estos permisos da acceso a los reportes (los costos exigen el segundo). */
 export const PERMISOS_REPORTES = ['reportes.operativos', 'reportes.rentabilidad']
 

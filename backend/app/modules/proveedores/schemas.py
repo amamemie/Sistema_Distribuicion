@@ -19,6 +19,7 @@ class ProveedorSalida(Esquema):
     correo: str | None
     direccion: str | None
     contacto: str | None
+    dias_entrega: int | None
     activo: bool
     productos: list[ProductoMinimo]
 
@@ -30,6 +31,7 @@ class ProveedorEntrada(BaseModel):
     correo: str | None = Field(default=None, max_length=254)
     direccion: str | None = Field(default=None, max_length=250)
     contacto: str | None = Field(default=None, max_length=120)
+    dias_entrega: int | None = Field(default=None, ge=0, le=180)  # vacío = valor general
     producto_ids: list[uuid.UUID] = []
 
 
@@ -40,5 +42,6 @@ class ProveedorActualizacion(BaseModel):
     correo: str | None = Field(default=None, max_length=254)
     direccion: str | None = Field(default=None, max_length=250)
     contacto: str | None = Field(default=None, max_length=120)
+    dias_entrega: int | None = Field(default=None, ge=0, le=180)
     activo: bool | None = None
     producto_ids: list[uuid.UUID] | None = None

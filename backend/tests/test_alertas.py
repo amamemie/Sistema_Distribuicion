@@ -277,3 +277,31 @@ def test_parametros_y_api(db: Session, esc: Escenario, iniciar_sesion: Login) ->
     encargado = iniciar_sesion("encargado@prueba.bo")
     assert encargado.get("/api/reposicion/compras").status_code == 403
     assert encargado.get("/api/alertas/resumen").status_code == 200
+
+
+def test_sobre_stock_solo_con_historial_suficiente(db: Session, esc: Escenario) -> None:
+    _vender(db, esc, 5, hace_dias=1)  # 595 en stock para 5 por semana, pero 1 semana de datos
+    pronostico.recalcular(db, esc.ctx.empresa_id)
+    reglas.evaluar(db, esc.ctx.empresa_id)
+    assert _activas(db, esc, "sobre_stock") == []
+    for semana in range(1, 5):
+        _vender(db, esc, 5, hace_dias=7 * semana + 1)
+    pronostico.recalcular(db, esc.ctx.empresa_id)
+    reglas.evaluar(db, esc.ctx.empresa_id)
+    [alerta] = _activas(db, esc, "sobre_stock")
+    assert "unidades" in alerta.mensaje and "alcanza para ~" in alerta.mensaje
+
+
+def test_dias_de_entrega_por_proveedor(db: Session, cadena: Escenario) -> None:
+    from app.modules.proveedores import servicios as proveedores
+    from app.modules.proveedores.schemas import ProveedorActualizacion
+
+    proveedores.actualizar(
+        db, cadena.ctx, cadena.cat.proveedor.id, ProveedorActualizacion(dias_entrega=7)
+    )
+    [dep] = [
+        f
+        for f in reposicion.planificar(db, cadena.ctx.empresa_id, Parametros()).depositos
+        if f.producto.id == cadena.cat.guantes.id
+    ]
+    assert dep.proveedor is not None and dep.dias_reposicion == 7

@@ -141,10 +141,11 @@ function DetalleTransferencia({ transferencia: t, onCerrar }: { transferencia: T
 
 const lineaVacia = (): LineaBase => ({ clave: nuevaClave(), producto: null, presentacion_id: '', cantidad: '' })
 
-/** Datos para precargar la transferencia (p. ej. desde un pedido sin stock suficiente). */
+/** Datos para precargar la transferencia (desde un pedido sin stock o una sugerencia de reposición). */
 interface Precarga {
+  origen?: string
   destino?: string
-  lineas?: { producto: Producto; cantidad: string }[]
+  lineas?: { producto: Producto; cantidad: string; presentacion_id?: string }[]
 }
 
 export function NuevaTransferencia() {
@@ -156,12 +157,12 @@ export function NuevaTransferencia() {
   const depositos = (ubicaciones.data ?? []).filter((u) => u.tipo === 'DEPOSITO')
   const [origenElegido, setOrigen] = useState<string | null>(null)
   // Desde un pedido, por defecto sale del único depósito (si hay uno solo).
-  const origen = origenElegido ?? (desdePedido && depositos.length === 1 ? depositos[0].id : '')
+  const origen = origenElegido ?? precarga.origen ?? (desdePedido && depositos.length === 1 ? depositos[0].id : '')
   const [destino, setDestino] = useState(precarga.destino ?? '')
   const [observaciones, setObservaciones] = useState('')
   const [lineas, setLineas] = useState<LineaBase[]>(() =>
     desdePedido
-      ? precarga.lineas!.map((l) => ({ clave: nuevaClave(), producto: l.producto, presentacion_id: '', cantidad: l.cantidad }))
+      ? precarga.lineas!.map((l) => ({ clave: nuevaClave(), producto: l.producto, presentacion_id: l.presentacion_id ?? '', cantidad: l.cantidad }))
       : [lineaVacia()],
   )
 

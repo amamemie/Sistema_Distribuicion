@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { EditorLineas } from '../../components/EditorLineas'
 import { cantidadBase, nuevaClave, type LineaBase } from '../../lib/lineas'
 import {
@@ -22,7 +22,7 @@ import {
 import { api, mensajeError } from '../../lib/api'
 import { useProveedores, useUbicaciones } from '../../lib/consultas'
 import { formatearBs, formatearCantidad, formatearCosto, formatearDia, hoyLaPaz } from '../../lib/formato'
-import type { CompraDetalle, CompraResumen, Pagina } from '../../lib/tipos'
+import type { CompraDetalle, CompraResumen, Pagina, Producto } from '../../lib/tipos'
 
 const TAMANO = 50
 
@@ -121,13 +121,29 @@ const lineaVacia = (): LineaCompra => ({
   lote_vencimiento: '',
 })
 
+/** Datos para precargar la compra (desde una sugerencia de reposición). */
+interface PrecargaCompra {
+  proveedor_id?: string
+  ubicacion_id?: string
+  lineas?: { producto: Producto; presentacion_id: string; cantidad: string; precio: string }[]
+}
+
 export function NuevaCompra() {
+  const precarga = (useLocation().state as PrecargaCompra | null) ?? {}
   const navegar = useNavigate()
   const queryClient = useQueryClient()
   const proveedores = useProveedores()
   const ubicaciones = useUbicaciones()
-  const [cabecera, setCabecera] = useState({ proveedor_id: '', ubicacion_id: '', fecha: hoyLaPaz(), numero_documento: '', observaciones: '' })
-  const [lineas, setLineas] = useState<LineaCompra[]>([lineaVacia()])
+  const [cabecera, setCabecera] = useState({
+    proveedor_id: precarga.proveedor_id ?? '',
+    ubicacion_id: precarga.ubicacion_id ?? '',
+    fecha: hoyLaPaz(),
+    numero_documento: '',
+    observaciones: '',
+  })
+  const [lineas, setLineas] = useState<LineaCompra[]>(() =>
+    precarga.lineas?.length ? precarga.lineas.map((l) => ({ ...lineaVacia(), ...l })) : [lineaVacia()],
+  )
   const [costos, setCostos] = useState<{ concepto: string; monto: string }[]>([])
 
   const subtotal = lineas.reduce((s, l) => s + (Number(l.cantidad) || 0) * (Number(l.precio) || 0), 0)

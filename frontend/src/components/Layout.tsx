@@ -12,6 +12,7 @@ import {
   MapPin,
   Menu,
   Package,
+  PackageCheck,
   ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
@@ -23,7 +24,8 @@ import {
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { api } from '../lib/api'
-import { CLAVE_YO, PERMISOS_PEDIDOS, PERMISOS_REPORTES, usePuedeAlguno, useYo } from '../lib/sesion'
+import { CLAVE_YO, PERMISOS_PEDIDOS, PERMISOS_REPORTES, PERMISOS_REPOSICION, usePuedeAlguno, useYo } from '../lib/sesion'
+import { Campana } from './Campana'
 import { CambiarPassword } from './CambiarPassword'
 import { Boton } from './ui'
 
@@ -42,6 +44,7 @@ const SECCIONES: { titulo?: string; enlaces: Enlace[] }[] = [
     enlaces: [
       { a: '/pedidos', texto: 'Pedidos', icono: ClipboardList, permiso: PERMISOS_PEDIDOS },
       { a: '/inventario', texto: 'Stock', icono: Boxes, permiso: 'inventario.ver' },
+      { a: '/reposicion', texto: 'Reposición', icono: PackageCheck, permiso: PERMISOS_REPOSICION },
       { a: '/compras', texto: 'Compras', icono: ShoppingCart, permiso: 'compras.registrar' },
       { a: '/transferencias', texto: 'Transferencias', icono: ArrowLeftRight, permiso: 'inventario.ver' },
       { a: '/ajustes', texto: 'Ajustes', icono: SlidersHorizontal, permiso: 'inventario.ver' },
@@ -159,6 +162,7 @@ export function Layout() {
             <Menu size={20} />
           </Boton>
           <div className="ml-auto flex items-center gap-2">
+            <Campana />
             <div className="hidden text-right sm:block">
               <div className="text-sm font-medium">
                 {yo?.nombre} {yo?.apellido}

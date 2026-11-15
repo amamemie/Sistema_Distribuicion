@@ -244,6 +244,23 @@ se exporta sin código adicional. Reportes: `ganancias`, `productos`, `clientes`
 `ajustes`, `precios_compra`, `usuarios`. Criterios en T-16 a T-19. Los gráficos son SVG propios
 (sin librería), con paleta validada para daltonismo, tooltip y la tabla siempre debajo.
 
+### Alertas, pronóstico y reposición (Fase 4)
+
+Módulo `alertas/`. El servicio `beat` (Celery) dispara `alertas.evaluar` cada 10 minutos y
+`alertas.pronosticar` cada lunes. Las reglas (`reglas.py`) son idempotentes: cada condición tiene
+una clave única entre las alertas activas. Las de **estado** (stock bajo, quiebre por ubicación y
+global, sobre-stock, pedidos confirmados sin stock vigente, lotes por vencer o vencidos, sin
+movimiento, documento repetido) se resuelven solas cuando la condición desaparece; las de
+**evento** (margen bajo o negativo, precio distinto del último, conteos con diferencias grandes,
+anomalías en pedidos, compras y mermas) quedan hasta que alguien las marca como atendidas y no se
+repiten. Cada alerta exige un permiso (p. ej. `costos.ver` para márgenes) y respeta las
+ubicaciones del usuario. Los canales externos se agregan implementando `Notificador`.
+
+El pronóstico (`pronostico.py`, `dominio.py`) se guarda en `pronostico` por sucursal y producto;
+`reposicion.py` arma el plan (punto de reorden, seguridad, objetivo, cobertura) y las sugerencias
+depósito → sucursal y proveedor → depósito, que precargan una transferencia o una compra.
+Parámetros en `empresa.configuracion["alertas"]` (D-23 a D-26, T-20 a T-25).
+
 ## Plan por fases
 
 | Fase | Contenido | Estado |
@@ -253,5 +270,5 @@ se exporta sin código adicional. Reportes: `ganancias`, `productos`, `clientes`
 | 2a · Pedidos | OC adjunta (foto/PDF) con carga manual, revisión, validación aritmética, equivalencias, reserva, alistado con FEFO, rentabilidad, entrega con constancia, anulación, devoluciones, duplicados, PWA con cámara y cola de subida | ✅ |
 | 2b · Lectura automática | PDF con texto, OCR de fotos, plantillas por cadena, confianza, emparejamiento automático, métricas de precisión | ✅ Hipermaxi + lectura genérica; plantillas de otras cadenas cuando haya muestras |
 | 3 · Reportes | Dashboard y métricas, exportación Excel/PDF | ✅ |
-| 4 · Alertas y ML | Alertas, pronóstico, reposición en dos niveles, anomalías | Pendiente |
+| 4 · Alertas y ML | Alertas, pronóstico, reposición en dos niveles, anomalías | ✅ |
 | 5 · Finanzas | Cuentas por cobrar/pagar, gastos, contabilidad, impuestos | Futuro |

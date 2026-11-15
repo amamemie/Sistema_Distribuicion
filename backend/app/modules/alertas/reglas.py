@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.core.tiempo import ahora, hoy
 from app.modules.alertas import dominio, parametros, reposicion
-from app.modules.alertas.models import Alerta, EstadoAlerta, Severidad
+from app.modules.alertas.models import Alerta, Confianza, EstadoAlerta, Severidad
 from app.modules.alertas.notificadores import notificar
 from app.modules.catalogo.models import Producto
 from app.modules.compras.models import Compra, CompraLinea, EstadoCompra
@@ -73,6 +73,14 @@ TIPOS_DE_ESTADO = {
     "sin_movimiento",
     "oc_duplicada",
 }
+
+
+def _unidades(producto: Producto) -> str:
+    return "unidades" if producto.unidad_base == "unidad" else producto.unidad_base
+
+
+def _dias(valor: Decimal | None) -> str:
+    return str(int(valor)) if valor is not None else "?"
 
 
 def _mediana(valores: list[float]) -> Decimal:
@@ -132,7 +140,7 @@ def _stock(plan: reposicion.Planificacion, p: parametros.Parametros) -> list[Ale
             )
         elif f.con_demanda and f.disponible <= f.plan.punto_reorden:
             alcance = (
-                f" (alcanza para ~{f.plan.cobertura_dias} días)"
+                f" (alcanza para ~{_dias(f.plan.cobertura_dias)} días)"
                 if f.plan.cobertura_dias is not None
                 else ""
             )
@@ -143,7 +151,7 @@ def _stock(plan: reposicion.Planificacion, p: parametros.Parametros) -> list[Ale
                     clave=f"stock_bajo:{ub.id}:{prod.id}",
                     titulo=f"Stock bajo: {prod.nombre}",
                     mensaje=(
-                        f"{ub.nombre}: quedan {cant(f.disponible)} {prod.unidad_base}{alcance}; "
+                        f"{ub.nombre}: quedan {cant(f.disponible)} {_unidades(prod)}{alcance}; "
                         f"conviene reponer al bajar de {cant(f.plan.punto_reorden)}. {accion}"
                     ),
                     datos=datos,
@@ -155,8 +163,10 @@ def _stock(plan: reposicion.Planificacion, p: parametros.Parametros) -> list[Ale
                 p.cobertura_sucursal_dias if es_suc else p.cobertura_deposito_dias
             ) * p.sobre_stock_veces
             excede_max = f.maximo is not None and f.fisico > f.maximo
+            # Con poco historial (confianza baja) la cobertura es poco fiable: no se avisa.
             excede_dias = (
                 f.maximo is None
+                and f.confianza != Confianza.BAJA
                 and f.demanda_semanal > 0
                 and f.plan.cobertura_dias is not None
                 and f.plan.cobertura_dias > Decimal(str(limite_dias))
@@ -165,7 +175,8 @@ def _stock(plan: reposicion.Planificacion, p: parametros.Parametros) -> list[Ale
                 detalle = (
                     f"supera el máximo de {cant(f.maximo)}"
                     if excede_max and f.maximo is not None
-                    else f"alcanza para ~{f.plan.cobertura_dias} días al ritmo de venta actual"
+                    else f"alcanza para ~{_dias(f.plan.cobertura_dias)} días al ritmo de venta "
+                    "actual"
                 )
                 alertas.append(
                     AlertaNueva(
@@ -173,7 +184,7 @@ def _stock(plan: reposicion.Planificacion, p: parametros.Parametros) -> list[Ale
                         severidad=Severidad.INFO,
                         clave=f"sobre_stock:{ub.id}:{prod.id}",
                         titulo=f"Sobre-stock: {prod.nombre}",
-                        mensaje=f"{ub.nombre}: {cant(f.fisico)} {prod.unidad_base}, {detalle}.",
+                        mensaje=f"{ub.nombre}: {cant(f.fisico)} {_unidades(prod)}, {detalle}.",
                         datos=datos,
                         **base,
                     )

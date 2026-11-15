@@ -129,6 +129,7 @@ export interface Proveedor {
   correo: string | null
   direccion: string | null
   contacto: string | null
+  dias_entrega: number | null
   activo: boolean
   productos: { id: string; sku: string; nombre: string }[]
 }
@@ -555,4 +556,97 @@ export interface Reporte {
   kpis: Kpi[]
   series: SerieReporte[]
   tablas: TablaReporte[]
+}
+
+// ---------------------------------------------------------------- alertas y reposición (Fase 4)
+
+export type SeveridadAlerta = 'INFO' | 'AVISO' | 'CRITICA'
+export type Confianza = 'BAJA' | 'MEDIA' | 'ALTA'
+
+export interface Alerta {
+  id: string
+  tipo: string
+  severidad: SeveridadAlerta
+  titulo: string
+  mensaje: string
+  enlace: string | null
+  ubicacion: string | null
+  producto: string | null
+  datos: Record<string, unknown>
+  auto_resolver: boolean
+  estado: 'ACTIVA' | 'RESUELTA'
+  creada_at: string
+  resuelta_at: string | null
+  resuelta_por: string | null
+  leida: boolean
+}
+
+export interface ResumenAlertas {
+  no_leidas: number
+  criticas: number
+}
+
+export interface ParametrosAlertas {
+  dias_entrega_proveedor: number
+  dias_reposicion_sucursal: number
+  cobertura_sucursal_dias: number
+  cobertura_deposito_dias: number
+  margen_minimo: number
+  dias_sin_movimiento: number
+  dias_aviso_vencimiento: number
+  diferencia_conteo_pct: number
+  sobre_stock_veces: number
+}
+
+export interface Referencia {
+  id: string
+  nombre: string
+}
+
+export interface FilaReposicion {
+  ubicacion: Referencia
+  producto: Referencia
+  sku: string
+  unidad: string
+  disponible: Decimal
+  demanda_semanal: Decimal
+  cobertura_dias: Decimal | null
+  stock_seguridad: Decimal
+  punto_reorden: Decimal
+  objetivo: Decimal
+  confianza: Confianza
+  metodo: string
+  semanas: number
+  con_limites: boolean
+}
+
+export interface SugerenciaTransferencia extends FilaReposicion {
+  origen: Referencia
+  origen_disponible: Decimal
+  cantidad: Decimal
+  presentacion: string
+  cantidad_presentacion: Decimal
+  insuficiente: boolean
+}
+
+export interface SugerenciaCompra extends FilaReposicion {
+  proveedor: Referencia | null
+  dias_entrega: number
+  fecha: string
+  cantidad: Decimal
+  presentacion: string
+  cantidad_presentacion: Decimal
+  costo_estimado: Decimal | null
+}
+
+export interface PronosticoProducto {
+  producto: Referencia
+  ubicacion: Referencia
+  metodo: string
+  confianza: Confianza
+  semanas: number
+  demanda_semanal: Decimal
+  error_medio: Decimal | null
+  historial: number[]
+  calculado_at: string | null
 }
