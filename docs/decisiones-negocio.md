@@ -58,6 +58,15 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | T-14 | Campos dudosos | Confianza menor a 85 % se resalta en ámbar; si las cuentas no cuadran, se avisa. |
 | T-15 | Red | El backend y el worker no tienen salida a internet (las OC no salen del equipo). |
 
+## Decisiones técnicas tomadas en la Fase 3 (a confirmar con el cliente)
+
+| # | Tema | Implementado | Cómo cambiarlo |
+|---|---|---|---|
+| T-16 | Qué es una venta y su fecha | Pedidos ALISTADOS o ENTREGADOS, con la **fecha del pedido** (la de la nota de recepción). Cifras de las líneas, netas de devoluciones. | Usar la fecha de alistado o de entrega: un cambio en `reportes/consultas.py`. |
+| T-17 | Rotación y días de inventario | Rotación = unidades vendidas en el período ÷ stock actual. Días de inventario = stock actual ÷ venta diaria promedio del período. | Con inventario promedio histórico (reconstruido del libro de movimientos) si el cliente lo prefiere. |
+| T-18 | Sin movimiento | Con stock y sin ventas ni transferencias de salida desde esa ubicación en los últimos N días (30 por defecto, elegible). | — |
+| T-19 | Quién ve qué | `reportes.operativos` (Administrador): unidades, facturación, rankings, inventario en unidades, usuarios. `reportes.rentabilidad` (Dueño, asignable a otros roles): además costos, ganancias, márgenes, valor a costo, mermas en Bs y precios de compra. | Desde Roles y permisos. |
+
 ## Pendientes de validar
 
 - Muestras reales de notas de recepción de las demás cadenas (D-09, D-19) para la lectura automática.

@@ -52,6 +52,14 @@ def esquema() -> None:
     command.upgrade(cfg, "head")
 
 
+@pytest.fixture(autouse=True)
+def sin_cola(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Las pruebas no encolan lecturas en Redis (no hay worker): se procesan a mano."""
+    from app.modules.pedidos import lectura
+
+    monkeypatch.setattr(lectura, "encolar", lambda _lectura_id: None)
+
+
 @pytest.fixture
 def db() -> Iterator[Session]:
     conexion = engine.connect()

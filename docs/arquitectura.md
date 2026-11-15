@@ -31,7 +31,7 @@ backend/app/
 │   │                  ajustes, conteos, kardex, verificación
 │   ├── pedidos/       OC → pedido, estados, rentabilidad, equivalencias     ✅ Fase 2a
 │   ├── documentos/    archivos; lectura de OC: OCR local y plantillas      ✅ Fase 2b
-│   ├── reportes/      consultas de solo lectura, exportación                Fase 3
+│   ├── reportes/      consultas de solo lectura, exportación                ✅ Fase 3
 │   ├── alertas/       reglas y notificaciones                               Fase 4
 │   └── ml/            pronóstico, reposición, anomalías                     Fase 4
 └── workers/         tareas Celery
@@ -233,6 +233,17 @@ fotos simuladas (todas las cantidades, precios y totales; fallan espacios en des
   validados por contenido (JPG, PNG, WebP, PDF), 15 MB por archivo, 20 por pedido. La tabla
   `archivo` y la historia del pedido son inmutables (trigger).
 
+### Reportes (Fase 3)
+
+Módulo `reportes/` de solo lectura. Cada reporte (`GET /api/reportes/{clave}` con filtros de fecha,
+ubicación, cadena, sucursal de cliente, categoría, producto y agrupación) devuelve un mismo formato:
+indicadores (con comparación contra el período anterior de igual duración), series para gráficos y
+tablas. Ese formato lo dibuja el navegador y lo exporta el servidor
+(`GET /api/reportes/{clave}/exportar?formato=xlsx|pdf`; openpyxl y fpdf2), así todo reporte nuevo
+se exporta sin código adicional. Reportes: `ganancias`, `productos`, `clientes`, `inventario`,
+`ajustes`, `precios_compra`, `usuarios`. Criterios en T-16 a T-19. Los gráficos son SVG propios
+(sin librería), con paleta validada para daltonismo, tooltip y la tabla siempre debajo.
+
 ## Plan por fases
 
 | Fase | Contenido | Estado |
@@ -241,6 +252,6 @@ fotos simuladas (todas las cantidades, precios y totales; fallan espacios en des
 | 1 · Inventario | Catálogo, presentaciones, proveedores, cadenas y sucursales de supermercado, compras con prorrateo, lotes, CPP por ubicación, transferencias, ajustes, conteos, kardex, stock físico/comprometido/disponible | ✅ |
 | 2a · Pedidos | OC adjunta (foto/PDF) con carga manual, revisión, validación aritmética, equivalencias, reserva, alistado con FEFO, rentabilidad, entrega con constancia, anulación, devoluciones, duplicados, PWA con cámara y cola de subida | ✅ |
 | 2b · Lectura automática | PDF con texto, OCR de fotos, plantillas por cadena, confianza, emparejamiento automático, métricas de precisión | ✅ Hipermaxi + lectura genérica; plantillas de otras cadenas cuando haya muestras |
-| 3 · Reportes | Dashboard y métricas, exportación Excel/PDF | Pendiente |
+| 3 · Reportes | Dashboard y métricas, exportación Excel/PDF | ✅ |
 | 4 · Alertas y ML | Alertas, pronóstico, reposición en dos niveles, anomalías | Pendiente |
 | 5 · Finanzas | Cuentas por cobrar/pagar, gastos, contabilidad, impuestos | Futuro |

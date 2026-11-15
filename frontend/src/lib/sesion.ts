@@ -25,6 +25,9 @@ export function usePuede(): (permiso: string) => boolean {
   return (permiso) => data?.permisos.includes(permiso) ?? false
 }
 
+/** Cualquiera de estos permisos da acceso a los reportes (los costos exigen el segundo). */
+export const PERMISOS_REPORTES = ['reportes.operativos', 'reportes.rentabilidad']
+
 /** Cualquiera de estos permisos da acceso a la sección de pedidos. */
 export const PERMISOS_PEDIDOS = [
   'pedidos.escanear',

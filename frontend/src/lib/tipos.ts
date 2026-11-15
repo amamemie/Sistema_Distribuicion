@@ -506,3 +506,53 @@ export interface Sugerencia {
   fuente: 'equivalencia' | 'codigo' | 'similitud'
   puntaje: number
 }
+
+// ---------------------------------------------------------------- reportes (Fase 3)
+
+export type TipoDato = 'texto' | 'entero' | 'cantidad' | 'dinero' | 'porcentaje' | 'fecha'
+
+export interface Kpi {
+  clave: string
+  titulo: string
+  tipo: TipoDato
+  valor: string | number | null
+  anterior: string | number | null
+  variacion: string | null
+}
+
+export interface ColumnaReporte {
+  clave: string
+  titulo: string
+  tipo: TipoDato
+}
+
+export type FilaReporte = Record<string, string | number | null>
+
+export interface TablaReporte {
+  clave: string
+  titulo: string
+  descripcion: string | null
+  columnas: ColumnaReporte[]
+  filas: FilaReporte[]
+}
+
+export interface SerieReporte {
+  clave: string
+  titulo: string
+  tipo: TipoDato
+  forma: 'linea' | 'barras'
+  eje: 'tiempo' | 'categoria'
+  claves: ColumnaReporte[]
+  puntos: FilaReporte[]
+}
+
+export interface Reporte {
+  clave: string
+  titulo: string
+  descripcion: string
+  filtros_texto: string[]
+  con_rentabilidad: boolean
+  kpis: Kpi[]
+  series: SerieReporte[]
+  tablas: TablaReporte[]
+}
