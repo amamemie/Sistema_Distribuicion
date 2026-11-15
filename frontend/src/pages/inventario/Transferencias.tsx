@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ArrowRight, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { EditorLineas } from '../../components/EditorLineas'
 import { nuevaClave, type LineaBase } from '../../lib/lineas'
 import { Aviso, Boton, CABECERA_TABLA, Campo, Encabezado, Entrada, Insignia, Modal, Paginador, Selector, Tabla, Tarjeta, Vacio } from '../../components/ui'
@@ -9,7 +9,7 @@ import { api, mensajeError } from '../../lib/api'
 import { useUbicaciones } from '../../lib/consultas'
 import { formatearCantidad, formatearFecha } from '../../lib/formato'
 import { usePuede } from '../../lib/sesion'
-import type { Pagina, Transferencia } from '../../lib/tipos'
+import type { Pagina, Producto, Transferencia } from '../../lib/tipos'
 
 const TAMANO = 50
 
@@ -141,14 +141,29 @@ function DetalleTransferencia({ transferencia: t, onCerrar }: { transferencia: T
 
 const lineaVacia = (): LineaBase => ({ clave: nuevaClave(), producto: null, presentacion_id: '', cantidad: '' })
 
+/** Datos para precargar la transferencia (p. ej. desde un pedido sin stock suficiente). */
+interface Precarga {
+  destino?: string
+  lineas?: { producto: Producto; cantidad: string }[]
+}
+
 export function NuevaTransferencia() {
   const navegar = useNavigate()
   const queryClient = useQueryClient()
   const ubicaciones = useUbicaciones()
-  const [origen, setOrigen] = useState('')
-  const [destino, setDestino] = useState('')
+  const precarga = (useLocation().state as Precarga | null) ?? {}
+  const desdePedido = !!precarga.lineas?.length
+  const depositos = (ubicaciones.data ?? []).filter((u) => u.tipo === 'DEPOSITO')
+  const [origenElegido, setOrigen] = useState<string | null>(null)
+  // Desde un pedido, por defecto sale del único depósito (si hay uno solo).
+  const origen = origenElegido ?? (desdePedido && depositos.length === 1 ? depositos[0].id : '')
+  const [destino, setDestino] = useState(precarga.destino ?? '')
   const [observaciones, setObservaciones] = useState('')
-  const [lineas, setLineas] = useState<LineaBase[]>([lineaVacia()])
+  const [lineas, setLineas] = useState<LineaBase[]>(() =>
+    desdePedido
+      ? precarga.lineas!.map((l) => ({ clave: nuevaClave(), producto: l.producto, presentacion_id: '', cantidad: l.cantidad }))
+      : [lineaVacia()],
+  )
 
   const transferir = useMutation({
     mutationFn: () =>
@@ -166,7 +181,10 @@ export function NuevaTransferencia() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transferencias'] })
       queryClient.invalidateQueries({ queryKey: ['stock'] })
-      navegar('/transferencias', { replace: true })
+      queryClient.invalidateQueries({ queryKey: ['pedido'] })
+      // Si vino de un pedido, vuelve a la revisión para confirmarlo.
+      if (desdePedido) navegar(-1)
+      else navegar('/transferencias', { replace: true })
     },
   })
 

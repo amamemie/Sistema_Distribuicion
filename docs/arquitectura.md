@@ -29,8 +29,8 @@ backend/app/
 │   ├── compras/       compras, costos prorrateados, historial de precios    ✅ Fase 1
 │   ├── inventario/    motor, libro, saldos, CPP, lotes, transferencias,     ✅ Fase 1
 │   │                  ajustes, conteos, kardex, verificación
-│   ├── pedidos/       OC → pedido, estados, rentabilidad                    Fase 2a
-│   ├── documentos/    archivos, extractores, plantillas por cadena          Fase 2b
+│   ├── pedidos/       OC → pedido, estados, rentabilidad, equivalencias     ✅ Fase 2a
+│   ├── documentos/    archivos; lectura de OC: OCR local y plantillas      ✅ Fase 2b
 │   ├── reportes/      consultas de solo lectura, exportación                Fase 3
 │   ├── alertas/       reglas y notificaciones                               Fase 4
 │   └── ml/            pronóstico, reposición, anomalías                     Fase 4
@@ -199,14 +199,48 @@ erDiagram
 - Cantidades y precios de la OC siempre por unidad base (D-10).
 - `cantidad_confirmada ≤ disponible` al confirmar (D-02); `cantidad_alistada ≤ confirmada` (D-11).
 
+### Lectura automática de la OC (Fase 2b)
+
+Al subir la OC a un borrador vacío, el worker la lee (OCR local, ver
+[ADR 0003](adr/0003-lectura-de-oc-sin-costo.md)) y completa cadena, sucursal del supermercado (por
+parecido con «Enviar a»), número, fechas, total y líneas. El producto de cada línea se asigna solo
+si hay una equivalencia aprendida o coincide el código; si no, se ofrecen sugerencias. Los campos
+leídos con confianza menor a 85 % se resaltan. Nunca reemplaza lo cargado a mano salvo que el
+usuario pulse «Volver a leer», y nunca mueve stock. `GET /api/pedidos/lectura/precision` resume la
+precisión por formato a partir de lo que se corrigió al confirmar.
+
+Desde D-19 el documento del pedido es la **nota de recepción**. Plantillas: `hipermaxi_recepcion`
+(nota de recepción: N.º de O/C → número del pedido, N.º Rec. → observaciones, U/N → sucursal,
+código de artículo y de fábrica, subtotal/descuento/total), `hipermaxi` (OC "Aviso de despacho",
+se conserva) y `generica`. Medido con 10 notas reales: 100 % en PDF; 97,7 % de los campos con
+fotos simuladas (todas las cantidades, precios y totales; fallan espacios en descripciones).
+
+### Reglas de pedidos implementadas (Fase 2a)
+
+| Paso | Qué hace |
+|---|---|
+| Nuevo | Se elige la sucursal que despacha y se adjunta la nota de recepción (PDF/fotos) **o se crea a mano sin documento** (D-20). Las fotos se reducen en el celular; si no hay señal, quedan en el dispositivo (IndexedDB) y se suben solas al volver la conexión. |
+| Borrador | Todo es editable (D-20). El total de línea, el subtotal y el total (subtotal − descuento) se calculan solos (D-21). La revisión muestra el documento al lado (si lo hay), compara con los totales impresos, avisa precios distintos del último de la cadena, muestra el disponible en la sucursal y en depósitos (con atajo para transferir) y sugiere el producto: equivalencia aprendida → código → parecido del nombre (pg_trgm). |
+| Confirmar | Exige cadena, sucursal de supermercado, fecha y productos en las líneas con cantidad (el documento y el N.º de O/C son opcionales). Bloquea N.º de O/C duplicados por cadena (índice único). Reserva solo stock **vigente** y guarda las equivalencias usadas. |
+| Alistar | Libera la reserva y descuenta lo alistado (≤ confirmado) de lotes vigentes: FEFO o los lotes elegidos. Congela el costo (CPP de la sucursal) y calcula ingreso, costo, ganancia y margen por línea y total. La merma va a un ajuste ROTURA vinculado al pedido, con la regla de aprobación de ajustes. |
+| Entregar | Constancia opcional: quién recibe, foto y firma en pantalla. |
+| Anular | Borrador: nada. Confirmado: libera la reserva. Alistado: reverso en los mismos lotes y costo. Entregado: no se anula (D-03). |
+| Devolución | Solo después de entregar (D-12): vuelve al stock en los mismos lotes y costo y recalcula la ganancia. |
+
+- El stock reservado está protegido: transferencias y ajustes no pueden tomar unidades vigentes
+  comprometidas. La verificación compara el comprometido con los pedidos confirmados.
+- Archivos: en disco del servidor (volumen `archivos`, incluido en `scripts/respaldo.sh`),
+  validados por contenido (JPG, PNG, WebP, PDF), 15 MB por archivo, 20 por pedido. La tabla
+  `archivo` y la historia del pedido son inmutables (trigger).
+
 ## Plan por fases
 
 | Fase | Contenido | Estado |
 |---|---|---|
 | 0 · Base | Monorepo, Docker Compose, BD, autenticación, roles/permisos, ubicaciones, auditoría, CI, PWA base, respaldos | ✅ |
 | 1 · Inventario | Catálogo, presentaciones, proveedores, cadenas y sucursales de supermercado, compras con prorrateo, lotes, CPP por ubicación, transferencias, ajustes, conteos, kardex, stock físico/comprometido/disponible | ✅ |
-| 2a · Pedidos | OC adjunta (foto/PDF) con carga manual, revisión, validación aritmética, equivalencias, reserva, alistado con FEFO, rentabilidad, entrega con constancia, anulación, duplicados, PWA con cámara y cola de subida | Pendiente |
-| 2b · Lectura automática | PDF con texto, OCR de fotos, plantillas por cadena, confianza, emparejamiento automático, métricas de precisión | Pendiente (requiere OC reales) |
+| 2a · Pedidos | OC adjunta (foto/PDF) con carga manual, revisión, validación aritmética, equivalencias, reserva, alistado con FEFO, rentabilidad, entrega con constancia, anulación, devoluciones, duplicados, PWA con cámara y cola de subida | ✅ |
+| 2b · Lectura automática | PDF con texto, OCR de fotos, plantillas por cadena, confianza, emparejamiento automático, métricas de precisión | ✅ Hipermaxi + lectura genérica; plantillas de otras cadenas cuando haya muestras |
 | 3 · Reportes | Dashboard y métricas, exportación Excel/PDF | Pendiente |
 | 4 · Alertas y ML | Alertas, pronóstico, reposición en dos niveles, anomalías | Pendiente |
 | 5 · Finanzas | Cuentas por cobrar/pagar, gastos, contabilidad, impuestos | Futuro |

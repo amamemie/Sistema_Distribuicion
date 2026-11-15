@@ -275,6 +275,17 @@ def _umbral_ajuste(db: Session, ctx: Contexto) -> Decimal:
 def crear_ajuste(db: Session, ctx: Contexto, datos: AjusteEntrada) -> Ajuste:
     """Registra un ajuste. Se aplica de inmediato si quien lo registra puede aprobar ajustes
     (o si su valor no supera el umbral configurado); si no, queda PENDIENTE de aprobación."""
+    ajuste = registrar_ajuste(db, ctx, datos)
+    db.commit()
+    db.refresh(ajuste)
+    return ajuste
+
+
+def registrar_ajuste(
+    db: Session, ctx: Contexto, datos: AjusteEntrada, *, pedido_id: uuid.UUID | None = None
+) -> Ajuste:
+    """Igual que `crear_ajuste` pero sin commit, para usarlo dentro de otro caso de uso
+    (p. ej. la merma encontrada al alistar un pedido, D-11)."""
     ubicacion = ubicaciones.operable(db, ctx, datos.ubicacion_id)
     resueltas = [_resolver(db, ctx, linea, i) for i, linea in enumerate(datos.lineas, start=1)]
     saldos = motor.bloquear(db, ctx, [(ubicacion.id, lr.producto.id) for lr in resueltas])
@@ -286,6 +297,7 @@ def crear_ajuste(db: Session, ctx: Contexto, datos: AjusteEntrada) -> Ajuste:
         observacion=datos.observacion.strip(),
         estado=EstadoAjuste.PENDIENTE,
         solicitado_por_id=ctx.usuario.id,
+        pedido_id=pedido_id,
     )
     db.add(ajuste)
     db.flush()
@@ -355,12 +367,12 @@ def crear_ajuste(db: Session, ctx: Contexto, datos: AjusteEntrada) -> Ajuste:
             "ubicacion": ubicacion.nombre,
             "motivo": datos.motivo,
             "valor_estimado": valor_total,
+            "pedido_id": pedido_id,
         },
     )
     if ctx.puede("inventario.aprobar_ajuste") or abs(valor_total) <= _umbral_ajuste(db, ctx):
         _aplicar(db, ctx, ajuste)
-    db.commit()
-    db.refresh(ajuste)
+    db.flush()
     return ajuste
 
 
@@ -519,6 +531,7 @@ def salida_ajuste(a: Ajuste, ctx: Contexto) -> AjusteSalida:
         resuelto_at=a.resuelto_at,
         resolucion_nota=a.resolucion_nota,
         conteo_id=a.conteo_id,
+        pedido_id=a.pedido_id,
         lineas=[
             AjusteLineaSalida(
                 producto_id=x.producto_id,

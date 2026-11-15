@@ -7,6 +7,9 @@ Reglas:
   ordena las filas siempre de la misma manera.
 - Las salidas se valoran al CPP de la ubicación; las entradas recalculan el CPP.
 - Las salidas consumen lotes: el indicado, o FEFO (vence primero) y luego FIFO.
+- Las reservas de pedidos confirmados suben el `comprometido` sin mover el libro. Solo se
+  reserva stock vigente (no vencido), y ninguna salida puede tomar unidades vigentes que
+  estén reservadas.
 - Estas funciones NO hacen commit: lo hace el servicio que las llama.
 """
 
@@ -15,7 +18,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -212,6 +215,65 @@ def _asignar_lotes(
     return asignaciones
 
 
+def _vigente_lote(lote: Lote) -> bool:
+    return lote.vencimiento is None or lote.vencimiento >= hoy()
+
+
+def vigente(db: Session, ubicacion_id: uuid.UUID, producto_id: uuid.UUID) -> Decimal:
+    """Unidades de lotes no vencidos (llamar con el saldo ya bloqueado para que sea exacto)."""
+    total = db.scalar(
+        select(func.coalesce(func.sum(StockLote.cantidad), 0))
+        .join(Lote, Lote.id == StockLote.lote_id)
+        .where(
+            StockLote.ubicacion_id == ubicacion_id,
+            StockLote.producto_id == producto_id,
+            or_(Lote.vencimiento.is_(None), Lote.vencimiento >= hoy()),
+        )
+    )
+    return Decimal(total or 0)
+
+
+def reservar(
+    db: Session,
+    ctx: Contexto,
+    *,
+    ubicacion_id: uuid.UUID,
+    producto_id: uuid.UUID,
+    cantidad: Decimal,
+) -> None:
+    """Compromete stock vigente para un pedido confirmado. No crea movimientos."""
+    if cantidad <= 0:
+        raise ValueError("La cantidad a reservar debe ser positiva.")
+    stock = _stock(db, ctx.empresa_id, ubicacion_id, producto_id)
+    disponible = min(stock.fisico, vigente(db, ubicacion_id, producto_id)) - stock.comprometido
+    if cantidad > disponible:
+        raise ReglaNegocio(
+            _mensaje_insuficiente(db, ubicacion_id, producto_id, max(disponible, CERO), cantidad)
+        )
+    stock.comprometido += cantidad
+    db.flush()  # _stock() recarga la fila: lo pendiente debe quedar escrito
+
+
+def liberar(
+    db: Session,
+    ctx: Contexto,
+    *,
+    ubicacion_id: uuid.UUID,
+    producto_id: uuid.UUID,
+    cantidad: Decimal,
+) -> None:
+    """Devuelve al disponible una reserva hecha con `reservar`."""
+    if cantidad <= 0:
+        raise ValueError("La cantidad a liberar debe ser positiva.")
+    stock = _stock(db, ctx.empresa_id, ubicacion_id, producto_id)
+    if cantidad > stock.comprometido:
+        raise ReglaNegocio(
+            "La reserva no coincide con el stock comprometido. Ejecute la verificación."
+        )
+    stock.comprometido -= cantidad
+    db.flush()
+
+
 def _mensaje_insuficiente(
     db: Session,
     ubicacion_id: uuid.UUID,
@@ -261,10 +323,28 @@ def salida(
             _mensaje_insuficiente(db, ubicacion_id, producto_id, disponible, cantidad)
         )
 
-    movimientos: list[Movimiento] = []
-    for stock_lote, tomar in _asignar_lotes(
+    asignaciones = _asignar_lotes(
         db, ubicacion_id, producto_id, cantidad, lote_id, excluir_vencidos
-    ):
+    )
+    if not consume_reserva and stock.comprometido > 0:
+        # No se pueden tomar unidades vigentes que estén reservadas para pedidos.
+        vigente_tomado = sum((t for sl, t in asignaciones if _vigente_lote(sl.lote)), CERO)
+        if vigente_tomado > 0:
+            restante = vigente(db, ubicacion_id, producto_id) - vigente_tomado
+            if restante < stock.comprometido:
+                raise ReglaNegocio(
+                    _mensaje_insuficiente(
+                        db,
+                        ubicacion_id,
+                        producto_id,
+                        max(vigente(db, ubicacion_id, producto_id) - stock.comprometido, CERO),
+                        cantidad,
+                    )
+                    + " Parte del stock vigente está reservada para pedidos confirmados."
+                )
+
+    movimientos: list[Movimiento] = []
+    for stock_lote, tomar in asignaciones:
         if costo_unitario is None:
             costo = stock.cpp
         else:

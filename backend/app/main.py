@@ -14,6 +14,7 @@ from app.modules.compras.api import router as compras_router
 from app.modules.identidad.api import router as identidad_router
 from app.modules.inventario.api import router as inventario_router
 from app.modules.organizacion.api import router as organizacion_router
+from app.modules.pedidos.api import router as pedidos_router
 from app.modules.proveedores.api import router as proveedores_router
 
 
@@ -53,6 +54,7 @@ def crear_app() -> FastAPI:
         clientes_router,
         compras_router,
         inventario_router,
+        pedidos_router,
     ):
         api.include_router(router)
     app.include_router(api)

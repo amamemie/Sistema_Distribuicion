@@ -13,7 +13,8 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY . .
-RUN useradd --system --uid 1001 app && chown -R app /app
+RUN useradd --system --uid 1001 app && chown -R app /app \
+    && mkdir -p /datos/archivos && chown app /datos/archivos
 USER app
 
 EXPOSE 8000

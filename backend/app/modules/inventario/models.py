@@ -221,6 +221,8 @@ class Ajuste(ConId, ConFechas, DeEmpresa, Base):
     resuelto_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     resolucion_nota: Mapped[str | None] = mapped_column(String(500))
     conteo_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("conteo_fisico.id"))
+    # Merma encontrada al alistar un pedido (D-11). Sin FK para no acoplar inventario a pedidos.
+    pedido_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, index=True)
 
     ubicacion: Mapped[Ubicacion] = relationship(lazy="joined")
     solicitado_por: Mapped[Usuario] = relationship(foreign_keys=[solicitado_por_id], lazy="joined")

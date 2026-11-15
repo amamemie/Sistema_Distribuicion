@@ -191,6 +191,7 @@ def lotes(
 
 def _documentos(db: Session, movimientos: list[Movimiento]) -> dict[uuid.UUID, str]:
     from app.modules.compras.models import Compra  # evita importación circular
+    from app.modules.pedidos.models import Devolucion, Pedido
 
     por_tipo: dict[str, set[uuid.UUID]] = defaultdict(set)
     for m in movimientos:
@@ -200,6 +201,8 @@ def _documentos(db: Session, movimientos: list[Movimiento]) -> dict[uuid.UUID, s
         "COMPRA": (Compra, "Compra"),
         "TRANSFERENCIA": (Transferencia, "Transferencia"),
         "AJUSTE": (Ajuste, "Ajuste"),
+        "PEDIDO": (Pedido, "Pedido"),
+        "DEVOLUCION": (Devolucion, "Devolución"),
     }
     for tipo, ids in por_tipo.items():
         if tipo in modelos:
@@ -317,6 +320,17 @@ def verificar(db: Session, ctx: Contexto) -> ResultadoVerificacion:
             diferencias.append(f"Saldo {clave}: libro {esperado}, materializado {actual}")
         if por_lotes.get(clave, CERO) != actual:
             diferencias.append(f"Lotes {clave}: suma {por_lotes.get(clave, CERO)}, saldo {actual}")
+    # Comprometido = lo reservado por pedidos confirmados.
+    from app.modules.pedidos.servicios import reservado_por_pedidos  # evita importación circular
+
+    reservado = reservado_por_pedidos(db, ctx.empresa_id)
+    for clave in set(reservado) | {k for k, s in saldos.items() if s.comprometido}:
+        esperado = reservado.get(clave, CERO)
+        actual = saldos[clave].comprometido if clave in saldos else CERO
+        if esperado != actual:
+            diferencias.append(
+                f"Comprometido {clave}: pedidos confirmados {esperado}, materializado {actual}"
+            )
     for clave in set(lotes_libro) | set(lotes_saldo):
         if lotes_libro.get(clave, CERO) != lotes_saldo.get(clave, CERO):
             diferencias.append(

@@ -20,6 +20,11 @@ export class ErrorApi extends Error {
 
 type Params = Record<string, string | number | boolean | null | undefined>
 
+/** URL de un archivo de un pedido (OC o constancia), servida con la cookie de sesión. */
+export function urlArchivo(pedidoId: string, archivoId: string): string {
+  return `/api/pedidos/${pedidoId}/archivos/${archivoId}`
+}
+
 export function construirUrl(ruta: string, params?: Params): string {
   const query = new URLSearchParams()
   for (const [clave, valor] of Object.entries(params ?? {})) {
@@ -45,7 +50,9 @@ interface Opciones {
 
 export async function api<T>(ruta: string, { metodo = 'GET', cuerpo, params }: Opciones = {}) {
   const headers: Record<string, string> = { Accept: 'application/json' }
-  if (cuerpo !== undefined) headers['Content-Type'] = 'application/json'
+  const esFormulario = cuerpo instanceof FormData
+  // Con FormData el navegador pone el Content-Type (multipart con su separador).
+  if (cuerpo !== undefined && !esFormulario) headers['Content-Type'] = 'application/json'
   if (metodo !== 'GET') {
     const csrf = leerCookie('csrf_token', document.cookie)
     if (csrf) headers['X-CSRF-Token'] = csrf
@@ -56,7 +63,7 @@ export async function api<T>(ruta: string, { metodo = 'GET', cuerpo, params }: O
     respuesta = await fetch(construirUrl(ruta, params), {
       method: metodo,
       headers,
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+      body: cuerpo === undefined ? undefined : esFormulario ? cuerpo : JSON.stringify(cuerpo),
       credentials: 'same-origin',
     })
   } catch {

@@ -23,7 +23,7 @@ import {
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { api } from '../lib/api'
-import { CLAVE_YO, usePuede, useYo } from '../lib/sesion'
+import { CLAVE_YO, PERMISOS_PEDIDOS, usePuedeAlguno, useYo } from '../lib/sesion'
 import { CambiarPassword } from './CambiarPassword'
 import { Boton } from './ui'
 
@@ -31,7 +31,7 @@ interface Enlace {
   a: string
   texto: string
   icono: LucideIcon
-  permiso?: string
+  permiso?: string | string[]
   proximamente?: boolean
 }
 
@@ -40,12 +40,12 @@ const SECCIONES: { titulo?: string; enlaces: Enlace[] }[] = [
   {
     titulo: 'Operación',
     enlaces: [
+      { a: '/pedidos', texto: 'Pedidos', icono: ClipboardList, permiso: PERMISOS_PEDIDOS },
       { a: '/inventario', texto: 'Stock', icono: Boxes, permiso: 'inventario.ver' },
       { a: '/compras', texto: 'Compras', icono: ShoppingCart, permiso: 'compras.registrar' },
       { a: '/transferencias', texto: 'Transferencias', icono: ArrowLeftRight, permiso: 'inventario.ver' },
       { a: '/ajustes', texto: 'Ajustes', icono: SlidersHorizontal, permiso: 'inventario.ver' },
       { a: '/conteos', texto: 'Conteos físicos', icono: ClipboardCheck, permiso: 'inventario.ver' },
-      { a: '/pedidos', texto: 'Pedidos', icono: ClipboardList, proximamente: true },
     ],
   },
   {
@@ -70,7 +70,7 @@ const SECCIONES: { titulo?: string; enlaces: Enlace[] }[] = [
 
 export function Layout() {
   const { data: yo } = useYo()
-  const puede = usePuede()
+  const puede = usePuedeAlguno()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [cambiandoClave, setCambiandoClave] = useState(false)
   const queryClient = useQueryClient()

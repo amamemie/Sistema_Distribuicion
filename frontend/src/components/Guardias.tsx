@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router'
-import { usePuede, useYo } from '../lib/sesion'
+import { usePuedeAlguno, useYo } from '../lib/sesion'
 
 export function RequiereSesion({ children }: { children: ReactNode }) {
   const { data, isPending, isError } = useYo()
@@ -12,8 +12,8 @@ export function RequiereSesion({ children }: { children: ReactNode }) {
   return children
 }
 
-export function RequierePermiso({ permiso, children }: { permiso: string; children: ReactNode }) {
-  const puede = usePuede()
+export function RequierePermiso({ permiso, children }: { permiso: string | string[]; children: ReactNode }) {
+  const puede = usePuedeAlguno()
   if (!puede(permiso)) {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-amber-900">

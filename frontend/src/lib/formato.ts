@@ -36,6 +36,17 @@ export function formatearCosto(valor: string | number | null | undefined): strin
   return `Bs ${costo.format(Number(valor))}`
 }
 
+export function formatearPorcentaje(valor: string | number | null | undefined): string {
+  if (valor === null || valor === undefined || valor === '') return '—'
+  return `${dinero.format(Number(valor))} %`
+}
+
+/** Tamaño de archivo legible: 1,5 MB, 320 KB. */
+export function formatearTamano(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${numero.format(Math.round((bytes / 1024 / 1024) * 10) / 10)} MB`
+  return `${numero.format(Math.max(1, Math.round(bytes / 1024)))} KB`
+}
+
 /** Fecha de hoy en La Paz como AAAA-MM-DD (para inputs de tipo date). */
 export function hoyLaPaz(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(new Date())

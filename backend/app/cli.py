@@ -60,6 +60,11 @@ def cmd_demo() -> None:
             u.nombre: u
             for u in db.scalars(select(Ubicacion).where(Ubicacion.empresa_id == empresa.id))
         }
+        if existentes and not set(existentes) & set(ubicaciones):
+            sys.exit(
+                "La empresa ya tiene ubicaciones reales: no se cargan datos de demostración para "
+                "no mezclarlos con los datos de trabajo."
+            )
         for nombre, tipo in ubicaciones.items():
             if nombre not in existentes:
                 existentes[nombre] = Ubicacion(empresa_id=empresa.id, nombre=nombre, tipo=tipo)
@@ -101,6 +106,8 @@ def cmd_demo() -> None:
                 )
             else:
                 print("El catálogo ya tenía productos: no se cargó inventario de ejemplo.")
+            if demo.cargar_pedidos(db, ctx):
+                print("Pedidos de ejemplo cargados (entregado, confirmado y un borrador).")
     print(f"Datos de demostración cargados. Contraseña de los usuarios demo: {PASSWORD_DEMO}")
 
 
