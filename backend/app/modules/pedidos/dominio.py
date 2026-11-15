@@ -70,17 +70,20 @@ def validar_aritmetica(
                 (
                     linea.numero,
                     f"Línea {linea.numero}: {formatear_cantidad(linea.cantidad)} x "
-                    f"Bs {linea.precio.normalize():f} = Bs {calculado:.2f}, pero la OC dice "
+                    f"Bs {linea.precio.normalize():f} = Bs {calculado:.2f}, pero el documento dice "
                     f"Bs {linea.total_impreso:.2f}.",
                 )
             )
         suma += linea.total_impreso if linea.total_impreso is not None else calculado
     if total_oc is not None and lineas and abs(suma - total_oc) > TOLERANCIA:
+        # El total puede ser menor por un descuento (subtotal - descuento = total, D-21).
         avisos.append(
             (
                 None,
-                f"La suma de las líneas es Bs {suma:.2f}, pero el total de la OC es "
-                f"Bs {total_oc:.2f}.",
+                f"Descuento de Bs {suma - total_oc:.2f}: subtotal Bs {suma:.2f}, total "
+                f"Bs {total_oc:.2f}. Verifique que coincida con el documento."
+                if total_oc < suma
+                else f"La suma de las líneas es Bs {suma:.2f}, pero el total es Bs {total_oc:.2f}.",
             )
         )
     return avisos

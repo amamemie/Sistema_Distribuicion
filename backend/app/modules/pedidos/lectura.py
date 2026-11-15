@@ -239,6 +239,12 @@ def aplicar(db: Session, ctx: Contexto, pedido: Pedido, oc: OCLeida, texto: str 
     pedido.fecha_entrega = oc.fecha_entrega
     pedido.emisor = (oc.emisor or "")[:120] or None
     pedido.total_oc = oc.total
+    if oc.numero_documento:
+        # El pedido se identifica por la O/C; el N.º de la nota de recepción queda anotado (D-19).
+        nota = f"Nota de recepción N.º {oc.numero_documento}"
+        previas = pedido.observaciones or ""
+        if nota not in previas:
+            pedido.observaciones = (f"{nota} · {previas}" if previas else nota)[:500]
     confianza["avisos"] = avisos
     if oc.destino_texto:
         confianza["destino_texto"] = oc.destino_texto[:120]

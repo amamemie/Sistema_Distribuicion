@@ -209,13 +209,19 @@ leídos con confianza menor a 85 % se resaltan. Nunca reemplaza lo cargado a man
 usuario pulse «Volver a leer», y nunca mueve stock. `GET /api/pedidos/lectura/precision` resume la
 precisión por formato a partir de lo que se corrigió al confirmar.
 
+Desde D-19 el documento del pedido es la **nota de recepción**. Plantillas: `hipermaxi_recepcion`
+(nota de recepción: N.º de O/C → número del pedido, N.º Rec. → observaciones, U/N → sucursal,
+código de artículo y de fábrica, subtotal/descuento/total), `hipermaxi` (OC "Aviso de despacho",
+se conserva) y `generica`. Medido con 10 notas reales: 100 % en PDF; 97,7 % de los campos con
+fotos simuladas (todas las cantidades, precios y totales; fallan espacios en descripciones).
+
 ### Reglas de pedidos implementadas (Fase 2a)
 
 | Paso | Qué hace |
 |---|---|
-| Nuevo | Se elige la sucursal que despacha y se adjuntan fotos/PDF de la OC. Las fotos se reducen en el celular; si no hay señal, quedan en el dispositivo (IndexedDB) y se suben solas al volver la conexión. |
-| Borrador | Todo es editable (D-06). La revisión muestra el documento al lado, valida `cantidad × precio = total` y `suma = total OC`, avisa precios distintos del último de la cadena, muestra el disponible en la sucursal y en depósitos (con atajo para transferir) y sugiere el producto: equivalencia aprendida → código → parecido del nombre (pg_trgm). |
-| Confirmar | Exige OC adjunta, cadena, sucursal de supermercado, número, fecha y productos en las líneas con cantidad. Bloquea OC duplicadas por cadena (índice único). Reserva solo stock **vigente** y guarda las equivalencias usadas. |
+| Nuevo | Se elige la sucursal que despacha y se adjunta la nota de recepción (PDF/fotos) **o se crea a mano sin documento** (D-20). Las fotos se reducen en el celular; si no hay señal, quedan en el dispositivo (IndexedDB) y se suben solas al volver la conexión. |
+| Borrador | Todo es editable (D-20). El total de línea, el subtotal y el total (subtotal − descuento) se calculan solos (D-21). La revisión muestra el documento al lado (si lo hay), compara con los totales impresos, avisa precios distintos del último de la cadena, muestra el disponible en la sucursal y en depósitos (con atajo para transferir) y sugiere el producto: equivalencia aprendida → código → parecido del nombre (pg_trgm). |
+| Confirmar | Exige cadena, sucursal de supermercado, fecha y productos en las líneas con cantidad (el documento y el N.º de O/C son opcionales). Bloquea N.º de O/C duplicados por cadena (índice único). Reserva solo stock **vigente** y guarda las equivalencias usadas. |
 | Alistar | Libera la reserva y descuenta lo alistado (≤ confirmado) de lotes vigentes: FEFO o los lotes elegidos. Congela el costo (CPP de la sucursal) y calcula ingreso, costo, ganancia y margen por línea y total. La merma va a un ajuste ROTURA vinculado al pedido, con la regla de aprobación de ajustes. |
 | Entregar | Constancia opcional: quién recibe, foto y firma en pantalla. |
 | Anular | Borrador: nada. Confirmado: libera la reserva. Alistado: reverso en los mismos lotes y costo. Entregado: no se anula (D-03). |

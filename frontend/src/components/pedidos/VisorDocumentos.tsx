@@ -5,7 +5,7 @@ import { formatearTamano } from '../../lib/formato'
 import type { DocumentoPedido } from '../../lib/tipos'
 import { Boton, Tarjeta } from '../ui'
 
-/** Muestra las páginas de la OC (fotos y PDF) para revisarlas junto a los datos. */
+/** Muestra las páginas del documento (fotos y PDF) para revisarlas junto a los datos. */
 export function VisorDocumentos({
   pedidoId,
   documentos,
@@ -20,7 +20,7 @@ export function VisorDocumentos({
   if (!doc) {
     return (
       <Tarjeta className="flex h-40 items-center justify-center p-4 text-sm text-slate-500">
-        Sin documentos adjuntos.
+        Sin documento adjunto (pedido cargado a mano).
       </Tarjeta>
     )
   }
@@ -77,7 +77,7 @@ export function VisorDocumentos({
               variante="fantasma"
               className="min-h-7 px-2 text-red-600"
               onClick={() => {
-                if (confirm(`¿Quitar «${doc.nombre}» de la OC?`)) onQuitar(doc.id)
+                if (confirm(`¿Quitar «${doc.nombre}» del pedido?`)) onQuitar(doc.id)
               }}
               aria-label="Quitar archivo"
             >

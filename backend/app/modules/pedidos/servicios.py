@@ -230,7 +230,7 @@ def agregar_documentos(
     pedido = _bloqueado(db, ctx, pedido_id)
     _exigir_estado(pedido, EstadoPedido.BORRADOR)
     if not archivos:
-        raise ReglaNegocio("Adjunte al menos una foto o PDF de la OC.")
+        raise ReglaNegocio("Adjunte al menos una foto o PDF de la nota de recepción.")
     if len(_documentos_activos(pedido)) + len(archivos) > MAX_DOCUMENTOS:
         raise ReglaNegocio(f"Un pedido admite como máximo {MAX_DOCUMENTOS} archivos.")
     orden = max((d.orden for d in pedido.documentos), default=0)
@@ -262,11 +262,11 @@ def agregar_documentos(
 
 
 def leer(db: Session, ctx: Contexto, pedido_id: uuid.UUID) -> Pedido:
-    """Vuelve a leer la OC automáticamente; reemplaza lo cargado en el borrador."""
+    """Vuelve a leer el documento automáticamente; reemplaza lo cargado en el borrador."""
     pedido = _bloqueado(db, ctx, pedido_id)
     _exigir_estado(pedido, EstadoPedido.BORRADOR)
     if not _documentos_activos(pedido):
-        raise ReglaNegocio("Adjunte primero la OC (foto o PDF).")
+        raise ReglaNegocio("Adjunte primero la nota de recepción (foto o PDF).")
     nueva = lectura.solicitar(db, ctx, pedido, reemplazar=True)
     _evento(db, ctx, pedido, "LECTURA_SOLICITADA")
     db.commit()
@@ -357,7 +357,7 @@ def guardar_borrador(
         if not sucursal.activo and sucursal.id != pedido.sucursal_cliente_id:
             raise ReglaNegocio(f"La sucursal de supermercado «{sucursal.nombre}» está inactiva.")
     if datos.fecha_oc and datos.fecha_oc > hoy():
-        raise ReglaNegocio("La fecha de la OC no puede ser futura.")
+        raise ReglaNegocio("La fecha del pedido no puede ser futura.")
     numero_oc = (datos.numero_oc or "").strip() or None
     # Se verifica antes de modificar nada; el índice único cubre el caso de dos personas
     # guardando la misma OC a la vez.
@@ -384,7 +384,7 @@ def guardar_borrador(
         )
         if confirmada > linea.cantidad_oc:
             raise ReglaNegocio(
-                f"Línea {orden}: no se puede confirmar más de lo que pide la OC "
+                f"Línea {orden}: no se puede confirmar más de la cantidad del pedido "
                 f"({dominio_inv.formatear_cantidad(linea.cantidad_oc)})."
             )
         previa = pedido.lineas[orden - 1] if orden - 1 < len(pedido.lineas) else None
@@ -502,20 +502,16 @@ def _validaciones(
     def aviso(mensaje: str, linea: PedidoLinea | None = None) -> None:
         v.append(Validacion(nivel="aviso", mensaje=mensaje, linea_id=linea.id if linea else None))
 
-    if not _documentos_activos(pedido):
-        error("Adjunte la OC (foto o PDF): todo pedido nace de una OC.")
     if not pedido.cadena_id:
         error("Indique la cadena.")
     if not pedido.sucursal_cliente_id:
         error("Indique la sucursal de supermercado que recibe el pedido.")
-    if not pedido.numero_oc:
-        error("Indique el número de la OC.")
     if not pedido.fecha_oc:
-        error("Indique la fecha de la OC.")
+        error("Indique la fecha del pedido.")
     if otro := _duplicado(db, ctx, pedido):
         error(_mensaje_duplicado(otro))
     if not pedido.lineas:
-        error("La OC no tiene líneas.")
+        error("El pedido no tiene líneas.")
     elif not _lineas_activas(pedido):
         error("Todas las cantidades a confirmar están en cero: anule el pedido en su lugar.")
 
@@ -733,7 +729,7 @@ def alistar(db: Session, ctx: Contexto, pedido_id: uuid.UUID, datos: AlistarEntr
             cantidad=x.cantidad_confirmada,
         )
     # 2. Descontar lo alistado, solo de lotes vigentes, valorado al CPP de la sucursal (D-04).
-    motivo = f"Pedido #{pedido.numero} · OC {pedido.numero_oc}"
+    motivo = f"Pedido #{pedido.numero}" + (f" · OC {pedido.numero_oc}" if pedido.numero_oc else "")
     for x in pedido.lineas:
         elegida = entradas.get(x.id)
         alistada = elegida.cantidad_alistada if elegida else CERO

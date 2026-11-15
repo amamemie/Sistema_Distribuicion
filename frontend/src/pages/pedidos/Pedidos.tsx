@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, CloudOff, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { ArrowLeft, CloudOff, FileUp, PencilLine, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { useCallback, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { SelectorArchivos } from '../../components/pedidos/SelectorArchivos'
 import { Aviso, Boton, CABECERA_TABLA, Campo, Encabezado, Entrada, Insignia, Paginador, Selector, Tabla, Tarjeta, Vacio } from '../../components/ui'
@@ -9,7 +9,7 @@ import { guardarEnvio, nuevoEnvio, procesarEnvio, useColaSubida } from '../../li
 import { useCadenas, useUbicaciones } from '../../lib/consultas'
 import { formatearBs, formatearDia, formatearFecha, formatearPorcentaje } from '../../lib/formato'
 import { usePuede, useYo } from '../../lib/sesion'
-import { NOMBRE_ESTADO_PEDIDO, type EstadoPedido, type Pagina, type PedidoResumen } from '../../lib/tipos'
+import { NOMBRE_ESTADO_PEDIDO, type EstadoPedido, type Pagina, type PedidoDetalle, type PedidoResumen } from '../../lib/tipos'
 
 const TAMANO = 30
 
@@ -65,7 +65,7 @@ export function Pedidos() {
         <Tarjeta className="mb-4 border-amber-300 bg-amber-50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-sm font-medium text-amber-900">
-              <CloudOff size={18} /> {cola.pendientes.length} OC guardada(s) en este dispositivo, pendientes de subir
+              <CloudOff size={18} /> {cola.pendientes.length} documento(s) guardado(s) en este dispositivo, pendientes de subir
             </p>
             <Boton variante="secundario" disabled={cola.subiendo} onClick={() => void cola.reintentar()}>
               <RefreshCw size={16} className={cola.subiendo ? 'animate-spin' : ''} /> {cola.subiendo ? 'Subiendo…' : 'Subir ahora'}
@@ -157,7 +157,7 @@ export function Pedidos() {
                         #{p.numero} {p.numero_oc && <span className="text-slate-500">· OC {p.numero_oc}</span>}
                       </p>
                       <p className="truncate text-sm text-slate-600">
-                        {p.cadena ? `${p.cadena.nombre} · ${p.sucursal_cliente?.nombre ?? '—'}` : 'Sin datos de la OC'}
+                        {p.cadena ? `${p.cadena.nombre} · ${p.sucursal_cliente?.nombre ?? '—'}` : 'Sin datos del cliente'}
                       </p>
                     </div>
                     <InsigniaEstado estado={p.estado} />
@@ -181,7 +181,7 @@ export function Pedidos() {
                   <th>OC</th>
                   <th>Cliente</th>
                   <th>Despacha</th>
-                  <th>Fecha OC</th>
+                  <th>Fecha</th>
                   <th className="text-right">Total</th>
                   {verGanancia && <th className="text-right">Margen</th>}
                   <th>Estado</th>
@@ -221,7 +221,7 @@ export function Pedidos() {
   )
 }
 
-/** Paso 1: elegir la sucursal que despacha y adjuntar la OC (fotos o PDF). */
+/** Paso 1: elegir la sucursal que despacha y adjuntar la nota de recepción o cargar a mano. */
 export function NuevoPedido() {
   const navegar = useNavigate()
   const queryClient = useQueryClient()
@@ -238,12 +238,26 @@ export function NuevoPedido() {
   const [error, setError] = useState<string | null>(null)
   const [preparando, setPreparando] = useState(false)
   const [progreso, setProgreso] = useState<string | null>(null)
+  const [modo, setModo] = useState<'documento' | 'manual'>('documento')
 
   const enviar = async () => {
     setError(null)
     const sucursal = sucursales.find((s) => s.id === ubicacion)
     if (!sucursal) return setError('Elija la sucursal que despacha el pedido.')
-    if (!archivos.length) return setError('Adjunte al menos una foto o PDF de la OC.')
+    if (modo === 'manual') {
+      // D-20: pedido sin documento; los datos se cargan a mano en la revisión.
+      setProgreso('Creando el pedido…')
+      try {
+        const pedido = await api<PedidoDetalle>('/pedidos', { metodo: 'POST', cuerpo: { ubicacion_id: sucursal.id } })
+        await queryClient.invalidateQueries({ queryKey: ['pedidos'] })
+        navegar(`/pedidos/${pedido.id}`, { replace: true })
+      } catch (e) {
+        setProgreso(null)
+        setError(mensajeError(e))
+      }
+      return
+    }
+    if (!archivos.length) return setError('Adjunte al menos una foto o PDF de la nota de recepción.')
     const envio = nuevoEnvio(sucursal, archivos)
     try {
       // Primero se guarda en el dispositivo: si se corta la señal, no se pierde nada.
@@ -270,7 +284,7 @@ export function NuevoPedido() {
       <Link to="/pedidos" className="mb-2 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
         <ArrowLeft size={16} /> Pedidos
       </Link>
-      <Encabezado titulo="Nuevo pedido" descripcion="Fotografíe la OC (todas sus páginas) o adjunte el PDF. Luego revisará y completará los datos." />
+      <Encabezado titulo="Nuevo pedido" descripcion="Adjunte la nota de recepción (PDF o fotos) para que se lea sola, o cargue el pedido a mano." />
       <div className="max-w-2xl space-y-5">
         <Campo etiqueta="Sucursal que despacha">
           <Selector value={ubicacion} onChange={(e) => setElegida(e.target.value)}>
@@ -282,16 +296,59 @@ export function NuevoPedido() {
             ))}
           </Selector>
         </Campo>
-        <SelectorArchivos archivos={archivos} onCambio={setArchivos} onError={setError} ocupado={setPreparando} />
+        <div role="radiogroup" aria-label="Cómo cargar el pedido" className="grid gap-3 sm:grid-cols-2">
+          <OpcionModo activo={modo === 'documento'} onClick={() => setModo('documento')} icono={<FileUp size={18} />} titulo="Subir nota de recepción">
+            PDF, foto o galería. El sistema lee los datos y usted los revisa.
+          </OpcionModo>
+          <OpcionModo activo={modo === 'manual'} onClick={() => setModo('manual')} icono={<PencilLine size={18} />} titulo="Cargar a mano">
+            Usted escribe la cadena, la sucursal, la fecha y los productos.
+          </OpcionModo>
+        </div>
+        {modo === 'documento' && (
+          <>
+            <SelectorArchivos archivos={archivos} onCambio={setArchivos} onError={setError} ocupado={setPreparando} />
+            <p className="text-xs text-slate-500">
+              Si no hay señal, el documento queda guardado en este dispositivo y se sube solo al recuperar la conexión.
+            </p>
+          </>
+        )}
         {error && <Aviso>{error}</Aviso>}
         {progreso && <Aviso tipo="exito">{progreso}</Aviso>}
-        <p className="text-xs text-slate-500">
-          Si no hay señal, la OC queda guardada en este dispositivo y se sube sola al recuperar la conexión.
-        </p>
         <Boton className="w-full sm:w-auto" disabled={preparando || !!progreso} onClick={() => void enviar()}>
-          {preparando ? 'Preparando fotos…' : progreso ? 'Subiendo…' : 'Crear pedido y revisar'}
+          {preparando ? 'Preparando fotos…' : progreso ? 'Un momento…' : modo === 'manual' ? 'Crear pedido y cargar datos' : 'Crear pedido y revisar'}
         </Boton>
       </div>
     </>
+  )
+}
+
+function OpcionModo({
+  activo,
+  onClick,
+  icono,
+  titulo,
+  children,
+}: {
+  activo: boolean
+  onClick: () => void
+  icono: ReactNode
+  titulo: string
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={activo}
+      onClick={onClick}
+      className={`rounded-lg border p-3 text-left transition ${
+        activo ? 'border-marca-600 bg-marca-50 ring-2 ring-marca-100' : 'border-slate-300 bg-white hover:bg-slate-50'
+      }`}
+    >
+      <span className="flex items-center gap-2 font-medium text-slate-900">
+        {icono} {titulo}
+      </span>
+      <span className="mt-1 block text-xs text-slate-600">{children}</span>
+    </button>
   )
 }

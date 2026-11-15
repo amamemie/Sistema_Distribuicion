@@ -93,7 +93,7 @@ def _borrador(
     *,
     cantidad: D = D(100),
     confirmada: D | None = None,
-    numero_oc: str = "OC-1001",
+    numero_oc: str | None = "OC-1001",
     precio: D = D("1.50"),
     documento: bool = True,
     ctx: Contexto | None = None,
@@ -213,7 +213,7 @@ def test_no_se_reserva_mas_de_lo_disponible(db: Session, esc: Escenario) -> None
 
 
 def test_no_se_confirma_mas_de_lo_que_pide_la_oc(db: Session, esc: Escenario) -> None:
-    with pytest.raises(ReglaNegocio, match="más de lo que pide la OC"):
+    with pytest.raises(ReglaNegocio, match="más de la cantidad del pedido"):
         _borrador(db, esc, cantidad=D(10), confirmada=D(11))
 
 
@@ -290,13 +290,31 @@ def test_oc_duplicada(db: Session, esc: Escenario) -> None:
     assert _borrador(db, esc, numero_oc="OC-2001").estado == EstadoPedido.BORRADOR
 
 
-def test_confirmar_exige_la_oc_adjunta_y_los_datos(db: Session, esc: Escenario) -> None:
-    pedido = _borrador(db, esc, documento=False)
-    with pytest.raises(ReglaNegocio, match="Adjunte la OC"):
-        pedidos.confirmar(db, esc.ctx, pedido.id)
+def test_pedido_manual_sin_documento_ni_numero(db: Session, esc: Escenario) -> None:
+    # D-20: se puede cargar a mano, sin nota adjunta; el N.º de OC es opcional.
+    pedido = _borrador(db, esc, documento=False, numero_oc=None)
+    assert pedidos.confirmar(db, esc.ctx, pedido.id).estado == EstadoPedido.CONFIRMADO
+    assert _alistar(db, esc, pedido, D(100)).estado == EstadoPedido.ALISTADO
+    _verificar(db, esc)
+    # Sin número, dos pedidos de la misma cadena no chocan entre sí.
+    assert _borrador(db, esc, documento=False, numero_oc=None).estado == EstadoPedido.BORRADOR
+
+
+def test_confirmar_exige_los_datos(db: Session, esc: Escenario) -> None:
     vacio = pedidos.crear(db, esc.ctx, PedidoCrear(ubicacion_id=esc.datos.sucursal.id))
     with pytest.raises(ReglaNegocio, match="Indique la cadena"):
         pedidos.confirmar(db, esc.ctx, vacio.id)
+
+
+def test_descuento_avisa_sin_bloquear(db: Session, esc: Escenario) -> None:
+    pedido = _borrador(db, esc, cantidad=D(10), precio=D(2))  # subtotal 20
+    datos = pedidos.detalle(db, esc.ctx, pedido)
+    assert not datos.validaciones
+    pedido.total_oc = D(18)  # D-21: total = subtotal - descuento
+    db.flush()
+    mensajes = [v.mensaje for v in pedidos.detalle(db, esc.ctx, pedido).validaciones]
+    assert any("Descuento de Bs 2.00" in m for m in mensajes)
+    assert pedidos.confirmar(db, esc.ctx, pedido.id).estado == EstadoPedido.CONFIRMADO
 
 
 def test_los_pedidos_salen_de_una_sucursal(db: Session, esc: Escenario) -> None:

@@ -22,8 +22,8 @@ const NOMBRE_EVENTO: Record<string, string> = {
   ENTREGADO: 'Entregó',
   ANULADO: 'Anuló',
   DEVOLUCION: 'Registró una devolución',
-  LEIDO: 'Lectura automática de la OC',
-  LECTURA_SOLICITADA: 'Pidió volver a leer la OC',
+  LEIDO: 'Lectura automática del documento',
+  LECTURA_SOLICITADA: 'Pidió volver a leer el documento',
 }
 
 export function DetallePedido() {
@@ -114,9 +114,9 @@ function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
           </Aviso>
         )}
         <Tarjeta className="grid grid-cols-2 gap-4 p-4 text-sm sm:grid-cols-4">
-          <Dato titulo="Fecha OC" valor={formatearDia(p.fecha_oc)} />
+          <Dato titulo="Fecha" valor={formatearDia(p.fecha_oc)} />
           <Dato titulo="Entrega" valor={formatearDia(p.fecha_entrega)} />
-          <Dato titulo="Total OC" valor={formatearBs(p.total_oc ?? p.total_calculado)} />
+          <Dato titulo="Total" valor={formatearBs(p.total_oc ?? p.total_calculado)} />
           <Dato titulo="Responsable" valor={p.responsable_nombre} />
           {p.ingreso !== null && <Dato titulo="Ingreso" valor={formatearBs(p.ingreso)} />}
           {conCostos && <Dato titulo="Costo" valor={formatearBs(p.costo)} />}
@@ -133,7 +133,7 @@ function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
           <thead className={CABECERA_TABLA}>
             <tr>
               <th>Producto</th>
-              <th className="text-right">OC</th>
+              <th className="text-right">Pedido</th>
               <th className="text-right">Confirmado</th>
               {alistado && <th className="text-right">Alistado</th>}
               <th className="text-right">Precio</th>

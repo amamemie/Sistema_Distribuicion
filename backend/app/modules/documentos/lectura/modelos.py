@@ -67,7 +67,10 @@ class OCLeida(BaseModel):
     fecha_entrega: date | None = None
     destino_texto: str | None = None  # sucursal del supermercado tal como figura
     emisor: str | None = None
-    total: Decimal | None = None
+    total: Decimal | None = None  # total a pagar (ya con el descuento)
+    descuento: Decimal | None = None
+    # Número del documento leído cuando no es la OC (p. ej. N.º de la nota de recepción).
+    numero_documento: str | None = None
     lineas: list[LineaLeida] = Field(default_factory=list)
     confianza: dict[str, float] = Field(default_factory=dict)
     avisos: list[str] = Field(default_factory=list)
@@ -84,7 +87,9 @@ class OCLeida(BaseModel):
         suma = sum(
             (linea.total or linea.cantidad * linea.precio for linea in self.lineas), Decimal(0)
         )
-        total_ok = self.total is None or abs(suma - self.total) <= Decimal("0.01")
+        total_ok = self.total is None or (
+            abs(suma - (self.descuento or Decimal(0)) - self.total) <= Decimal("0.01")
+        )
         return lineas_ok and total_ok
 
     @property

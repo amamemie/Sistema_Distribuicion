@@ -10,7 +10,7 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | D-03 | Anulación | Se puede anular en BORRADOR, CONFIRMADO (libera la reserva) y ALISTADO (revierte movimientos). **Un pedido ENTREGADO no se puede anular.** | 2026-11-14 |
 | D-04 | Costo promedio | El CPP se lleva **por ubicación**. La salida a un supermercado usa el CPP de la sucursal que despacha. Una transferencia sale al CPP del origen y recalcula el CPP del destino. | 2026-11-14 |
 | D-05 | Asignación de pedidos | No hay asignación: el trabajador que escanea la OC registra el pedido y queda como responsable. | 2026-11-14 |
-| D-06 | Pedidos "manuales" | Todo pedido nace de una OC (foto o PDF). "Manual" significa que todo lo extraído es editable; si la lectura falla, los datos se pueden cargar a mano con la OC adjunta. | 2026-11-14 |
+| D-06 | Pedidos "manuales" | ~~Reemplazada por D-20.~~ Todo pedido nace de una OC (foto o PDF). "Manual" significa que todo lo extraído es editable; si la lectura falla, los datos se pueden cargar a mano con la OC adjunta. | 2026-11-14 |
 | D-07 | Terminología | **Depósito** y **Sucursal** (de la empresa); **Sucursal de supermercado** (del cliente). En código: `Ubicacion(tipo=DEPOSITO\|SUCURSAL)`, `Cadena`, `SucursalCliente`. | 2026-11-14 |
 | D-08 | IA sin costo | La lectura de OC no puede tener costo mensual por uso: OCR local y gratuito. Un servicio en la nube gratuito podrá activarse en el futuro como opción, **desactivado por defecto**. | 2026-11-14 |
 | D-09 | Muestras de OC | El cliente entregará OC reales de cada cadena para diseñar y probar la lectura. | 2026-11-14 |
@@ -23,6 +23,10 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | D-16 | Cantidad de la OC (Hipermaxi) | La cantidad del pedido es **"Cant. OC"** (lo que piden). "Cant. Dpcho." normalmente es igual y no se usa. | 2026-11-14 |
 | D-17 | Unidad de medida en la OC | La columna U/M ("PCE") siempre significa **unidades**: no hay conversión de paquetes (confirma D-10). | 2026-11-14 |
 | D-18 | Anotaciones del supermercado | La columna "Recepción" (escrita a mano por el encargado del supermercado) no es relevante: la lectura la ignora. | 2026-11-14 |
+| D-19 | Documento del pedido | El pedido se registra con la **nota de recepción** de la cadena (ya no con la OC); el stock se descuenta con sus cantidades al alistar. El número del pedido sigue siendo el **N.º de O/C** de la nota (control de duplicados); el N.º de la nota se anota en observaciones. La "U/N" es la sucursal del supermercado que recibe. Sin cambios en la base de datos. | 2026-11-15 |
+| D-20 | Pedidos a mano | **Reemplaza a D-06.** Además de subir la nota (PDF o foto), se puede crear un pedido a mano, sin documento, escribiendo cadena, sucursal, fecha y productos. El N.º de O/C es opcional; si se escribe, se sigue controlando que no se repita. | 2026-11-15 |
+| D-21 | Cálculos automáticos | El usuario solo escribe cantidad y precio: el total de cada línea (cantidad × precio), el subtotal y el total (subtotal − descuento) se calculan solos. El descuento no tiene columna propia: es la diferencia entre la suma de las líneas y el total guardado. | 2026-11-15 |
+| D-22 | Códigos de producto | El código (SKU) de cada producto es su **código de fábrica** de la nota de recepción; el nombre, la descripción tal cual figura en la nota. Los precios de compra los dará el cliente más adelante. | 2026-11-15 |
 
 ## Decisiones técnicas tomadas en la Fase 1 (a confirmar con el cliente)
 
@@ -56,6 +60,7 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 
 ## Pendientes de validar
 
-- Muestras reales de OC de cada cadena (D-09) para la lectura automática (Fase 2b).
+- Muestras reales de notas de recepción de las demás cadenas (D-09, D-19) para la lectura automática.
+- Precios de compra reales de los productos (D-22): el stock actual es imaginario, con costo provisional ≈ 70 % del precio de venta.
 
 - Acceso desde celulares fuera de la red de la oficina y cómo obtener HTTPS (necesario para la cámara). Ver [ADR 0002](adr/0002-despliegue-en-oficina.md).

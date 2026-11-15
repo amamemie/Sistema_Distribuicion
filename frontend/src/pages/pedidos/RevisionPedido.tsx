@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeftRight, CheckCircle2, FilePlus2, Loader2, Plus, RefreshCw, ScanText, Sparkles, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowLeftRight, CheckCircle2, FilePlus2, Loader2, PencilLine, Plus, RefreshCw, ScanText, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { SelectorArchivos } from '../../components/pedidos/SelectorArchivos'
@@ -12,7 +12,7 @@ import { formatearBs, formatearCantidad, formatearCosto, formatearDia, hoyLaPaz 
 import { nuevaClave } from '../../lib/lineas'
 import { usePuede } from '../../lib/sesion'
 import type { LecturaOC, PedidoDetalle, PedidoLinea, Producto, Sugerencia, Validacion } from '../../lib/tipos'
-import { diferenciaLinea, numeroONulo, sumaLineas } from './calculos'
+import { descuentoInicial, diferenciaLinea, numeroONulo, totalCalculado, totales } from './calculos'
 
 interface LineaForm {
   clave: string
@@ -23,7 +23,7 @@ interface LineaForm {
   sugerido: boolean
   cantidad_oc: string
   precio_oc: string
-  total_linea_oc: string
+  impreso: string // total de línea impreso en el documento leído (solo para comparar)
   confirmada: string
 }
 
@@ -35,39 +35,13 @@ interface Formulario {
   fecha_oc: string
   fecha_entrega: string
   emisor: string
-  total_oc: string
+  descuento: string
   observaciones: string
   lineas: LineaForm[]
 }
 
 const texto = (v: string | null | undefined) => v ?? ''
 const sinCeros = (v: string | null | undefined) => (v === null || v === undefined ? '' : String(Number(v)))
-
-function desdePedido(p: PedidoDetalle): Formulario {
-  return {
-    ubicacion_id: p.ubicacion.id,
-    cadena_id: texto(p.cadena?.id),
-    sucursal_cliente_id: texto(p.sucursal_cliente?.id),
-    numero_oc: texto(p.numero_oc),
-    fecha_oc: texto(p.fecha_oc),
-    fecha_entrega: texto(p.fecha_entrega),
-    emisor: texto(p.emisor),
-    total_oc: sinCeros(p.total_oc),
-    observaciones: texto(p.observaciones),
-    lineas: p.detalle_lineas.map((l) => ({
-      clave: nuevaClave(),
-      id: l.id,
-      codigo: texto(l.codigo_cliente),
-      descripcion: l.descripcion_cliente,
-      producto: l.producto,
-      sugerido: false,
-      cantidad_oc: sinCeros(l.cantidad_oc),
-      precio_oc: sinCeros(l.precio_oc),
-      total_linea_oc: sinCeros(l.total_linea_oc),
-      confirmada: sinCeros(l.cantidad_confirmada),
-    })),
-  }
-}
 
 const lineaVacia = (): LineaForm => ({
   clave: nuevaClave(),
@@ -78,11 +52,46 @@ const lineaVacia = (): LineaForm => ({
   sugerido: false,
   cantidad_oc: '',
   precio_oc: '',
-  total_linea_oc: '',
+  impreso: '',
   confirmada: '',
 })
 
+function desdePedido(p: PedidoDetalle): Formulario {
+  const lineas = p.detalle_lineas.map((l) => ({
+    clave: nuevaClave(),
+    id: l.id,
+    codigo: texto(l.codigo_cliente),
+    descripcion: l.descripcion_cliente,
+    producto: l.producto,
+    sugerido: false,
+    cantidad_oc: sinCeros(l.cantidad_oc),
+    precio_oc: sinCeros(l.precio_oc),
+    impreso: sinCeros(l.total_linea_oc),
+    confirmada: sinCeros(l.cantidad_confirmada),
+  }))
+  return {
+    ubicacion_id: p.ubicacion.id,
+    cadena_id: texto(p.cadena?.id),
+    sucursal_cliente_id: texto(p.sucursal_cliente?.id),
+    numero_oc: texto(p.numero_oc),
+    fecha_oc: texto(p.fecha_oc),
+    fecha_entrega: texto(p.fecha_entrega),
+    emisor: texto(p.emisor),
+    // Sin columna propia: el descuento es la diferencia entre la suma de las líneas y el total.
+    descuento: descuentoInicial(
+      p.detalle_lineas.map((l) => l.total_linea_oc ?? String(totalCalculado({ cantidad_oc: l.cantidad_oc, precio_oc: l.precio_oc }))),
+      p.total_oc,
+    ),
+    observaciones: texto(p.observaciones),
+    // Pedido a mano recién creado: se empieza con una línea vacía.
+    lineas: lineas.length || p.detalle_documentos.length ? lineas : [lineaVacia()],
+  }
+}
+
+
 function aCuerpo(f: Formulario) {
+  const lineas = f.lineas.filter((l) => l.descripcion.trim() || l.producto || l.cantidad_oc)
+  const { total } = totales(lineas, f.descuento)
   return {
     ubicacion_id: f.ubicacion_id,
     cadena_id: f.cadena_id || null,
@@ -91,23 +100,22 @@ function aCuerpo(f: Formulario) {
     fecha_oc: f.fecha_oc || null,
     fecha_entrega: f.fecha_entrega || null,
     emisor: f.emisor.trim() || null,
-    total_oc: numeroONulo(f.total_oc),
+    // Los totales se calculan solos (D-21): total = suma de cantidad × precio − descuento.
+    total_oc: lineas.length ? total.toFixed(2) : null,
     observaciones: f.observaciones.trim() || null,
-    lineas: f.lineas
-      .filter((l) => l.descripcion.trim() || l.producto || l.cantidad_oc)
-      .map((l) => ({
+    lineas: lineas.map((l) => ({
         codigo_cliente: l.codigo.trim() || null,
         descripcion_cliente: l.descripcion.trim() || l.producto?.nombre || 'Sin descripción',
         producto_id: l.producto?.id ?? null,
         cantidad_oc: numeroONulo(l.cantidad_oc),
         precio_oc: numeroONulo(l.precio_oc) ?? '0',
-        total_linea_oc: numeroONulo(l.total_linea_oc),
+        total_linea_oc: totalCalculado(l).toFixed(2),
         cantidad_confirmada: numeroONulo(l.confirmada),
       })),
   }
 }
 
-/** Revisión de la OC en BORRADOR: documento al lado, todo editable, validaciones y confirmación. */
+/** Revisión del pedido en BORRADOR: documento al lado (si lo hay), todo editable, validaciones y confirmación. */
 export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: PedidoDetalle; puedeAnular: boolean; onAnular: () => void }) {
   const puede = usePuede()
   const queryClient = useQueryClient()
@@ -165,16 +173,24 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
   for (const v of pedido.validaciones) if (v.linea_id) porLinea.set(v.linea_id, [...(porLinea.get(v.linea_id) ?? []), v])
   const generales = pedido.validaciones.filter((v) => !v.linea_id)
   const errores = pedido.validaciones.filter((v) => v.nivel === 'error')
-  const suma = sumaLineas(form.lineas)
-  const totalOc = numeroONulo(form.total_oc)
-  const diferenciaTotal = totalOc !== null && form.lineas.length > 0 && Math.abs(suma - Number(totalOc)) > 0.01
+  const suma = totales(form.lineas, form.descuento)
+  const conDocumento = pedido.detalle_documentos.length > 0
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="space-y-2 lg:sticky lg:top-4 lg:self-start">
-        <VisorDocumentos pedidoId={pedido.id} documentos={pedido.detalle_documentos} onQuitar={(id) => quitarDocumento.mutate(id)} />
+        {conDocumento ? (
+          <VisorDocumentos pedidoId={pedido.id} documentos={pedido.detalle_documentos} onQuitar={(id) => quitarDocumento.mutate(id)} />
+        ) : (
+          <Tarjeta className="p-4 text-sm text-slate-600">
+            <p className="inline-flex items-center gap-1.5 font-medium text-slate-800">
+              <PencilLine size={16} /> Pedido cargado a mano
+            </p>
+            <p className="mt-1">Si tiene la nota de recepción, puede adjuntarla (opcional) y el sistema la leerá.</p>
+          </Tarjeta>
+        )}
         <Boton variante="secundario" className="w-full" onClick={() => setAgregando(true)}>
-          <FilePlus2 size={16} /> Agregar páginas
+          <FilePlus2 size={16} /> {conDocumento ? 'Agregar páginas' : 'Adjuntar nota de recepción'}
         </Boton>
         {quitarDocumento.isError && <Aviso>{mensajeError(quitarDocumento.error)}</Aviso>}
       </div>
@@ -186,14 +202,16 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
           guardar.mutate()
         }}
       >
-        <EstadoLectura
-          lectura={pedido.lectura}
-          avisos={pedido.confianza?.avisos ?? []}
-          ocupado={leer.isPending}
-          onLeer={() => {
-            if (!form.lineas.length || confirm('Se volverá a leer la OC y se reemplazarán los datos cargados. ¿Continuar?')) leer.mutate()
-          }}
-        />
+        {(conDocumento || pedido.lectura) && (
+          <EstadoLectura
+            lectura={pedido.lectura}
+            avisos={pedido.confianza?.avisos ?? []}
+            ocupado={leer.isPending}
+            onLeer={() => {
+              if (!pedido.detalle_lineas.length || confirm('Se volverá a leer el documento y se reemplazarán los datos cargados. ¿Continuar?')) leer.mutate()
+            }}
+          />
+        )}
         {leer.isError && <Aviso>{mensajeError(leer.error)}</Aviso>}
         <Tarjeta className={`grid gap-4 p-4 sm:grid-cols-2 ${leyendo ? 'pointer-events-none opacity-50' : ''}`}>
           <Campo etiqueta="Cadena">
@@ -210,7 +228,7 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
           </Campo>
           <Campo
             etiqueta="Sucursal de supermercado"
-            ayuda={!form.sucursal_cliente_id && pedido.confianza?.destino_texto ? `La OC dice: «${pedido.confianza.destino_texto}»` : undefined}
+            ayuda={!form.sucursal_cliente_id && pedido.confianza?.destino_texto ? `El documento dice: «${pedido.confianza.destino_texto}»` : undefined}
           >
             <Selector value={form.sucursal_cliente_id} disabled={!cadena} onChange={(e) => cambiar({ sucursal_cliente_id: e.target.value })}>
               <option value="">{cadena ? 'Elegir…' : 'Primero la cadena'}</option>
@@ -223,14 +241,11 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
                 ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="N.º de OC">
+          <Campo etiqueta="N.º de OC (opcional)">
             <Entrada className={claseDudosa(pedido.confianza?.numero_oc)} value={form.numero_oc} onChange={(e) => cambiar({ numero_oc: e.target.value })} />
           </Campo>
-          <Campo etiqueta="Fecha de la OC">
+          <Campo etiqueta="Fecha">
             <Entrada type="date" className={claseDudosa(pedido.confianza?.fecha_oc)} max={hoyLaPaz()} value={form.fecha_oc} onChange={(e) => cambiar({ fecha_oc: e.target.value })} />
-          </Campo>
-          <Campo etiqueta="Total de la OC (Bs)" ayuda={`Suma de las líneas: ${formatearBs(suma)}`} error={diferenciaTotal ? `No coincide con la suma de las líneas (${formatearBs(suma)}).` : undefined}>
-            <Entrada inputMode="decimal" className={claseDudosa(pedido.confianza?.total)} value={form.total_oc} onChange={(e) => cambiar({ total_oc: e.target.value.replace(',', '.') })} />
           </Campo>
           <Campo etiqueta="Sucursal que despacha">
             <Selector value={form.ubicacion_id} onChange={(e) => cambiar({ ubicacion_id: e.target.value })}>
@@ -250,7 +265,7 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
         </Tarjeta>
 
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-slate-700 uppercase">Líneas de la OC</h2>
+          <h2 className="text-sm font-semibold text-slate-700 uppercase">Productos</h2>
           {form.lineas.map((l, i) => (
             <LineaRevision
               key={l.clave}
@@ -271,8 +286,35 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
           </Boton>
         </div>
 
+        <Tarjeta className={`space-y-2 p-4 text-sm ${leyendo ? 'pointer-events-none opacity-50' : ''}`}>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-600">Subtotal</span>
+            <span className="tabular-nums">{formatearBs(suma.subtotal)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor="descuento" className="text-slate-600">
+              Descuento (Bs)
+            </label>
+            <Entrada
+              id="descuento"
+              inputMode="decimal"
+              placeholder="0"
+              className="max-w-32 text-right"
+              value={form.descuento}
+              onChange={(e) => cambiar({ descuento: e.target.value.replace(',', '.') })}
+            />
+          </div>
+          <div className="flex items-center justify-between border-t border-slate-200 pt-2 text-base font-semibold">
+            <span>Total</span>
+            <span className={`tabular-nums ${claseDudosa(pedido.confianza?.total) ? 'rounded bg-amber-50 px-1 ring-1 ring-amber-300' : ''}`}>
+              {formatearBs(suma.total)}
+            </span>
+          </div>
+          {suma.total < 0 && <p className="text-xs text-red-700">El descuento no puede ser mayor que el subtotal.</p>}
+        </Tarjeta>
+
         <Campo etiqueta="Observaciones">
-          <Entrada value={form.observaciones} onChange={(e) => cambiar({ observaciones: e.target.value })} />
+          <Entrada value={form.observaciones} maxLength={500} onChange={(e) => cambiar({ observaciones: e.target.value })} />
         </Campo>
 
         {sucio ? (
@@ -289,12 +331,12 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
               Anular
             </Boton>
           )}
-          <Boton type="submit" variante="secundario" disabled={guardar.isPending || !sucio}>
+          <Boton type="submit" variante="secundario" disabled={guardar.isPending || !sucio || suma.total < 0}>
             {guardar.isPending ? 'Guardando…' : 'Guardar borrador'}
           </Boton>
           {puede('pedidos.confirmar') && (
             <Boton
-              disabled={confirmar.isPending || (!sucio && errores.length > 0)}
+              disabled={confirmar.isPending || (!sucio && errores.length > 0) || suma.total < 0}
               onClick={() => {
                 if (confirm('Al confirmar se reserva el stock de la sucursal. ¿Continuar?')) confirmar.mutate()
               }}
@@ -317,7 +359,11 @@ function claseDudosa(confianza: unknown): string {
   return typeof confianza === 'number' && confianza < UMBRAL_DUDOSO ? 'border-amber-400! bg-amber-50! ring-1 ring-amber-300' : ''
 }
 
-const NOMBRE_PLANTILLA: Record<string, string> = { hipermaxi: 'formato Hipermaxi', generica: 'lectura genérica (formato sin plantilla)' }
+const NOMBRE_PLANTILLA: Record<string, string> = {
+  hipermaxi_recepcion: 'nota de recepción Hipermaxi',
+  hipermaxi: 'OC Hipermaxi',
+  generica: 'lectura genérica (formato sin plantilla)',
+}
 
 function EstadoLectura({
   lectura,
@@ -332,21 +378,21 @@ function EstadoLectura({
 }) {
   const boton = (
     <Boton variante="secundario" className="min-h-8 text-xs" disabled={ocupado} onClick={onLeer}>
-      <RefreshCw size={14} /> {lectura ? 'Volver a leer' : 'Leer la OC automáticamente'}
+      <RefreshCw size={14} /> {lectura ? 'Volver a leer' : 'Leer el documento automáticamente'}
     </Boton>
   )
   if (!lectura) return <div className="flex justify-end">{boton}</div>
   if (lectura.estado === 'PENDIENTE' || lectura.estado === 'PROCESANDO') {
     return (
       <div role="status" className="flex items-center gap-2 rounded-md border border-marca-200 bg-marca-50 px-3 py-2 text-sm text-marca-900">
-        <Loader2 size={16} className="animate-spin" /> Leyendo la OC automáticamente… suele tardar entre 10 y 30 segundos por página.
+        <Loader2 size={16} className="animate-spin" /> Leyendo el documento automáticamente… suele tardar entre 10 y 30 segundos por página.
       </div>
     )
   }
   if (lectura.estado === 'FALLIDA') {
     return (
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-        <span>{lectura.error ?? 'No se pudo leer la OC.'}</span>
+        <span>{lectura.error ?? 'No se pudo leer el documento.'}</span>
         {boton}
       </div>
     )
@@ -356,7 +402,7 @@ function EstadoLectura({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 text-slate-700">
           <ScanText size={16} className="text-marca-700" />
-          {lectura.aplicada ? 'Datos leídos automáticamente' : 'Se leyó la OC, pero el borrador ya tenía datos: no se reemplazaron'} ·{' '}
+          {lectura.aplicada ? 'Datos leídos automáticamente' : 'Se leyó el documento, pero el borrador ya tenía datos: no se reemplazaron'} ·{' '}
           {NOMBRE_PLANTILLA[lectura.plantilla ?? ''] ?? lectura.plantilla} · confianza {Math.round(Number(lectura.confianza ?? 0))} %
           {lectura.aritmetica_ok ? ' · las cuentas cuadran' : ' · revise: las cuentas no cuadran'}
         </span>
@@ -377,7 +423,7 @@ function PanelValidaciones({ generales, errores, total }: { generales: Validacio
     return (
       <Aviso tipo="exito">
         <span className="inline-flex items-center gap-1">
-          <CheckCircle2 size={16} /> Todo cuadra: la OC está lista para confirmar.
+          <CheckCircle2 size={16} /> Todo cuadra: el pedido está listo para confirmar.
         </span>
       </Aviso>
     )
@@ -447,8 +493,8 @@ function LineaRevision({
         </Boton>
       </div>
       <div className="grid gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
-        <Entrada aria-label="Código en la OC" placeholder="Código" className={claseDudosa(conf?.codigo)} value={linea.codigo} onChange={(e) => onCambio({ codigo: e.target.value })} />
-        <Entrada aria-label="Descripción en la OC" placeholder="Descripción como figura en la OC" className={claseDudosa(conf?.descripcion)} value={linea.descripcion} onChange={(e) => onCambio({ descripcion: e.target.value })} />
+        <Entrada aria-label="Código del cliente" placeholder="Código" className={claseDudosa(conf?.codigo)} value={linea.codigo} onChange={(e) => onCambio({ codigo: e.target.value })} />
+        <Entrada aria-label="Descripción del cliente" placeholder="Descripción como figura en la nota (opcional)" className={claseDudosa(conf?.descripcion)} value={linea.descripcion} onChange={(e) => onCambio({ descripcion: e.target.value })} />
       </div>
       <div className="mt-3">
         <SelectorProducto valor={linea.producto} onCambio={(producto) => onCambio({ producto, sugerido: false })} />
@@ -467,14 +513,19 @@ function LineaRevision({
         )}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Campo etiqueta={`Cantidad OC (${unidad})`}>
+        <Campo etiqueta={`Cantidad (${unidad})`}>
           <Entrada inputMode="decimal" className={claseDudosa(conf?.cantidad)} value={linea.cantidad_oc} onChange={(e) => onCambio({ cantidad_oc: e.target.value.replace(',', '.') })} />
         </Campo>
         <Campo etiqueta="Precio unitario">
           <Entrada inputMode="decimal" className={claseDudosa(conf?.precio)} value={linea.precio_oc} onChange={(e) => onCambio({ precio_oc: e.target.value.replace(',', '.') })} />
         </Campo>
-        <Campo etiqueta="Total línea (OC)">
-          <Entrada inputMode="decimal" className={claseDudosa(conf?.total)} value={linea.total_linea_oc} onChange={(e) => onCambio({ total_linea_oc: e.target.value.replace(',', '.') })} />
+        <Campo etiqueta="Total línea">
+          <output
+            aria-label={`Total de la línea ${numero}`}
+            className={`flex min-h-10 items-center justify-end rounded-md border border-slate-200 bg-slate-50 px-3 text-sm tabular-nums ${claseDudosa(conf?.total)}`}
+          >
+            {formatearBs(totalCalculado(linea))}
+          </output>
         </Campo>
         <Campo etiqueta="A confirmar">
           <Entrada inputMode="decimal" placeholder={linea.cantidad_oc || '0'} value={linea.confirmada} onChange={(e) => onCambio({ confirmada: e.target.value.replace(',', '.') })} />
@@ -594,7 +645,7 @@ function AgregarPaginas({ pedidoId, abierto, onCerrar }: { pedidoId: string; abi
     },
   })
   return (
-    <Modal abierto={abierto} titulo="Agregar páginas de la OC" onCerrar={onCerrar}>
+    <Modal abierto={abierto} titulo="Adjuntar nota de recepción" onCerrar={onCerrar}>
       <div className="space-y-4">
         <SelectorArchivos archivos={archivos} onCambio={setArchivos} onError={setError} ocupado={setPreparando} />
         {error && <Aviso>{error}</Aviso>}

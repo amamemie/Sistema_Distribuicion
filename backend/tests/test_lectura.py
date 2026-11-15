@@ -168,6 +168,141 @@ def test_plantilla_generica_para_formatos_desconocidos() -> None:
     assert oc.aritmetica_ok
 
 
+RECEPCION = [
+    [
+        (36, "COMPRAS"),
+        (269, "HIPERMAXI"),
+        (327, "S.A"),
+        (498, "No."),
+        (515, "Rec."),
+        (536, ":"),
+        (541, "8345686"),
+    ],
+    [
+        (36, "14-11-2026"),
+        (254, "NOTA"),
+        (284, "DE"),
+        (300, "RECEPCION"),
+        (496, "Fecha"),
+        (525, ":"),
+        (530, "22/10/2026"),
+    ],
+    [(36, "No."), (53, "O/C."), (80, ":"), (85, "11409941"), (506, "T/C"), (529, "11.68")],
+    [(36, "U/N"), (78, ":"), (84, "42"), (96, "U.N."), (118, "EL"), (133, "PRADO")],
+    [
+        (38, "Cod."),
+        (60, "Articulo"),
+        (118, "Cod."),
+        (140, "Fabrica"),
+        (198, "Descripcion"),
+        (383, "U/M"),
+        (426, "Cantidad"),
+        (488, "Precio"),
+        (516, "U."),
+        (560, "Total"),
+    ],
+    [
+        (58, "350561"),
+        (118, "350561"),
+        (188, "BOLSA"),
+        (216, "BLANCA"),
+        (251, "BELEN"),
+        (383, "PCE"),
+        (438, "100.00"),
+        (503, "19.500"),
+        (560, "1,950.00"),
+    ],
+    [
+        (58, "660378"),
+        (118, "90010072238"),
+        (188, "GUANTES"),
+        (227, "ASATEX"),
+        (261, "GRUESO"),
+        (383, "PCE"),
+        (438, "48.00"),
+        (503, "13.800"),
+        (560, "662.40"),
+    ],
+    [
+        (36, "Almacen"),
+        (77, ":"),
+        (82, "42"),
+        (95, "CBBA"),
+        (376, "Paq."),
+        (401, "148.00"),
+        (488, "SubTotal"),
+        (527, ":"),
+        (545, "2,612.40"),
+    ],
+    [
+        (36, "No.Ingr."),
+        (83, "40582019"),
+        (426, "0.000"),
+        (451, "%"),
+        (484, "Descuento"),
+        (529, ":"),
+        (549, "12.40"),
+    ],
+    [(36, "Acreedor"), (491, "Total"), (515, "Bs"), (528, ":"), (548, "2,600.00")],
+    [(36, "Cta.x"), (60, "Pagar"), (133, "Fecha"), (159, "Vcto."), (184, ":"), (189, "30/10/2026")],
+]
+
+
+def test_plantilla_nota_de_recepcion_hipermaxi() -> None:
+    oc = interpretar(_hoja(RECEPCION))
+    assert oc.plantilla == "hipermaxi_recepcion"
+    assert (oc.numero_oc, oc.numero_documento, oc.fecha_oc) == (
+        "11409941",
+        "8345686",
+        date(2026, 10, 22),
+    )
+    assert oc.destino_texto == "EL PRADO"
+    assert (oc.total, oc.descuento) == (D("2600.00"), D("12.40"))
+    assert [
+        (x.codigo, x.codigo_alterno, x.descripcion, x.cantidad, x.precio, x.total)
+        for x in oc.lineas
+    ] == [
+        ("350561", "350561", "BOLSA BLANCA BELEN", D(100), D("19.5"), D(1950)),
+        ("660378", "90010072238", "GUANTES ASATEX GRUESO", D(48), D("13.8"), D("662.4")),
+    ]
+    assert oc.aritmetica_ok  # subtotal - descuento = total
+
+
+def test_nota_de_recepcion_fotografiada() -> None:
+    """Con OCR, las cajas suelen juntar varias palabras ("Cod. Fabrica", "350561 350561")."""
+    filas = [list(f) for f in RECEPCION]
+    filas[4] = [
+        (69, "Cod. Articulo"),
+        (259, "Cod. Fabrica"),
+        (445, "Descripcion"),
+        (881, "U/M"),
+        (984, "Cantidad"),
+        (1129, "Precio U."),
+        (1298, "Total"),
+    ]
+    filas[5] = [
+        (117, "350561"),
+        (259, "350561"),
+        (424, "BOLSA BLANCA BELEN"),
+        (882, "PCE"),
+        (1015, "100.00"),
+        (1170, "19.500"),
+        (1303, "1,950.00"),
+    ]
+    filas[6] = [
+        (127, "660378 90010072238"),
+        (435, "GUANTES ASATEX GRUESO"),
+        (893, "PCE 48.00"),
+        (1180, "13.800"),
+        (1311, "662.40"),
+    ]
+    oc = interpretar(_hoja(filas))
+    assert [(x.codigo, x.codigo_alterno, x.cantidad, x.total) for x in oc.lineas] == [
+        ("350561", "350561", D(100), D(1950)),
+        ("660378", "90010072238", D(48), D("662.4")),
+    ]
+
+
 # ---------------------------------------------------------------- integración con pedidos
 
 
@@ -337,3 +472,45 @@ def test_lectura_fallida_queda_registrada(db: Session, esc: Escenario, cola: lis
     lect = db.get(Lectura, lect.id)
     assert lect is not None and lect.estado == EstadoLectura.FALLIDA
     assert lect.error and "Cargue los datos a mano" in lect.error
+
+
+def test_nota_de_recepcion_completa_el_borrador(
+    db: Session, esc: Escenario, cola: list[object]
+) -> None:
+    from app.modules.catalogo import servicios as catalogo
+    from app.modules.catalogo.schemas import ProductoEntrada
+    from app.modules.clientes import servicios as clientes
+    from app.modules.clientes.schemas import SucursalClienteEntrada
+
+    # El SKU del producto es el código de fábrica (D-22): se empareja solo, sin equivalencia.
+    guante = catalogo.crear_producto(
+        db,
+        esc.ctx,
+        ProductoEntrada(
+            sku="90010072238",
+            nombre="GUANTES ASATEX GRUESO TALLA 8",
+            categoria_id=esc.cat.guantes.categoria_id,
+        ),
+    )
+    prado = clientes.crear_sucursal(
+        db, esc.ctx, esc.cadena.id, SucursalClienteEntrada(nombre="El Prado")
+    )
+    db.expire_all()  # la cadena ya estaba cargada en la sesión sin la sucursal nueva
+    filas = [list(f) for f in RECEPCION]
+    filas[1][-1] = (530, hoy().strftime("%d/%m/%Y"))
+    pedido = pedidos.crear(
+        db,
+        esc.ctx,
+        PedidoCrear(ubicacion_id=esc.datos.sucursal.id, observaciones="Entregar temprano"),
+    )
+    pedidos.agregar_documentos(db, esc.ctx, pedido.id, [(JPEG, "nota.jpg")])
+    lect = lectura.ultima(db, pedido.id)
+    assert lect is not None
+    lectura.procesar(lect.id, ExtractorFalso(filas), sesion=lambda: nullcontext(db))
+    db.expire_all()
+    pedido = pedidos.obtener(db, esc.ctx, pedido.id)
+    assert (pedido.cadena_id, pedido.sucursal_cliente_id) == (esc.cadena.id, prado.id)
+    assert (pedido.numero_oc, pedido.fecha_oc, pedido.total_oc) == ("11409941", hoy(), D("2600"))
+    assert pedido.observaciones == "Nota de recepción N.º 8345686 · Entregar temprano"
+    assert [x.producto_id for x in pedido.lineas] == [None, guante.id]
+    assert pedido.lineas[1].codigo_cliente == "660378"

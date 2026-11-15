@@ -1,27 +1,39 @@
 import { describe, expect, it } from 'vitest'
-import { diferenciaLinea, numeroONulo, sumaLineas } from './calculos'
+import { descuentoInicial, diferenciaLinea, numeroONulo, totalCalculado, totales } from './calculos'
 import { medidasReducidas } from '../../lib/imagenes'
 
-describe('revisión de la OC', () => {
+describe('revisión del pedido', () => {
   it('convierte los números del formulario', () => {
     expect(numeroONulo(' 12,5 ')).toBe('12.5')
     expect(numeroONulo('')).toBeNull()
     expect(numeroONulo('abc')).toBeNull()
   })
 
-  it('detecta cantidad × precio distinto del total impreso', () => {
-    expect(diferenciaLinea({ cantidad_oc: '10', precio_oc: '2.5', total_linea_oc: '25' })).toBeNull()
-    expect(diferenciaLinea({ cantidad_oc: '10', precio_oc: '2.5', total_linea_oc: '250' })).toContain('pero la OC dice')
-    expect(diferenciaLinea({ cantidad_oc: '3', precio_oc: '1.3333', total_linea_oc: '4' })).toBeNull()
+  it('calcula el total de la línea', () => {
+    expect(totalCalculado({ cantidad_oc: '40', precio_oc: '19' })).toBe(760)
+    expect(totalCalculado({ cantidad_oc: '48', precio_oc: '13.8' })).toBe(662.4)
+    expect(totalCalculado({ cantidad_oc: '', precio_oc: '5' })).toBe(0)
   })
 
-  it('suma con el total impreso o el calculado', () => {
-    expect(
-      sumaLineas([
-        { cantidad_oc: '10', precio_oc: '2.5', total_linea_oc: '' },
-        { cantidad_oc: '1', precio_oc: '1', total_linea_oc: '0.10' },
-      ]),
-    ).toBe(25.1)
+  it('avisa si el documento leído dice otro total de línea', () => {
+    expect(diferenciaLinea({ cantidad_oc: '10', precio_oc: '2.5', impreso: '25' })).toBeNull()
+    expect(diferenciaLinea({ cantidad_oc: '10', precio_oc: '2.5', impreso: '250' })).toContain('pero el documento dice')
+    expect(diferenciaLinea({ cantidad_oc: '10', precio_oc: '2.5', impreso: '' })).toBeNull()
+  })
+
+  it('subtotal, descuento y total', () => {
+    const lineas = [
+      { cantidad_oc: '40', precio_oc: '19' },
+      { cantidad_oc: '24', precio_oc: '8' },
+    ]
+    expect(totales(lineas, '')).toEqual({ subtotal: 952, descuento: 0, total: 952 })
+    expect(totales(lineas, '52,5')).toEqual({ subtotal: 952, descuento: 52.5, total: 899.5 })
+  })
+
+  it('recupera el descuento de un pedido guardado', () => {
+    expect(descuentoInicial(['760.00', '192.00'], '900.00')).toBe('52')
+    expect(descuentoInicial(['760.00'], '760.00')).toBe('')
+    expect(descuentoInicial(['760.00'], null)).toBe('')
   })
 })
 
