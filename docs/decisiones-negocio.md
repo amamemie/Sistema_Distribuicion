@@ -45,6 +45,15 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | T-10 | Visibilidad | El encargado ve solo los pedidos que él cargó (D-05); con `pedidos.ver_todos` se ven todos. | Desde Roles y permisos. |
 | T-11 | Documentos | Se guardan en el disco del equipo de la oficina y entran en el respaldo diario. Máximo 15 MB por archivo y 20 archivos por pedido. | Variables `ARCHIVO_MAX_MB`. |
 
+## Decisiones técnicas tomadas en la Fase 2b
+
+| # | Tema | Implementado |
+|---|---|---|
+| T-12 | Cuándo se lee | Automáticamente al subir la OC a un borrador sin líneas; luego, solo con «Volver a leer» (reemplaza lo cargado). |
+| T-13 | Producto automático | Solo por equivalencia aprendida o código; el parecido de nombres solo sugiere (p. ej. talla 8 vs 8.5 es fácil de confundir). |
+| T-14 | Campos dudosos | Confianza menor a 85 % se resalta en ámbar; si las cuentas no cuadran, se avisa. |
+| T-15 | Red | El backend y el worker no tienen salida a internet (las OC no salen del equipo). |
+
 ## Pendientes de validar
 
 - Muestras reales de OC de cada cadena (D-09) para la lectura automática (Fase 2b).

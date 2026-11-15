@@ -32,7 +32,11 @@ class ExtractorDocumento(Protocol):
 
 @lru_cache(maxsize=1)
 def _motor() -> Any:
+    import onnxruntime
     from rapidocr import RapidOCR
+
+    # Ningún dato sale del equipo: se apaga la telemetría de ONNX Runtime.
+    onnxruntime.disable_telemetry_events()
 
     return RapidOCR(params={"Global.log_level": "error", "Global.max_side_len": _LADO_OCR})
 

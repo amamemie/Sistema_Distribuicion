@@ -11,6 +11,8 @@ x-backend: &backend
       condition: service_healthy
     redis:
       condition: service_healthy
+  # Sin salida a internet: los datos (y las OC que se leen) no salen del equipo.
+  networks: [interna]
   restart: unless-stopped
 
 services:
@@ -26,6 +28,7 @@ services:
     # Solo accesible desde este equipo (para desarrollo y respaldos).
     ports:
       - "127.0.0.1:${PUERTO_DB:-5433}:5432"
+    networks: [interna, default]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -35,6 +38,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    networks: [interna]
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -72,10 +76,15 @@ services:
       - "${PUERTO_WEB_HTTPS:-8443}:443"
     volumes:
       - caddy_datos:/data
+    networks: [interna, default]
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
+
+networks:
+  interna:
+    internal: true
 
 volumes:
   db_datos:

@@ -4,9 +4,9 @@ Sistema web para una distribuidora que compra en unidades grandes, almacena en d
 fracciona en sucursales y despacha pedidos a supermercados. Controla el stock por ubicación, los
 pedidos que llegan en órdenes de compra (OC), quién hizo cada operación y cuánto se ganó.
 
-> **Estado:** Fases 0, 1 y 2a completadas: base del sistema, núcleo de inventario y pedidos de
-> supermercado (OC adjunta con foto o PDF, revisión, reserva, alistado, entrega, rentabilidad).
-> La lectura automática de la OC (Fase 2b) espera muestras reales de cada cadena.
+> **Estado:** Fases 0, 1, 2a y 2b completadas: base del sistema, núcleo de inventario, pedidos de
+> supermercado y lectura automática de la OC (local y sin costo; plantilla de Hipermaxi y lectura
+> genérica para las demás cadenas hasta tener sus muestras).
 > Ver el [plan por fases](docs/arquitectura.md#plan-por-fases).
 
 ## Requisitos

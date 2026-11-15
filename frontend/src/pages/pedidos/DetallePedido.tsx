@@ -22,6 +22,8 @@ const NOMBRE_EVENTO: Record<string, string> = {
   ENTREGADO: 'Entregó',
   ANULADO: 'Anuló',
   DEVOLUCION: 'Registró una devolución',
+  LEIDO: 'Lectura automática de la OC',
+  LECTURA_SOLICITADA: 'Pidió volver a leer la OC',
 }
 
 export function DetallePedido() {
@@ -32,6 +34,8 @@ export function DetallePedido() {
   const pedido = useQuery({
     queryKey: ['pedido', pedidoId],
     queryFn: () => api<PedidoDetalle>(`/pedidos/${pedidoId}`),
+    // Mientras la OC se lee en segundo plano, se consulta cada 2 segundos.
+    refetchInterval: (q) => (['PENDIENTE', 'PROCESANDO'].includes(q.state.data?.lectura?.estado ?? '') ? 2000 : false),
   })
 
   if (pedido.isError) return <Aviso>{mensajeError(pedido.error)}</Aviso>
@@ -85,7 +89,7 @@ export function DetallePedido() {
       </div>
 
       {p.estado === 'BORRADOR' ? (
-        <RevisionPedido key={p.id} pedido={p} puedeAnular={puedeAnular} onAnular={() => setAccion('anular')} />
+        <RevisionPedido key={`${p.id}-${p.lectura?.id ?? ''}-${p.lectura?.estado ?? ''}`} pedido={p} puedeAnular={puedeAnular} onAnular={() => setAccion('anular')} />
       ) : (
         <ResumenPedido pedido={p} />
       )}

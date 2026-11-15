@@ -443,6 +443,7 @@ export interface PedidoLinea {
   ingreso: Decimal | null
   ganancia: Decimal | null
   margen: Decimal | null
+  confianza: Record<string, number> | null
 }
 
 export interface EventoPedido {
@@ -479,6 +480,25 @@ export interface PedidoDetalle extends PedidoResumen {
   entregado_at: string | null
   ingreso: Decimal | null
   costo: Decimal | null
+  confianza: (Record<string, unknown> & { avisos?: string[]; destino_texto?: string }) | null
+  lectura: LecturaOC | null
+}
+
+export type EstadoLectura = 'PENDIENTE' | 'PROCESANDO' | 'COMPLETADA' | 'FALLIDA'
+
+export interface LecturaOC {
+  id: string
+  estado: EstadoLectura
+  plantilla: string | null
+  motor: string | null
+  confianza: Decimal | null
+  aritmetica_ok: boolean | null
+  aplicada: boolean
+  error: string | null
+  duracion_ms: number | null
+  precision: Decimal | null
+  created_at: string
+  terminada_at: string | null
 }
 
 export interface Sugerencia {

@@ -30,7 +30,7 @@ backend/app/
 │   ├── inventario/    motor, libro, saldos, CPP, lotes, transferencias,     ✅ Fase 1
 │   │                  ajustes, conteos, kardex, verificación
 │   ├── pedidos/       OC → pedido, estados, rentabilidad, equivalencias     ✅ Fase 2a
-│   ├── documentos/    archivos (✅ 2a); extractores y plantillas por cadena  Fase 2b
+│   ├── documentos/    archivos; lectura de OC: OCR local y plantillas      ✅ Fase 2b
 │   ├── reportes/      consultas de solo lectura, exportación                Fase 3
 │   ├── alertas/       reglas y notificaciones                               Fase 4
 │   └── ml/            pronóstico, reposición, anomalías                     Fase 4
@@ -199,6 +199,16 @@ erDiagram
 - Cantidades y precios de la OC siempre por unidad base (D-10).
 - `cantidad_confirmada ≤ disponible` al confirmar (D-02); `cantidad_alistada ≤ confirmada` (D-11).
 
+### Lectura automática de la OC (Fase 2b)
+
+Al subir la OC a un borrador vacío, el worker la lee (OCR local, ver
+[ADR 0003](adr/0003-lectura-de-oc-sin-costo.md)) y completa cadena, sucursal del supermercado (por
+parecido con «Enviar a»), número, fechas, total y líneas. El producto de cada línea se asigna solo
+si hay una equivalencia aprendida o coincide el código; si no, se ofrecen sugerencias. Los campos
+leídos con confianza menor a 85 % se resaltan. Nunca reemplaza lo cargado a mano salvo que el
+usuario pulse «Volver a leer», y nunca mueve stock. `GET /api/pedidos/lectura/precision` resume la
+precisión por formato a partir de lo que se corrigió al confirmar.
+
 ### Reglas de pedidos implementadas (Fase 2a)
 
 | Paso | Qué hace |
@@ -224,7 +234,7 @@ erDiagram
 | 0 · Base | Monorepo, Docker Compose, BD, autenticación, roles/permisos, ubicaciones, auditoría, CI, PWA base, respaldos | ✅ |
 | 1 · Inventario | Catálogo, presentaciones, proveedores, cadenas y sucursales de supermercado, compras con prorrateo, lotes, CPP por ubicación, transferencias, ajustes, conteos, kardex, stock físico/comprometido/disponible | ✅ |
 | 2a · Pedidos | OC adjunta (foto/PDF) con carga manual, revisión, validación aritmética, equivalencias, reserva, alistado con FEFO, rentabilidad, entrega con constancia, anulación, devoluciones, duplicados, PWA con cámara y cola de subida | ✅ |
-| 2b · Lectura automática | PDF con texto, OCR de fotos, plantillas por cadena, confianza, emparejamiento automático, métricas de precisión | Pendiente (requiere OC reales) |
+| 2b · Lectura automática | PDF con texto, OCR de fotos, plantillas por cadena, confianza, emparejamiento automático, métricas de precisión | ✅ Hipermaxi + lectura genérica; plantillas de otras cadenas cuando haya muestras |
 | 3 · Reportes | Dashboard y métricas, exportación Excel/PDF | Pendiente |
 | 4 · Alertas y ML | Alertas, pronóstico, reposición en dos niveles, anomalías | Pendiente |
 | 5 · Finanzas | Cuentas por cobrar/pagar, gastos, contabilidad, impuestos | Futuro |

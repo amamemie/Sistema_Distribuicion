@@ -60,5 +60,5 @@ plugins = ["pydantic.mypy"]
 exclude = ["migrations/"]
 
 [[tool.mypy.overrides]]
-module = ["celery.*", "kombu.*"]
+module = ["celery.*", "kombu.*", "onnxruntime.*", "rapidocr.*", "pdfplumber.*", "cv2.*"]
 ignore_missing_imports = true

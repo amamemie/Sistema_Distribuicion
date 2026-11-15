@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeftRight, CheckCircle2, FilePlus2, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowLeftRight, CheckCircle2, FilePlus2, Loader2, Plus, RefreshCw, ScanText, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { SelectorArchivos } from '../../components/pedidos/SelectorArchivos'
@@ -11,7 +11,7 @@ import { useCadenas, useUbicaciones } from '../../lib/consultas'
 import { formatearBs, formatearCantidad, formatearCosto, formatearDia, hoyLaPaz } from '../../lib/formato'
 import { nuevaClave } from '../../lib/lineas'
 import { usePuede } from '../../lib/sesion'
-import type { PedidoDetalle, PedidoLinea, Producto, Sugerencia, Validacion } from '../../lib/tipos'
+import type { LecturaOC, PedidoDetalle, PedidoLinea, Producto, Sugerencia, Validacion } from '../../lib/tipos'
 import { diferenciaLinea, numeroONulo, sumaLineas } from './calculos'
 
 interface LineaForm {
@@ -150,6 +150,11 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
       void queryClient.invalidateQueries({ queryKey: ['stock'] })
     },
   })
+  const leer = useMutation({
+    mutationFn: () => api<PedidoDetalle>(`/pedidos/${pedido.id}/leer`, { metodo: 'POST' }),
+    onSuccess: (nuevo) => queryClient.setQueryData(['pedido', pedido.id], nuevo),
+  })
+  const leyendo = ['PENDIENTE', 'PROCESANDO'].includes(pedido.lectura?.estado ?? '')
   const quitarDocumento = useMutation({
     mutationFn: (archivoId: string) => api<PedidoDetalle>(`/pedidos/${pedido.id}/documentos/${archivoId}`, { metodo: 'DELETE' }),
     onSuccess: (nuevo) => queryClient.setQueryData(['pedido', pedido.id], nuevo),
@@ -181,7 +186,16 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
           guardar.mutate()
         }}
       >
-        <Tarjeta className="grid gap-4 p-4 sm:grid-cols-2">
+        <EstadoLectura
+          lectura={pedido.lectura}
+          avisos={pedido.confianza?.avisos ?? []}
+          ocupado={leer.isPending}
+          onLeer={() => {
+            if (!form.lineas.length || confirm('Se volverá a leer la OC y se reemplazarán los datos cargados. ¿Continuar?')) leer.mutate()
+          }}
+        />
+        {leer.isError && <Aviso>{mensajeError(leer.error)}</Aviso>}
+        <Tarjeta className={`grid gap-4 p-4 sm:grid-cols-2 ${leyendo ? 'pointer-events-none opacity-50' : ''}`}>
           <Campo etiqueta="Cadena">
             <Selector value={form.cadena_id} onChange={(e) => cambiar({ cadena_id: e.target.value, sucursal_cliente_id: '' })}>
               <option value="">Elegir…</option>
@@ -194,7 +208,10 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
                 ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="Sucursal de supermercado">
+          <Campo
+            etiqueta="Sucursal de supermercado"
+            ayuda={!form.sucursal_cliente_id && pedido.confianza?.destino_texto ? `La OC dice: «${pedido.confianza.destino_texto}»` : undefined}
+          >
             <Selector value={form.sucursal_cliente_id} disabled={!cadena} onChange={(e) => cambiar({ sucursal_cliente_id: e.target.value })}>
               <option value="">{cadena ? 'Elegir…' : 'Primero la cadena'}</option>
               {cadena?.sucursales
@@ -207,13 +224,13 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
             </Selector>
           </Campo>
           <Campo etiqueta="N.º de OC">
-            <Entrada value={form.numero_oc} onChange={(e) => cambiar({ numero_oc: e.target.value })} />
+            <Entrada className={claseDudosa(pedido.confianza?.numero_oc)} value={form.numero_oc} onChange={(e) => cambiar({ numero_oc: e.target.value })} />
           </Campo>
           <Campo etiqueta="Fecha de la OC">
-            <Entrada type="date" max={hoyLaPaz()} value={form.fecha_oc} onChange={(e) => cambiar({ fecha_oc: e.target.value })} />
+            <Entrada type="date" className={claseDudosa(pedido.confianza?.fecha_oc)} max={hoyLaPaz()} value={form.fecha_oc} onChange={(e) => cambiar({ fecha_oc: e.target.value })} />
           </Campo>
           <Campo etiqueta="Total de la OC (Bs)" ayuda={`Suma de las líneas: ${formatearBs(suma)}`} error={diferenciaTotal ? `No coincide con la suma de las líneas (${formatearBs(suma)}).` : undefined}>
-            <Entrada inputMode="decimal" value={form.total_oc} onChange={(e) => cambiar({ total_oc: e.target.value.replace(',', '.') })} />
+            <Entrada inputMode="decimal" className={claseDudosa(pedido.confianza?.total)} value={form.total_oc} onChange={(e) => cambiar({ total_oc: e.target.value.replace(',', '.') })} />
           </Campo>
           <Campo etiqueta="Sucursal que despacha">
             <Selector value={form.ubicacion_id} onChange={(e) => cambiar({ ubicacion_id: e.target.value })}>
@@ -293,6 +310,68 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
   )
 }
 
+const UMBRAL_DUDOSO = 0.85
+
+/** Resalta en ámbar los campos que la lectura automática leyó con poca seguridad. */
+function claseDudosa(confianza: unknown): string {
+  return typeof confianza === 'number' && confianza < UMBRAL_DUDOSO ? 'border-amber-400! bg-amber-50! ring-1 ring-amber-300' : ''
+}
+
+const NOMBRE_PLANTILLA: Record<string, string> = { hipermaxi: 'formato Hipermaxi', generica: 'lectura genérica (formato sin plantilla)' }
+
+function EstadoLectura({
+  lectura,
+  avisos,
+  ocupado,
+  onLeer,
+}: {
+  lectura: LecturaOC | null
+  avisos: string[]
+  ocupado: boolean
+  onLeer: () => void
+}) {
+  const boton = (
+    <Boton variante="secundario" className="min-h-8 text-xs" disabled={ocupado} onClick={onLeer}>
+      <RefreshCw size={14} /> {lectura ? 'Volver a leer' : 'Leer la OC automáticamente'}
+    </Boton>
+  )
+  if (!lectura) return <div className="flex justify-end">{boton}</div>
+  if (lectura.estado === 'PENDIENTE' || lectura.estado === 'PROCESANDO') {
+    return (
+      <div role="status" className="flex items-center gap-2 rounded-md border border-marca-200 bg-marca-50 px-3 py-2 text-sm text-marca-900">
+        <Loader2 size={16} className="animate-spin" /> Leyendo la OC automáticamente… suele tardar entre 10 y 30 segundos por página.
+      </div>
+    )
+  }
+  if (lectura.estado === 'FALLIDA') {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <span>{lectura.error ?? 'No se pudo leer la OC.'}</span>
+        {boton}
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1.5 text-slate-700">
+          <ScanText size={16} className="text-marca-700" />
+          {lectura.aplicada ? 'Datos leídos automáticamente' : 'Se leyó la OC, pero el borrador ya tenía datos: no se reemplazaron'} ·{' '}
+          {NOMBRE_PLANTILLA[lectura.plantilla ?? ''] ?? lectura.plantilla} · confianza {Math.round(Number(lectura.confianza ?? 0))} %
+          {lectura.aritmetica_ok ? ' · las cuentas cuadran' : ' · revise: las cuentas no cuadran'}
+        </span>
+        {boton}
+      </div>
+      {lectura.aplicada && <p className="text-xs text-slate-500">Compare con el documento; los campos en ámbar se leyeron con poca seguridad.</p>}
+      {avisos.map((a, i) => (
+        <p key={i} className="text-xs text-amber-800">
+          {a}
+        </p>
+      ))}
+    </div>
+  )
+}
+
 function PanelValidaciones({ generales, errores, total }: { generales: Validacion[]; errores: number; total: number }) {
   if (total === 0) {
     return (
@@ -357,6 +436,7 @@ function LineaRevision({
   const faltante = disponible !== null && servidor?.producto?.id === linea.producto?.id ? confirmada - disponible : 0
   const unidad = linea.producto?.unidad_base ?? 'unid.'
   const conError = validaciones.some((v) => v.nivel === 'error')
+  const conf = servidor?.confianza ?? null
 
   return (
     <div className={`rounded-lg border p-3 ${conError && !sucio ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-white'}`}>
@@ -367,8 +447,8 @@ function LineaRevision({
         </Boton>
       </div>
       <div className="grid gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
-        <Entrada aria-label="Código en la OC" placeholder="Código" value={linea.codigo} onChange={(e) => onCambio({ codigo: e.target.value })} />
-        <Entrada aria-label="Descripción en la OC" placeholder="Descripción como figura en la OC" value={linea.descripcion} onChange={(e) => onCambio({ descripcion: e.target.value })} />
+        <Entrada aria-label="Código en la OC" placeholder="Código" className={claseDudosa(conf?.codigo)} value={linea.codigo} onChange={(e) => onCambio({ codigo: e.target.value })} />
+        <Entrada aria-label="Descripción en la OC" placeholder="Descripción como figura en la OC" className={claseDudosa(conf?.descripcion)} value={linea.descripcion} onChange={(e) => onCambio({ descripcion: e.target.value })} />
       </div>
       <div className="mt-3">
         <SelectorProducto valor={linea.producto} onCambio={(producto) => onCambio({ producto, sugerido: false })} />
@@ -388,13 +468,13 @@ function LineaRevision({
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Campo etiqueta={`Cantidad OC (${unidad})`}>
-          <Entrada inputMode="decimal" value={linea.cantidad_oc} onChange={(e) => onCambio({ cantidad_oc: e.target.value.replace(',', '.') })} />
+          <Entrada inputMode="decimal" className={claseDudosa(conf?.cantidad)} value={linea.cantidad_oc} onChange={(e) => onCambio({ cantidad_oc: e.target.value.replace(',', '.') })} />
         </Campo>
         <Campo etiqueta="Precio unitario">
-          <Entrada inputMode="decimal" value={linea.precio_oc} onChange={(e) => onCambio({ precio_oc: e.target.value.replace(',', '.') })} />
+          <Entrada inputMode="decimal" className={claseDudosa(conf?.precio)} value={linea.precio_oc} onChange={(e) => onCambio({ precio_oc: e.target.value.replace(',', '.') })} />
         </Campo>
         <Campo etiqueta="Total línea (OC)">
-          <Entrada inputMode="decimal" value={linea.total_linea_oc} onChange={(e) => onCambio({ total_linea_oc: e.target.value.replace(',', '.') })} />
+          <Entrada inputMode="decimal" className={claseDudosa(conf?.total)} value={linea.total_linea_oc} onChange={(e) => onCambio({ total_linea_oc: e.target.value.replace(',', '.') })} />
         </Campo>
         <Campo etiqueta="A confirmar">
           <Entrada inputMode="decimal" placeholder={linea.cantidad_oc || '0'} value={linea.confirmada} onChange={(e) => onCambio({ confirmada: e.target.value.replace(',', '.') })} />
