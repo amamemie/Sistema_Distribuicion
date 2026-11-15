@@ -9,6 +9,7 @@ import {
   Boton,
   CABECERA_TABLA,
   Campo,
+  Casilla,
   Encabezado,
   Entrada,
   Insignia,
@@ -94,7 +95,15 @@ export function Compras() {
                 <td>{c.proveedor.nombre}</td>
                 <td className="hidden md:table-cell">{c.ubicacion.nombre}</td>
                 <td className="text-right whitespace-nowrap">{formatearBs(c.total)}</td>
-                <td>{c.estado === 'ANULADA' ? <Insignia tono="rojo">Anulada</Insignia> : <Insignia tono="verde">Registrada</Insignia>}</td>
+                <td>
+                  {c.estado === 'ANULADA' ? (
+                    <Insignia tono="rojo">Anulada</Insignia>
+                  ) : c.condicion_pago === 'CREDITO' && !c.fecha_pago ? (
+                    <Insignia tono="ambar">A crédito</Insignia>
+                  ) : (
+                    <Insignia tono="verde">Registrada</Insignia>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -140,6 +149,9 @@ export function NuevaCompra() {
     fecha: hoyLaPaz(),
     numero_documento: '',
     observaciones: '',
+    con_factura: true,
+    condicion_pago: 'CONTADO' as 'CONTADO' | 'CREDITO',
+    fecha_vencimiento: '',
   })
   const [lineas, setLineas] = useState<LineaCompra[]>(() =>
     precarga.lineas?.length ? precarga.lineas.map((l) => ({ ...lineaVacia(), ...l })) : [lineaVacia()],
@@ -157,6 +169,7 @@ export function NuevaCompra() {
           ...cabecera,
           numero_documento: cabecera.numero_documento || null,
           observaciones: cabecera.observaciones || null,
+          fecha_vencimiento: cabecera.condicion_pago === 'CREDITO' ? cabecera.fecha_vencimiento || null : null,
           lineas: lineas
             .filter((l) => l.producto)
             .map((l) => ({
@@ -217,6 +230,34 @@ export function NuevaCompra() {
           <Campo etiqueta="N.º de factura o nota">
             <Entrada value={cabecera.numero_documento} onChange={(e) => setCabecera((c) => ({ ...c, numero_documento: e.target.value }))} />
           </Campo>
+          <Campo etiqueta="Pago">
+            <Selector
+              value={cabecera.condicion_pago}
+              onChange={(e) => setCabecera((c) => ({ ...c, condicion_pago: e.target.value as 'CONTADO' | 'CREDITO' }))}
+            >
+              <option value="CONTADO">Al contado</option>
+              <option value="CREDITO">A crédito</option>
+            </Selector>
+          </Campo>
+          {cabecera.condicion_pago === 'CREDITO' && (
+            <Campo etiqueta="Pagar hasta">
+              <Entrada
+                type="date"
+                required
+                min={cabecera.fecha}
+                value={cabecera.fecha_vencimiento}
+                onChange={(e) => setCabecera((c) => ({ ...c, fecha_vencimiento: e.target.value }))}
+              />
+            </Campo>
+          )}
+          <div className="self-end sm:col-span-2">
+            <Casilla
+              etiqueta="Con factura"
+              descripcion="La factura a nombre de la empresa da crédito fiscal (descuenta IVA)."
+              checked={cabecera.con_factura}
+              onChange={(e) => setCabecera((c) => ({ ...c, con_factura: e.target.checked }))}
+            />
+          </div>
         </Tarjeta>
 
         <section>
@@ -395,7 +436,16 @@ export function DetalleCompra() {
               <span>Total</span>
               <span>{formatearBs(c.total)}</span>
             </div>
-            <p className="pt-2 text-xs text-slate-500">Registrada por {c.usuario_nombre}</p>
+            <p className="pt-2 text-xs text-slate-500">
+              {c.condicion_pago === 'CREDITO'
+                ? c.fecha_pago
+                  ? `A crédito, pagada el ${formatearDia(c.fecha_pago)}`
+                  : `A crédito, pagar hasta el ${formatearDia(c.fecha_vencimiento)} (pendiente)`
+                : 'Al contado'}
+              {' · '}
+              {c.con_factura ? 'con factura' : 'sin factura'}
+            </p>
+            <p className="text-xs text-slate-500">Registrada por {c.usuario_nombre}</p>
           </Tarjeta>
         </>
       )}

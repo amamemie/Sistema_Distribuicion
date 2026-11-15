@@ -22,7 +22,9 @@ from app.modules.alertas import dominio, parametros, reposicion
 from app.modules.alertas.models import Alerta, Confianza, EstadoAlerta, Severidad
 from app.modules.alertas.notificadores import notificar
 from app.modules.catalogo.models import Producto
-from app.modules.compras.models import Compra, CompraLinea, EstadoCompra
+from app.modules.compras.models import Compra, CompraLinea, CondicionPago, EstadoCompra
+from app.modules.finanzas import cuentas
+from app.modules.finanzas import parametros as parametros_finanzas
 from app.modules.inventario.dominio import formatear_cantidad as cant
 from app.modules.inventario.models import (
     Ajuste,
@@ -72,6 +74,8 @@ TIPOS_DE_ESTADO = {
     "lote_por_vencer",
     "sin_movimiento",
     "oc_duplicada",
+    "cobro_vencido",
+    "pago_proveedor",
 }
 
 
@@ -418,6 +422,74 @@ def _oc_duplicada(db: Session, empresa_id: uuid.UUID) -> list[AlertaNueva]:
     return alertas
 
 
+# ================================================================ finanzas
+
+
+def _cobros_vencidos(db: Session, empresa_id: uuid.UUID) -> list[AlertaNueva]:
+    """Una alerta por cadena con saldo vencido (entregas de hace más de `dias_credito`)."""
+    pf = parametros_finanzas.leer(db, empresa_id)
+    al = hoy()
+    alertas = []
+    for r in cuentas.por_cadena(cuentas.cuentas(db, empresa_id, pf.dias_credito), al):
+        if r.vencido <= 0 or r.mas_antiguo is None:
+            continue
+        dias = (al - r.mas_antiguo).days
+        alertas.append(
+            AlertaNueva(
+                tipo="cobro_vencido",
+                severidad=Severidad.CRITICA if dias > pf.dias_credito + 30 else Severidad.AVISO,
+                clave=f"cobro_vencido:{r.cadena_id}",
+                titulo=f"{r.cadena} tiene {_bs(r.vencido)} vencidos",
+                mensaje=(
+                    f"Hay entregas de {r.cadena} sin cobrar hace más de {pf.dias_credito} días "
+                    f"(la más antigua, de hace {dias} días). Total pendiente: {_bs(r.pendiente)}. "
+                    "Si ya pagaron, registre la transferencia."
+                ),
+                permiso="finanzas.ver",
+                enlace="/finanzas",
+                datos={"vencido": str(r.vencido), "pendiente": str(r.pendiente)},
+            )
+        )
+    return alertas
+
+
+def _pagos_proveedor(db: Session, empresa_id: uuid.UUID) -> list[AlertaNueva]:
+    """Compras a crédito sin pagar que vencen en 3 días o menos (o ya vencieron)."""
+    al = hoy()
+    alertas = []
+    for compra in db.scalars(
+        select(Compra).where(
+            Compra.empresa_id == empresa_id,
+            Compra.estado == EstadoCompra.REGISTRADA,
+            Compra.condicion_pago == CondicionPago.CREDITO,
+            Compra.fecha_pago.is_(None),
+            Compra.fecha_vencimiento <= al + timedelta(days=3),
+        )
+    ):
+        assert compra.fecha_vencimiento is not None
+        dias = (compra.fecha_vencimiento - al).days
+        cuando = (
+            f"venció hace {-dias} días"
+            if dias < 0
+            else "vence hoy"
+            if dias == 0
+            else f"vence en {dias} días"
+        )
+        alertas.append(
+            AlertaNueva(
+                tipo="pago_proveedor",
+                severidad=Severidad.CRITICA if dias < 0 else Severidad.AVISO,
+                clave=f"pago_proveedor:{compra.id}",
+                titulo=f"Pago a {compra.proveedor.nombre}: {_bs(compra.total)}",
+                mensaje=f"La compra #{compra.numero} a crédito {cuando} "
+                f"({compra.fecha_vencimiento:%d/%m/%Y}).",
+                permiso="finanzas.ver",
+                enlace="/finanzas?pestana=por-pagar",
+            )
+        )
+    return alertas
+
+
 # ================================================================ eventos
 
 
@@ -681,6 +753,8 @@ def evaluar(db: Session, empresa_id: uuid.UUID) -> dict[str, int]:
         *_compras_atipicas(db, empresa_id),
         *_mermas_atipicas(db, empresa_id),
         *_conteos(db, empresa_id, p),
+        *_cobros_vencidos(db, empresa_id),
+        *_pagos_proveedor(db, empresa_id),
     ]
     resultado = _aplicar(db, empresa_id, nuevas)
     return resultado

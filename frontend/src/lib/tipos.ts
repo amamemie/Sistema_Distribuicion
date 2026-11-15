@@ -163,6 +163,10 @@ export interface CompraResumen {
   ubicacion: Referencia
   estado: 'REGISTRADA' | 'ANULADA'
   total: Decimal
+  con_factura: boolean
+  condicion_pago: 'CONTADO' | 'CREDITO'
+  fecha_vencimiento: string | null
+  fecha_pago: string | null
   usuario_nombre: string
   created_at: string
 }
@@ -649,4 +653,137 @@ export interface PronosticoProducto {
   error_medio: Decimal | null
   historial: number[]
   calculado_at: string | null
+}
+
+// ================================================================ finanzas (Fase 5)
+
+export type EstadoCuenta = 'PENDIENTE' | 'PARCIAL' | 'SALDADA' | 'A_FAVOR'
+export type EstadoRegistro = 'REGISTRADO' | 'ANULADO'
+
+export interface CuentaPorCobrar {
+  pedido_id: string
+  numero: number
+  numero_oc: string | null
+  cadena: Referencia
+  sucursal: string | null
+  fecha: string
+  vencimiento: string
+  monto: Decimal
+  cobrado: Decimal
+  diferencia: Decimal
+  saldo: Decimal
+  estado: EstadoCuenta
+  dias_vencida: number
+}
+
+export interface ResumenCadena {
+  cadena: Referencia
+  pedidos_pendientes: number
+  pendiente: Decimal
+  vencido: Decimal
+  a_favor: Decimal
+  mas_antiguo: string | null
+}
+
+export interface PorCobrar {
+  total_pendiente: Decimal
+  total_vencido: Decimal
+  cobrado_mes: Decimal
+  cadenas: ResumenCadena[]
+  cuentas: CuentaPorCobrar[]
+}
+
+export interface CobroResumen {
+  id: string
+  numero: number
+  cadena: Referencia
+  fecha: string
+  monto: Decimal
+  diferencias: Decimal
+  banco: string | null
+  referencia: string | null
+  estado: EstadoRegistro
+  es_cierre: boolean
+  pedidos: number
+  usuario_nombre: string
+  created_at: string
+}
+
+export interface CobroDetalle extends CobroResumen {
+  observaciones: string | null
+  comprobante_id: string | null
+  comprobante_nombre: string | null
+  anulacion_motivo: string | null
+  anulado_at: string | null
+  detalles: {
+    pedido_id: string
+    pedido_numero: number
+    numero_oc: string | null
+    sucursal: string | null
+    monto: Decimal
+    diferencia: Decimal
+    motivo_diferencia: string | null
+  }[]
+}
+
+export interface CategoriaGasto {
+  id: string
+  nombre: string
+  factura_habitual: boolean
+  activo: boolean
+}
+
+export interface Gasto {
+  id: string
+  numero: number
+  fecha: string
+  categoria: Referencia
+  ubicacion: Referencia | null
+  beneficiario: string | null
+  descripcion: string | null
+  monto: Decimal
+  con_factura: boolean
+  numero_factura: string | null
+  comprobante_id: string | null
+  comprobante_nombre: string | null
+  estado: EstadoRegistro
+  anulacion_motivo: string | null
+  usuario_nombre: string
+  created_at: string
+}
+
+export interface PaginaGastos extends Pagina<Gasto> {
+  suma: Decimal
+  por_categoria: { categoria: Referencia; total: Decimal }[]
+}
+
+export interface CompraPorPagar {
+  id: string
+  numero: number
+  fecha: string
+  proveedor: Referencia
+  numero_documento: string | null
+  total: Decimal
+  fecha_vencimiento: string | null
+  dias_para_vencer: number | null
+}
+
+export interface ImpuestoMes {
+  mes: string
+  ventas: Decimal
+  iva_debito: Decimal
+  compras_con_factura: Decimal
+  gastos_con_factura: Decimal
+  iva_credito: Decimal
+  saldo_anterior: Decimal
+  iva_pagar: Decimal
+  saldo_siguiente: Decimal
+  it: Decimal
+  total_pagar: Decimal
+}
+
+export interface ParametrosFinanzas {
+  dias_credito: number
+  iva_pct: Decimal
+  it_pct: Decimal
 }

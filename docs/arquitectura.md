@@ -261,6 +261,22 @@ El pronóstico (`pronostico.py`, `dominio.py`) se guarda en `pronostico` por suc
 depósito → sucursal y proveedor → depósito, que precargan una transferencia o una compra.
 Parámetros en `empresa.configuracion["alertas"]` (D-23 a D-26, T-20 a T-25).
 
+### Finanzas (Fase 5)
+
+Módulo `finanzas/`. La **cuenta por cobrar no es una tabla**: se deriva de cada pedido entregado
+(`cuentas.py`), así el saldo siempre cuadra con el pedido, su descuento y sus devoluciones. Se
+guardan los **cobros** (`cobro`, transferencias de una cadena) y su reparto entre pedidos
+(`cobro_detalle`, con la diferencia cerrada y su motivo). Un cobro de Bs 0 es un cierre de saldo
+sin transferencia. Para no aplicar dos veces el mismo saldo, el cobro bloquea las filas de los
+pedidos (`SELECT … FOR UPDATE`). Los **gastos** (`gasto`, `categoria_gasto`) guardan a quién se
+pagó, la ubicación y si tienen factura. La compra suma `con_factura`, `condicion_pago`,
+`fecha_vencimiento` y `fecha_pago`. El IVA y el IT mensuales salen de `impuestos.py`. Los reportes
+`resultados`, `flujo_caja`, `cobranza` e `impuestos` (`finanzas/reportes.py`) usan el formato común
+y se exportan igual que los demás. Las alertas `cobro_vencido` y `pago_proveedor` se resuelven
+solas. Los cobros, gastos y pagos publican eventos de dominio (`CobroRegistrado`,
+`GastoRegistrado`, `CompraPagada`…), base para una contabilidad de partida doble futura.
+Permisos: `finanzas.ver`, `finanzas.cobros`, `finanzas.gastos` (D-27 a D-31, T-26 a T-30).
+
 ## Plan por fases
 
 | Fase | Contenido | Estado |
@@ -271,4 +287,4 @@ Parámetros en `empresa.configuracion["alertas"]` (D-23 a D-26, T-20 a T-25).
 | 2b · Lectura automática | PDF con texto, OCR de fotos, plantillas por cadena, confianza, emparejamiento automático, métricas de precisión | ✅ Hipermaxi + lectura genérica; plantillas de otras cadenas cuando haya muestras |
 | 3 · Reportes | Dashboard y métricas, exportación Excel/PDF | ✅ |
 | 4 · Alertas y ML | Alertas, pronóstico, reposición en dos niveles, anomalías | ✅ |
-| 5 · Finanzas | Cuentas por cobrar/pagar, gastos, contabilidad, impuestos | Futuro |
+| 5 · Finanzas | Cuentas por cobrar (cobros por transferencia), compras a crédito, gastos, IVA/IT, estado de resultados, flujo de caja | ✅ Sin partida doble ni facturación electrónica del SIN |

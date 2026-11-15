@@ -7,16 +7,20 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.db import get_db
-from app.core.errors import NoEncontrado
+from app.core.errors import NoEncontrado, SinPermiso
 from app.core.tiempo import hoy
+from app.modules.finanzas.reportes import REPORTES as REPORTES_FINANZAS
 from app.modules.identidad.contexto import Contexto
 from app.modules.identidad.dependencias import requiere_alguno
 from app.modules.reportes import exportar
-from app.modules.reportes.consultas import REPORTES
+from app.modules.reportes.consultas import REPORTES as REPORTES_OPERATIVOS
 from app.modules.reportes.schemas import Filtros, Reporte
 
 router = APIRouter(prefix="/reportes", tags=["Reportes"])
-VER = requiere_alguno("reportes.operativos", "reportes.rentabilidad")
+OPERATIVOS = ("reportes.operativos", "reportes.rentabilidad")
+FINANZAS = ("finanzas.ver",)
+VER = requiere_alguno(*OPERATIVOS, *FINANZAS)
+REPORTES = {**REPORTES_OPERATIVOS, **REPORTES_FINANZAS}
 TIPOS = {
     "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "pdf": "application/pdf",
@@ -27,6 +31,9 @@ def _generar(clave: str, db: Session, ctx: Contexto, filtros: Filtros) -> Report
     funcion = REPORTES.get(clave)
     if funcion is None:
         raise NoEncontrado("Ese reporte no existe.")
+    necesarios = FINANZAS if clave in REPORTES_FINANZAS else OPERATIVOS
+    if not any(ctx.puede(p) for p in necesarios):
+        raise SinPermiso("No tiene permiso para ver este reporte.")
     return funcion(db, ctx, filtros)
 
 

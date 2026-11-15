@@ -10,7 +10,13 @@ from app.core.errors import NoEncontrado, ReglaNegocio
 from app.core.schemas import Pagina
 from app.core.tiempo import ahora, hoy
 from app.modules.catalogo import servicios as catalogo
-from app.modules.compras.models import Compra, CompraCosto, CompraLinea, EstadoCompra
+from app.modules.compras.models import (
+    Compra,
+    CompraCosto,
+    CompraLinea,
+    CondicionPago,
+    EstadoCompra,
+)
 from app.modules.compras.schemas import (
     CompraCostoSalida,
     CompraDetalle,
@@ -36,6 +42,11 @@ def registrar(db: Session, ctx: Contexto, datos: CompraEntrada) -> Compra:
     ubicacion = ubicaciones.operable(db, ctx, datos.ubicacion_id)
     if datos.fecha > hoy():
         raise ReglaNegocio("La fecha de la compra no puede ser futura.")
+    a_credito = datos.condicion_pago == CondicionPago.CREDITO
+    if a_credito and datos.fecha_vencimiento is None:
+        raise ReglaNegocio("Indique hasta cuándo hay que pagar la compra a crédito.")
+    if a_credito and datos.fecha_vencimiento and datos.fecha_vencimiento < datos.fecha:
+        raise ReglaNegocio("El vencimiento del pago no puede ser anterior a la compra.")
 
     # 1. Validar y calcular cada línea (sin tocar todavía el inventario).
     calculos = []
@@ -68,6 +79,10 @@ def registrar(db: Session, ctx: Contexto, datos: CompraEntrada) -> Compra:
         costos_adicionales=costos_adicionales,
         total=subtotal_compra + costos_adicionales,
         observaciones=datos.observaciones,
+        con_factura=datos.con_factura,
+        condicion_pago=datos.condicion_pago,
+        fecha_vencimiento=datos.fecha_vencimiento if a_credito else None,
+        fecha_pago=None if a_credito else datos.fecha,
         usuario_id=ctx.usuario.id,
         costos=[CompraCosto(concepto=c.concepto.strip(), monto=c.monto) for c in datos.costos],
     )
@@ -132,6 +147,8 @@ def registrar(db: Session, ctx: Contexto, datos: CompraEntrada) -> Compra:
             "ubicacion": ubicacion.nombre,
             "total": compra.total,
             "lineas": len(calculos),
+            "con_factura": compra.con_factura,
+            "condicion_pago": compra.condicion_pago,
         },
     )
     eventos.publicar(
@@ -232,6 +249,10 @@ def resumen(c: Compra) -> CompraResumen:
         ubicacion=Referencia(id=c.ubicacion.id, nombre=c.ubicacion.nombre),
         estado=c.estado,
         total=c.total,
+        con_factura=c.con_factura,
+        condicion_pago=c.condicion_pago,
+        fecha_vencimiento=c.fecha_vencimiento,
+        fecha_pago=c.fecha_pago,
         usuario_nombre=c.usuario.nombre_completo,
         created_at=c.created_at,
     )

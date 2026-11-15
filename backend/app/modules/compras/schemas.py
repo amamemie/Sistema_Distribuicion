@@ -5,7 +5,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 from app.core.schemas import Esquema
-from app.modules.compras.models import EstadoCompra
+from app.modules.compras.models import CondicionPago, EstadoCompra
 
 
 class CompraLineaEntrada(BaseModel):
@@ -30,6 +30,9 @@ class CompraEntrada(BaseModel):
     observaciones: str | None = Field(default=None, max_length=500)
     lineas: list[CompraLineaEntrada] = Field(min_length=1)
     costos: list[CompraCostoEntrada] = []
+    con_factura: bool = True  # da crédito fiscal (IVA)
+    condicion_pago: CondicionPago = CondicionPago.CONTADO  # casi siempre al contado (D-29)
+    fecha_vencimiento: date | None = None  # obligatoria a crédito
 
 
 class AnulacionEntrada(BaseModel):
@@ -72,6 +75,10 @@ class CompraResumen(BaseModel):
     ubicacion: Referencia
     estado: EstadoCompra
     total: Decimal
+    con_factura: bool
+    condicion_pago: CondicionPago
+    fecha_vencimiento: date | None
+    fecha_pago: date | None
     usuario_nombre: str
     created_at: datetime
 

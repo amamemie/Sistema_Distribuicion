@@ -54,6 +54,8 @@ const DetalleConteo = perezosa(() => import('./pages/inventario/Conteos'), 'Deta
 const Reportes = perezosa(() => import('./pages/reportes/Reportes'), 'Reportes')
 const Alertas = perezosa(() => import('./pages/alertas/Alertas'), 'Alertas')
 const Reposicion = perezosa(() => import('./pages/reposicion/Reposicion'), 'Reposicion')
+const Finanzas = perezosa(() => import('./pages/finanzas/Finanzas'), 'Finanzas')
+const NuevoCobro = perezosa(() => import('./pages/finanzas/NuevoCobro'), 'NuevoCobro')
 
 /** Si cualquier petición responde 401, la sesión expiró: se vuelve al login. */
 function alExpirarSesion(error: unknown) {
@@ -111,6 +113,8 @@ const router = createBrowserRouter([
       { path: 'alertas', element: <Suspense fallback={<p className="text-sm text-slate-500">Cargando…</p>}><Alertas /></Suspense> },
       { path: 'reposicion', element: conPermiso(PERMISOS_REPOSICION, <Reposicion />) },
       { path: 'reportes', element: conPermiso(PERMISOS_REPORTES, <Reportes />) },
+      { path: 'finanzas', element: conPermiso('finanzas.ver', <Finanzas />) },
+      { path: 'finanzas/cobros/nuevo', element: conPermiso('finanzas.cobros', <NuevoCobro />) },
       { path: 'usuarios', element: conPermiso('usuarios.ver', <Usuarios />) },
       { path: 'roles', element: conPermiso('roles.ver', <Roles />) },
       { path: 'ubicaciones', element: conPermiso('ubicaciones.gestionar', <Ubicaciones />) },

@@ -33,6 +33,8 @@ const TIPOS: Record<string, string> = {
   anomalia_pedido: 'Pedido inusual',
   anomalia_compra: 'Compra inusual',
   anomalia_merma: 'Merma inusual',
+  cobro_vencido: 'Cobro vencido',
+  pago_proveedor: 'Pago a proveedor',
 }
 
 /** Centro de notificaciones: alertas automáticas visibles para el usuario. */

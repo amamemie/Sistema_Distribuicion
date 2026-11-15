@@ -4,10 +4,10 @@ Sistema web para una distribuidora que compra en unidades grandes, almacena en d
 fracciona en sucursales y despacha pedidos a supermercados. Controla el stock por ubicación, los
 pedidos que llegan en órdenes de compra (OC), quién hizo cada operación y cuánto se ganó.
 
-> **Estado:** Fases 0 a 4 completadas: base del sistema, núcleo de inventario, pedidos de
+> **Estado:** Fases 0 a 5 completadas: base del sistema, núcleo de inventario, pedidos de
 > supermercado (por nota de recepción o a mano), lectura automática local y sin costo, reportes
-> con exportación a Excel y PDF, y alertas automáticas con pronóstico de demanda y sugerencias de
-> reposición.
+> con exportación a Excel y PDF, alertas automáticas con pronóstico de demanda y sugerencias de
+> reposición, y finanzas (cobros por transferencia, gastos, IVA/IT, ganancia neta y flujo de caja).
 > Ver el [plan por fases](docs/arquitectura.md#plan-por-fases).
 
 ## Requisitos

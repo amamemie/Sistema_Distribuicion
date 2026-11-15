@@ -19,6 +19,7 @@ import {
   Store,
   Truck,
   Users,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -59,7 +60,13 @@ const SECCIONES: { titulo?: string; enlaces: Enlace[] }[] = [
       { a: '/clientes', texto: 'Clientes', icono: Store, permiso: 'catalogo.ver' },
     ],
   },
-  { titulo: 'Análisis', enlaces: [{ a: '/reportes', texto: 'Reportes', icono: ChartLine, permiso: PERMISOS_REPORTES }] },
+  {
+    titulo: 'Análisis',
+    enlaces: [
+      { a: '/reportes', texto: 'Reportes', icono: ChartLine, permiso: PERMISOS_REPORTES },
+      { a: '/finanzas', texto: 'Finanzas', icono: Wallet, permiso: 'finanzas.ver' },
+    ],
+  },
   {
     titulo: 'Administración',
     enlaces: [

@@ -53,6 +53,14 @@ PERMISOS: tuple[DefPermiso, ...] = (
     DefPermiso("costos.ver", "Rentabilidad", "Ver costos, ganancias y márgenes"),
     DefPermiso("reportes.operativos", "Reportes", "Ver reportes operativos"),
     DefPermiso("reportes.rentabilidad", "Reportes", "Ver reportes de ganancias y márgenes"),
+    # Finanzas
+    DefPermiso(
+        "finanzas.ver",
+        "Finanzas",
+        "Ver cuentas por cobrar y por pagar, cobros, gastos, impuestos y flujo de caja",
+    ),
+    DefPermiso("finanzas.cobros", "Finanzas", "Registrar y anular cobros de los supermercados"),
+    DefPermiso("finanzas.gastos", "Finanzas", "Registrar y anular gastos y pagos a proveedores"),
 )
 
 CODIGOS = frozenset(p.codigo for p in PERMISOS)
