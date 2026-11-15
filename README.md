@@ -41,6 +41,12 @@ transferencias de ejemplo, y estos usuarios (contraseña `Demo-12345`):
 | `admin@example.com` | Administrador |
 | `encargado@example.com` | Encargado |
 
+## Servidor de producción (gratuito)
+
+El sistema se publica en una máquina Oracle Cloud Always Free con HTTPS:
+`scripts/desplegar.sh ubuntu@IP` instala o actualiza. Guía paso a paso en
+[docs/despliegue-oracle.md](docs/despliegue-oracle.md).
+
 ## Desarrollo
 
 ```bash
