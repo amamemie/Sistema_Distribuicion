@@ -4,6 +4,7 @@ Al crear un módulo nuevo con tablas, agréguelo aquí.
 """
 
 from app.core import eventos  # noqa: F401
+from app.modules.alertas import models as alertas  # noqa: F401
 from app.modules.catalogo import models as catalogo  # noqa: F401
 from app.modules.clientes import models as clientes  # noqa: F401
 from app.modules.compras import models as compras  # noqa: F401

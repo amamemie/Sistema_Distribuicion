@@ -15,12 +15,12 @@ from decimal import Decimal
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import ColumnElement, Date, and_, cast, func, select
+from sqlalchemy import ColumnElement, and_, func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.errors import ReglaNegocio, SinPermiso
-from app.core.tiempo import hoy
+from app.core.tiempo import fecha_local, hoy
 from app.modules.catalogo.models import Categoria, Producto
 from app.modules.clientes.models import Cadena, SucursalCliente
 from app.modules.compras.models import Compra, CompraLinea, EstadoCompra
@@ -92,9 +92,7 @@ def _kpi(clave: str, titulo: str, tipo: Any, valor: Any, anterior: Any = None) -
     )
 
 
-def _fecha_local(columna: Any) -> ColumnElement[date]:
-    """Fecha de un instante en la zona horaria del negocio."""
-    return cast(func.timezone(get_settings().zona_horaria, columna), Date)
+_fecha_local = fecha_local  # nombre usado en este módulo
 
 
 def inicio_periodo(d: date, agrupacion: Agrupacion) -> date:
@@ -831,19 +829,24 @@ def inventario(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
         datetime.min.time(),
         tzinfo=ZoneInfo(get_settings().zona_horaria),
     )
-    ultima_salida = (
+    # Lo recién ingresado no cuenta: se mide desde la última salida o, si nunca salió, desde el
+    # primer ingreso a esa ubicación (T-18).
+    referencia = (
         select(
             Movimiento.ubicacion_id,
             Movimiento.producto_id,
-            func.max(Movimiento.fecha).label("ultima"),
+            func.max(Movimiento.fecha)
+            .filter(
+                Movimiento.tipo.in_((TipoMovimiento.VENTA, TipoMovimiento.TRANSFERENCIA_SALIDA))
+            )
+            .label("ultima"),
+            func.min(Movimiento.fecha).label("primera"),
         )
-        .where(
-            Movimiento.empresa_id == ctx.empresa_id,
-            Movimiento.tipo.in_((TipoMovimiento.VENTA, TipoMovimiento.TRANSFERENCIA_SALIDA)),
-        )
+        .where(Movimiento.empresa_id == ctx.empresa_id)
         .group_by(Movimiento.ubicacion_id, Movimiento.producto_id)
         .subquery()
     )
+    desde = func.coalesce(referencia.c.ultima, referencia.c.primera)
     quietos = db.execute(
         select(
             Ubicacion.nombre,
@@ -851,23 +854,20 @@ def inventario(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
             Producto.nombre,
             StockUbicacion.fisico,
             StockUbicacion.fisico * StockUbicacion.cpp,
-            ultima_salida.c.ultima,
+            referencia.c.ultima,
+            desde,
         )
         .join(Ubicacion, Ubicacion.id == StockUbicacion.ubicacion_id)
         .join(Producto, Producto.id == StockUbicacion.producto_id)
-        .outerjoin(
-            ultima_salida,
+        .join(
+            referencia,
             and_(
-                ultima_salida.c.ubicacion_id == StockUbicacion.ubicacion_id,
-                ultima_salida.c.producto_id == StockUbicacion.producto_id,
+                referencia.c.ubicacion_id == StockUbicacion.ubicacion_id,
+                referencia.c.producto_id == StockUbicacion.producto_id,
             ),
         )
-        .where(
-            *_condiciones_stock(ctx, f),
-            StockUbicacion.fisico > 0,
-            (ultima_salida.c.ultima.is_(None)) | (ultima_salida.c.ultima < limite),
-        )
-        .order_by(ultima_salida.c.ultima.asc().nulls_first(), Producto.nombre)
+        .where(*_condiciones_stock(ctx, f), StockUbicacion.fisico > 0, desde < limite)
+        .order_by(desde, Producto.nombre)
     ).all()
     zona = ZoneInfo(get_settings().zona_horaria)
     filas_q = [
@@ -877,10 +877,10 @@ def inventario(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
             "producto": nombre,
             "stock": fisico,
             "ultima_salida": ultima.astimezone(zona).date() if ultima else None,
-            "dias": (hoy() - ultima.astimezone(zona).date()).days if ultima else None,
+            "dias": (hoy() - referencia_dia.astimezone(zona).date()).days,
         }
         | ({"valor": _dinero(valor)} if rent else {})
-        for ub, sku, nombre, fisico, valor, ultima in quietos
+        for ub, sku, nombre, fisico, valor, ultima, referencia_dia in quietos
     ]
     if rent:
         kpis.append(
@@ -895,14 +895,17 @@ def inventario(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
         Tabla(
             clave="sin_movimiento",
             titulo=f"Sin movimiento en los últimos {f.dias_sin_movimiento} días",
-            descripcion="Con stock y sin ventas ni transferencias de salida desde esa ubicación.",
+            descripcion=(
+                "Con stock y sin ventas ni transferencias de salida desde esa ubicación (lo que "
+                "nunca salió se cuenta desde que ingresó)."
+            ),
             columnas=[
                 Columna(clave="ubicacion", titulo="Ubicación"),
                 Columna(clave="sku", titulo="Código"),
                 Columna(clave="producto", titulo="Producto"),
                 Columna(clave="stock", titulo="Stock", tipo="cantidad"),
                 Columna(clave="ultima_salida", titulo="Última salida", tipo="fecha"),
-                Columna(clave="dias", titulo="Días sin salida", tipo="entero"),
+                Columna(clave="dias", titulo="Días sin movimiento", tipo="entero"),
             ]
             + ([Columna(clave="valor", titulo="Valor a costo", tipo="dinero")] if rent else []),
             filas=filas_q,

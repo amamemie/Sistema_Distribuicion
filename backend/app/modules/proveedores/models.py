@@ -23,5 +23,7 @@ class Proveedor(ConId, ConFechas, DeEmpresa, Base):
     direccion: Mapped[str | None] = mapped_column(String(250))
     contacto: Mapped[str | None] = mapped_column(String(120))
     activo: Mapped[bool] = mapped_column(default=True)
+    # Días que tarda en entregar una compra; vacío = el valor general de la empresa (D-24).
+    dias_entrega: Mapped[int | None]
 
     productos: Mapped[list[Producto]] = relationship(secondary=proveedor_producto, lazy="selectin")

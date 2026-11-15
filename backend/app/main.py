@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.errors import registrar_manejadores
 from app.core.logging import configurar_logging, middleware_registro
+from app.modules.alertas.api import router as alertas_router
 from app.modules.catalogo.api import router as catalogo_router
 from app.modules.clientes.api import router as clientes_router
 from app.modules.compras.api import router as compras_router
@@ -57,6 +58,7 @@ def crear_app() -> FastAPI:
         inventario_router,
         pedidos_router,
         reportes_router,
+        alertas_router,
     ):
         api.include_router(router)
     app.include_router(api)
