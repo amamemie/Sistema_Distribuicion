@@ -25,8 +25,9 @@ from app.modules.finanzas import cuentas, impuestos, parametros
 from app.modules.finanzas.models import CategoriaGasto, Cobro, CobroDetalle, EstadoRegistro, Gasto
 from app.modules.finanzas.parametros import ParametrosFinanzas
 from app.modules.identidad.contexto import Contexto
+from app.modules.inventario.models import Lote
 from app.modules.organizacion.models import Ubicacion
-from app.modules.pedidos.models import Pedido
+from app.modules.pedidos.models import Pedido, PedidoLinea, PedidoLineaLote
 from app.modules.reportes.consultas import (
     _dinero,
     _filtros_texto,
@@ -91,29 +92,20 @@ def _gastos(
     ]
 
 
-def _compras(
-    db: Session,
-    empresa_id: uuid.UUID,
-    desde: date,
-    hasta: date,
-    ubicacion_id: uuid.UUID | None,
-    *,
-    por_pago: bool,
-) -> list[tuple[date, Decimal, bool]]:
-    """(fecha, total, con_factura) de las compras vigentes, por fecha de compra o de pago."""
-    fecha = Compra.fecha_pago if por_pago else Compra.fecha
+def _pagos_compras(
+    db: Session, empresa_id: uuid.UUID, desde: date, hasta: date, ubicacion_id: uuid.UUID | None
+) -> list[tuple[date, Decimal]]:
+    """(fecha de pago, total) de las compras vigentes pagadas en el rango."""
     condiciones: list[ColumnElement[bool]] = [
         Compra.empresa_id == empresa_id,
         Compra.estado == EstadoCompra.REGISTRADA,
-        fecha.between(desde, hasta),
+        Compra.fecha_pago.between(desde, hasta),
     ]
     if ubicacion_id:
         condiciones.append(Compra.ubicacion_id == ubicacion_id)
     return [
-        (f, t, fac)
-        for f, t, fac in db.execute(
-            select(fecha, Compra.total, Compra.con_factura).where(*condiciones)
-        )
+        (f, t)
+        for f, t in db.execute(select(Compra.fecha_pago, Compra.total).where(*condiciones))
         if f is not None
     ]
 
@@ -125,10 +117,13 @@ class _Resultado:
         self.ventas = CERO
         self.costo = CERO
         self.gastos = CERO
-        self.credito_base = CERO  # compras y gastos con factura
+        # Costo de lo vendido que vino de compras con factura + gastos con factura (T-28).
+        self.credito_base = CERO
 
     def impuestos(self, p: ParametrosFinanzas) -> tuple[Decimal, Decimal]:
-        """(IVA neto del período, IT). El IVA neto puede ser negativo: crédito a favor."""
+        """(IVA de lo vendido, IT). El IVA se calcula sobre el margen: débito de las ventas
+        menos el crédito del costo de lo vendido y de los gastos con factura. Así una compra
+        grande no "regala" ganancia en el mes en que se compra."""
         return _pct(self.ventas, p.iva_pct) - _pct(self.credito_base, p.iva_pct), _pct(
             self.ventas, p.it_pct
         )
@@ -148,6 +143,7 @@ def _resultados_rango(
     def periodo(d: date) -> _Resultado:
         return por_periodo[inicio_periodo(d, f.agrupacion)]
 
+    fechas: dict[uuid.UUID, date] = {}
     for c in cuentas.cuentas(
         db,
         ctx.empresa_id,
@@ -160,18 +156,39 @@ def _resultados_rango(
         r = periodo(c.fecha)
         r.ventas += c.monto
         r.costo += c.costo
+        fechas[c.pedido_id] = c.fecha
+    for pedido_id, costo in _costo_con_factura(db, list(fechas)).items():
+        periodo(fechas[pedido_id]).credito_base += costo
     gastos = _gastos(db, ctx.empresa_id, desde, hasta, f.ubicacion_id)
     for fecha, _cat, _ub, monto, factura in gastos:
         r = periodo(fecha)
         r.gastos += monto
         if factura:
             r.credito_base += monto
-    for fecha, total, factura in _compras(
-        db, ctx.empresa_id, desde, hasta, f.ubicacion_id, por_pago=False
-    ):
-        if factura:
-            periodo(fecha).credito_base += total
     return por_periodo, gastos
+
+
+def _costo_con_factura(db: Session, pedido_ids: list[uuid.UUID]) -> dict[uuid.UUID, Decimal]:
+    """Costo de lo entregado (neto de devoluciones) que salió de lotes comprados con factura."""
+    if not pedido_ids:
+        return {}
+    return {
+        pid: _dinero(costo)
+        for pid, costo in db.execute(
+            select(
+                PedidoLinea.pedido_id,
+                func.sum(
+                    (PedidoLineaLote.cantidad - PedidoLineaLote.devuelta)
+                    * PedidoLineaLote.costo_unitario
+                ),
+            )
+            .join(PedidoLineaLote, PedidoLineaLote.linea_id == PedidoLinea.id)
+            .join(Lote, Lote.id == PedidoLineaLote.lote_id)
+            .join(Compra, (Lote.origen_tipo == "COMPRA") & (Compra.id == Lote.origen_id))
+            .where(PedidoLinea.pedido_id.in_(pedido_ids), Compra.con_factura.is_(True))
+            .group_by(PedidoLinea.pedido_id)
+        )
+    }
 
 
 def _sumar(resultados: dict[date, _Resultado]) -> _Resultado:
@@ -225,7 +242,7 @@ def resultados(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
             for nombre, monto in sorted(por_categoria.items(), key=lambda x: -x[1])
         ],
         fila("= Ganancia después de gastos", bruta - total.gastos, "total"),
-        fila(f"(-) IVA neto ({p.iva_pct.normalize():f} % débito - crédito fiscal)", -iva),
+        fila(f"(-) IVA de lo vendido ({p.iva_pct.normalize():f} % del margen con factura)", -iva),
         fila(f"(-) IT ({p.it_pct.normalize():f} %)", -it),
         fila("= Ganancia neta", neta, "total"),
     ]
@@ -249,8 +266,9 @@ def resultados(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
         titulo="Estado de resultados",
         descripcion=(
             "Ventas entregadas (facturadas) menos su costo, los gastos operativos y los impuestos "
-            "del período. Es un resultado de gestión: los montos incluyen IVA y el IVA neto se "
-            "resta como impuesto."
+            "de lo vendido. Es un resultado de gestión: los montos incluyen IVA; el IVA se resta "
+            "sobre el margen (ventas menos costo y gastos con factura). Lo que se declara cada mes "
+            "está en el reporte de Impuestos."
         ),
         filtros_texto=_filtros_texto(db, ctx, f),
         con_rentabilidad=True,
@@ -276,7 +294,7 @@ def resultados(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
                 _dinero(total.gastos),
                 _dinero(anterior.gastos),
             ),
-            _kpi("impuestos", "IVA neto + IT", "dinero", _dinero(iva + it), _dinero(a_iva + a_it)),
+            _kpi("impuestos", "IVA + IT", "dinero", _dinero(iva + it), _dinero(a_iva + a_it)),
             _kpi("neta", "Ganancia neta", "dinero", _dinero(neta), _dinero(anterior.neta(p))),
             _kpi(
                 "margen_neto",
@@ -323,7 +341,7 @@ def resultados(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
                     Columna(clave="costo", titulo="Costo", tipo="dinero"),
                     Columna(clave="bruta", titulo="Ganancia bruta", tipo="dinero"),
                     Columna(clave="gastos", titulo="Gastos", tipo="dinero"),
-                    Columna(clave="impuestos", titulo="IVA neto + IT", tipo="dinero"),
+                    Columna(clave="impuestos", titulo="IVA + IT", tipo="dinero"),
                     Columna(clave="neta", titulo="Ganancia neta", tipo="dinero"),
                     Columna(clave="margen", titulo="Margen neto", tipo="porcentaje"),
                 ],
@@ -370,9 +388,7 @@ def flujo_caja(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
     cobros = list(db.scalars(select(Cobro).where(*condiciones).order_by(Cobro.fecha, Cobro.numero)))
     for c in cobros:
         periodo(c.fecha)["cobros"] += c.monto
-    for fecha, total, _fac in _compras(
-        db, ctx.empresa_id, f.desde, f.hasta, f.ubicacion_id, por_pago=True
-    ):
+    for fecha, total in _pagos_compras(db, ctx.empresa_id, f.desde, f.hasta, f.ubicacion_id):
         periodo(fecha)["compras"] += total
     gastos = _gastos(db, ctx.empresa_id, f.desde, f.hasta, f.ubicacion_id)
     por_categoria: defaultdict[str, Decimal] = defaultdict(lambda: CERO)

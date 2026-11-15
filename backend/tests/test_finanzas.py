@@ -4,13 +4,14 @@ from datetime import date, timedelta
 from decimal import Decimal as D
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import Conflicto, ReglaNegocio
 from app.core.tiempo import ahora, hoy
 from app.modules.alertas import reglas
 from app.modules.compras import servicios as compras
-from app.modules.compras.models import CondicionPago
+from app.modules.compras.models import Compra, CondicionPago
 from app.modules.compras.schemas import CompraEntrada, CompraLineaEntrada
 from app.modules.finanzas import cuentas, impuestos, parametros, servicios
 from app.modules.finanzas import reportes as rep
@@ -397,13 +398,22 @@ def test_reportes_financieros(db: Session, entregas: tuple[Escenario, Pedido, Pe
 
     r = rep.resultados(db, esc.ctx, f)
     k = _kpis(r)
-    # Ventas 230, costo 140, gastos 50. IVA: 13 % de 230 = 29,90 menos 13 % de la compra del
-    # escenario (Bs 600 el 01/11) = 78 → -48,10. IT: 3 % de 230 = 6,90.
+    # Ventas 230, costo 140 (guantes comprados con factura), gastos 50 sin factura.
+    # IVA sobre el margen: 13 % de (230 - 140) = 11,70; la compra entera no cuenta. IT: 6,90.
     assert (k["ventas"], k["bruta"], k["gastos"]) == (D("230.00"), D("90.00"), D("50.00"))
-    assert k["impuestos"] == D("-41.20")
-    assert k["neta"] == D("81.20")
+    assert k["impuestos"] == D("18.60")
+    assert k["neta"] == D("21.40")
     conceptos = [x["concepto"] for x in r.tablas[0].filas]
     assert "(-) Sueldos" in conceptos and conceptos[-1] == "= Ganancia neta"
+
+    # Si la mercadería se compró sin factura, su costo no descuenta IVA: 13 % de 230.
+    for compra in db.scalars(select(Compra).where(Compra.empresa_id == esc.ctx.empresa_id)):
+        compra.con_factura = False
+    db.flush()
+    assert _kpis(rep.resultados(db, esc.ctx, f))["impuestos"] == D("36.80")
+    for compra in db.scalars(select(Compra).where(Compra.empresa_id == esc.ctx.empresa_id)):
+        compra.con_factura = True
+    db.flush()
 
     flujo = _kpis(rep.flujo_caja(db, esc.ctx, f))
     assert (flujo["entradas"], flujo["por_cobrar"]) == (D("150.00"), D("80.00"))
