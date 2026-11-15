@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
+from app.modules.finanzas import servicios as finanzas
 from app.modules.identidad import auditoria
 from app.modules.identidad.models import Permiso, Rol, Usuario
 from app.modules.identidad.permisos import PERMISOS, ROL_DUENO, ROLES_INICIALES
@@ -77,6 +78,7 @@ def inicializar(
         db.add(empresa)
         db.flush()
     roles = asegurar_roles(db, empresa)
+    finanzas.asegurar_categorias(db, empresa.id)
 
     try:
         correo = validate_email(correo_dueno.strip(), check_deliverability=False).normalized.lower()

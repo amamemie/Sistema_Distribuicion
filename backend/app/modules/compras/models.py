@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 
-from sqlalchemy import BigInteger, Date, DateTime, Enum, ForeignKey, Identity, String
+from sqlalchemy import BigInteger, Date, DateTime, Enum, ForeignKey, Identity, String, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models import CANTIDAD, COSTO_UNITARIO, DINERO, Base, ConFechas, ConId, DeEmpresa
@@ -17,6 +17,11 @@ from app.modules.proveedores.models import Proveedor
 class EstadoCompra(StrEnum):
     REGISTRADA = "REGISTRADA"
     ANULADA = "ANULADA"
+
+
+class CondicionPago(StrEnum):
+    CONTADO = "CONTADO"
+    CREDITO = "CREDITO"
 
 
 class Compra(ConId, ConFechas, DeEmpresa, Base):
@@ -38,6 +43,22 @@ class Compra(ConId, ConFechas, DeEmpresa, Base):
     costos_adicionales: Mapped[Decimal] = mapped_column(DINERO)
     total: Mapped[Decimal] = mapped_column(DINERO)
     observaciones: Mapped[str | None] = mapped_column(String(500))
+    # Finanzas: casi todo se compra al contado (D-29); con factura da crédito fiscal (D-30).
+    con_factura: Mapped[bool] = mapped_column(default=True, server_default=true())
+    condicion_pago: Mapped[CondicionPago] = mapped_column(
+        Enum(
+            CondicionPago,
+            name="condicion_pago",
+            native_enum=False,
+            create_constraint=True,
+            length=20,
+        ),
+        default=CondicionPago.CONTADO,
+        server_default=CondicionPago.CONTADO.value,
+    )
+    fecha_vencimiento: Mapped[date | None] = mapped_column(Date)  # solo a crédito
+    fecha_pago: Mapped[date | None] = mapped_column(Date)  # al contado = fecha de la compra
+    pago_registrado_por_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("usuario.id"))
     usuario_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("usuario.id"))
     anulacion_motivo: Mapped[str | None] = mapped_column(String(500))
     anulado_por_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("usuario.id"))

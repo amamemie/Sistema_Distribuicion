@@ -12,6 +12,7 @@ from app.modules.alertas.api import router as alertas_router
 from app.modules.catalogo.api import router as catalogo_router
 from app.modules.clientes.api import router as clientes_router
 from app.modules.compras.api import router as compras_router
+from app.modules.finanzas.api import router as finanzas_router
 from app.modules.identidad.api import router as identidad_router
 from app.modules.inventario.api import router as inventario_router
 from app.modules.organizacion.api import router as organizacion_router
@@ -59,6 +60,7 @@ def crear_app() -> FastAPI:
         pedidos_router,
         reportes_router,
         alertas_router,
+        finanzas_router,
     ):
         api.include_router(router)
     app.include_router(api)
