@@ -11,7 +11,7 @@ from app.modules.identidad.contexto import Contexto
 from app.modules.proveedores.models import Proveedor
 from app.modules.proveedores.schemas import ProveedorActualizacion, ProveedorEntrada
 
-_CAMPOS = ("nombre", "nit", "telefono", "correo", "direccion", "contacto")
+_CAMPOS = ("nombre", "nit", "telefono", "correo", "direccion", "contacto", "dias_entrega")
 
 
 def _foto(p: Proveedor) -> dict[str, Any]:

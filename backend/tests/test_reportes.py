@@ -115,8 +115,27 @@ def test_inventario_valor_rotacion_y_sin_movimiento(db: Session, ventas: Escenar
     assert valor == {"Depósito A": D("10.00"), "Sucursal A": D("400.00")}
     [rot] = [x for x in _tabla(r, "rotacion") if x["sku"] == "GUA-001"]
     assert (rot["stock"], rot["vendidas"], rot["rotacion"]) == (D(410), D(140), D("0.34"))
-    quietos = _tabla(r, "sin_movimiento")
-    assert [(x["ubicacion"], x["stock"]) for x in quietos] == [("Depósito A", D(10))]
+    # Lo recién ingresado no cuenta como inmovilizado (T-18).
+    assert _tabla(r, "sin_movimiento") == []
+
+
+def test_sin_movimiento_cuenta_desde_el_ingreso(
+    db: Session, ventas: Escenario, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    inventario.transferir(
+        db,
+        ventas.ctx,
+        TransferenciaEntrada(
+            origen_id=ventas.datos.sucursal.id,
+            destino_id=ventas.datos.deposito.id,
+            lineas=[TransferenciaLineaEntrada(producto_id=ventas.cat.guantes.id, cantidad=D(10))],
+        ),
+    )
+    monkeypatch.setattr(consultas, "hoy", lambda: HOY + timedelta(days=40))
+    r = consultas.inventario(db, ventas.ctx, SEMANA)
+    quietos = {x["ubicacion"]: x for x in _tabla(r, "sin_movimiento")}
+    assert quietos["Depósito A"]["stock"] == D(10)
+    assert quietos["Depósito A"]["ultima_salida"] is None and quietos["Depósito A"]["dias"] == 40
 
 
 def test_mermas_y_ajustes(db: Session, esc: Escenario) -> None:

@@ -7,7 +7,7 @@ import { RequierePermiso, RequiereSesion } from './components/Guardias'
 import { Layout } from './components/Layout'
 import './index.css'
 import { ErrorApi } from './lib/api'
-import { CLAVE_YO, PERMISOS_PEDIDOS, PERMISOS_REPORTES } from './lib/sesion'
+import { CLAVE_YO, PERMISOS_PEDIDOS, PERMISOS_REPORTES, PERMISOS_REPOSICION } from './lib/sesion'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
 
@@ -52,6 +52,8 @@ const DetallePedido = perezosa(() => import('./pages/pedidos/DetallePedido'), 'D
 const Conteos = perezosa(() => import('./pages/inventario/Conteos'), 'Conteos')
 const DetalleConteo = perezosa(() => import('./pages/inventario/Conteos'), 'DetalleConteo')
 const Reportes = perezosa(() => import('./pages/reportes/Reportes'), 'Reportes')
+const Alertas = perezosa(() => import('./pages/alertas/Alertas'), 'Alertas')
+const Reposicion = perezosa(() => import('./pages/reposicion/Reposicion'), 'Reposicion')
 
 /** Si cualquier petición responde 401, la sesión expiró: se vuelve al login. */
 function alExpirarSesion(error: unknown) {
@@ -106,6 +108,8 @@ const router = createBrowserRouter([
       { path: 'productos', element: conPermiso('catalogo.ver', <Productos />) },
       { path: 'proveedores', element: conPermiso('catalogo.ver', <Proveedores />) },
       { path: 'clientes', element: conPermiso('catalogo.ver', <Clientes />) },
+      { path: 'alertas', element: <Suspense fallback={<p className="text-sm text-slate-500">Cargando…</p>}><Alertas /></Suspense> },
+      { path: 'reposicion', element: conPermiso(PERMISOS_REPOSICION, <Reposicion />) },
       { path: 'reportes', element: conPermiso(PERMISOS_REPORTES, <Reportes />) },
       { path: 'usuarios', element: conPermiso('usuarios.ver', <Usuarios />) },
       { path: 'roles', element: conPermiso('roles.ver', <Roles />) },

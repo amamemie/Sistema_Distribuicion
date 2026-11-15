@@ -84,6 +84,7 @@ function FormularioProveedor({ proveedor, onCerrar }: { proveedor: Proveedor | n
     Object.fromEntries(CAMPOS.map(([c]) => [c, (proveedor?.[c] as string | null) ?? ''])),
   )
   const [activo, setActivo] = useState(proveedor?.activo ?? true)
+  const [diasEntrega, setDiasEntrega] = useState(proveedor?.dias_entrega?.toString() ?? '')
   const [productos, setProductos] = useState(proveedor?.productos ?? [])
 
   const guardar = useMutation({
@@ -91,6 +92,7 @@ function FormularioProveedor({ proveedor, onCerrar }: { proveedor: Proveedor | n
       const cuerpo = {
         ...Object.fromEntries(CAMPOS.map(([c]) => [c, datos[c].trim() || null])),
         producto_ids: productos.map((p) => p.id),
+        dias_entrega: diasEntrega === '' ? null : Number(diasEntrega),
       }
       return proveedor
         ? api(`/proveedores/${proveedor.id}`, { metodo: 'PATCH', cuerpo: { ...cuerpo, activo } })
@@ -118,6 +120,9 @@ function FormularioProveedor({ proveedor, onCerrar }: { proveedor: Proveedor | n
               <Entrada required={campo === 'nombre'} value={datos[campo]} onChange={(e) => setDatos((d) => ({ ...d, [campo]: e.target.value }))} />
             </Campo>
           ))}
+          <Campo etiqueta="Días que tarda en entregar" ayuda="Vacío: se usa el valor general de Reposición.">
+            <Entrada type="number" min={0} max={180} value={diasEntrega} onChange={(e) => setDiasEntrega(e.target.value)} />
+          </Campo>
         </div>
         <div className="space-y-2">
           <span className="text-sm font-medium text-slate-700">Productos que provee</span>

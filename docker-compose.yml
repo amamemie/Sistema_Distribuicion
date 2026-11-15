@@ -65,6 +65,11 @@ services:
       - archivos:/datos/archivos
     command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
 
+  # Dispara las tareas programadas: revisión de alertas (cada 10 min) y pronóstico (semanal).
+  beat:
+    <<: *backend
+    command: ["celery", "-A", "app.workers.celery_app", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
+
   web:
     build:
       context: .
