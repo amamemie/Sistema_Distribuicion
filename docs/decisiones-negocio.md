@@ -87,9 +87,19 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | T-24 | Ruido con poco historial | El sobre-stock calculado por pronóstico solo avisa con confianza media o alta (o si se superó un máximo cargado). El stock bajo y el quiebre avisan siempre. | — |
 | T-25 | Anomalías | Valor atípico = se aparta más de 3,5 desviaciones robustas (mediana y MAD) de la historia de esa cadena y producto (pedidos), del producto (compras) o del motivo (mermas). Hace falta un mínimo de historia (5; 3 en compras). | `atipico()` en `alertas/dominio.py`. |
 
+## Decisiones técnicas tomadas en la Fase 5 (a confirmar con el cliente)
+
+| # | Tema | Implementado | Cómo cambiarlo |
+|---|---|---|---|
+| T-26 | Cuenta por cobrar | Cada pedido **entregado** es una cuenta por cobrar por su ingreso (lo alistado menos lo devuelto), con el descuento de la nota aplicado en proporción. Vence a los **40 días** de la entrega. Una devolución después del pago deja **saldo a favor** de la cadena. | Plazo en Finanzas → Impuestos → Parámetros. |
+| T-27 | Cobros | Una transferencia se reparte entre los pedidos que paga: lo aplicado debe sumar exactamente lo transferido. Si pagaron menos, la diferencia **queda pendiente** o se **cierra con motivo** (D-28). Un N.º de operación no se registra dos veces para la misma cadena. Los cobros se anulan con motivo, nunca se borran. | — |
+| T-28 | Impuestos | **IVA 13 %** sobre lo facturado en el mes (la venta se reconoce al entregar), menos el **13 % de las compras y gastos con factura** del mes. Si el crédito es mayor, el sobrante pasa al mes siguiente (sin actualización por UFV). **IT 3 %** sobre lo facturado (sin compensar con el IUE). Es una referencia para el contador. | Porcentajes en Parámetros. |
+| T-29 | Estado de resultados | Resultado de gestión con montos que incluyen IVA: ventas − costo de lo vendido − gastos − IVA − IT. El IVA se calcula **sobre lo vendido** (ventas menos el costo comprado con factura y los gastos con factura), para que una compra grande no infle la ganancia del mes en que se compra. | `finanzas/reportes.py`. |
+| T-30 | Compras | Por defecto **al contado y con factura**: se consideran pagadas el día de la compra. A crédito exigen fecha de vencimiento y se marcan como pagadas en Finanzas → Por pagar (avisa 3 días antes). | En el formulario de compra. |
+
 ## Pendientes de validar
 
 - Muestras reales de notas de recepción de las demás cadenas (D-09, D-19) para la lectura automática.
-- Precios de compra reales de los productos (D-22): el stock actual es imaginario, con costo provisional ≈ 70 % del precio de venta.
+- Precios de compra reales de los productos (D-22): el stock actual es imaginario, con costo provisional ≈ 70 % del precio de venta. Sus compras de prueba están marcadas «con factura» y generan un crédito fiscal ficticio en octubre de 2026 (Finanzas → Impuestos).
 
 - Acceso desde celulares fuera de la red de la oficina y cómo obtener HTTPS (necesario para la cámara). Ver [ADR 0002](adr/0002-despliegue-en-oficina.md).

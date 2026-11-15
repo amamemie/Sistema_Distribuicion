@@ -8,7 +8,7 @@ import { Aviso, Boton, CABECERA_TABLA, Campo, Encabezado, Entrada, Selector, Tab
 import { api, construirUrl, mensajeError } from '../../lib/api'
 import { useCadenas, useCategorias, useUbicaciones } from '../../lib/consultas'
 import { hoyLaPaz } from '../../lib/formato'
-import { usePuede } from '../../lib/sesion'
+import { PERMISOS_REPORTES_OPERATIVOS, usePuede } from '../../lib/sesion'
 import type { Kpi, Producto, Reporte, TablaReporte } from '../../lib/tipos'
 import { agrupacionSugerida, esNumerico, fechasDeRango, formatear, type Rango } from './utiles'
 
@@ -16,8 +16,10 @@ interface DefReporte {
   clave: string
   titulo: string
   rentabilidad?: boolean // solo con reportes.rentabilidad
+  finanzas?: boolean // solo con finanzas.ver (resultados además con costos.ver)
   agrupacion?: boolean
   clientes?: boolean // admite filtro por cadena y sucursal
+  soloCadena?: boolean // admite filtro por cadena (sin sucursal)
   sinMovimiento?: boolean
 }
 
@@ -29,7 +31,17 @@ const REPORTES: DefReporte[] = [
   { clave: 'ajustes', titulo: 'Mermas y ajustes', agrupacion: true },
   { clave: 'precios_compra', titulo: 'Precios de compra', rentabilidad: true },
   { clave: 'usuarios', titulo: 'Usuarios y lectura', agrupacion: true, clientes: true },
+  { clave: 'resultados', titulo: 'Estado de resultados', finanzas: true, agrupacion: true, soloCadena: true },
+  { clave: 'flujo_caja', titulo: 'Flujo de caja', finanzas: true, agrupacion: true, soloCadena: true },
+  { clave: 'cobranza', titulo: 'Cobranza', finanzas: true, soloCadena: true },
+  { clave: 'impuestos', titulo: 'Impuestos', finanzas: true },
 ]
+
+function disponible(r: DefReporte, puede: (permiso: string) => boolean): boolean {
+  if (r.finanzas) return puede('finanzas.ver') && (r.clave !== 'resultados' || puede('costos.ver'))
+  if (r.rentabilidad) return puede('reportes.rentabilidad')
+  return PERMISOS_REPORTES_OPERATIVOS.some(puede)
+}
 
 const RANGOS: { valor: Rango; texto: string }[] = [
   { valor: 'mes', texto: 'Este mes' },
@@ -50,7 +62,7 @@ const AGRUPACIONES = [
 
 export function Reportes() {
   const puede = usePuede()
-  const disponibles = REPORTES.filter((r) => !r.rentabilidad || puede('reportes.rentabilidad'))
+  const disponibles = REPORTES.filter((r) => disponible(r, puede))
   const [params, setParams] = useSearchParams()
   const actual = disponibles.find((r) => r.clave === params.get('r')) ?? disponibles[0]
 
@@ -77,10 +89,10 @@ export function Reportes() {
     hasta: fechas.hasta,
     agrupacion: agrupacion ?? (fechasValidas ? agrupacionSugerida(fechas.desde, fechas.hasta) : 'dia'),
     ubicacion_id: ubicacion || null,
-    cadena_id: actual.clientes ? cadena || null : null,
+    cadena_id: actual.clientes || actual.soloCadena ? cadena || null : null,
     sucursal_cliente_id: actual.clientes ? sucursal || null : null,
-    categoria_id: categoria || null,
-    producto_id: producto?.id ?? null,
+    categoria_id: actual.finanzas ? null : categoria || null,
+    producto_id: actual.finanzas ? null : (producto?.id ?? null),
     dias_sin_movimiento: actual.sinMovimiento ? Number(diasQuieto) || 30 : null,
   }
   const reporte = useQuery({
@@ -90,13 +102,18 @@ export function Reportes() {
     placeholderData: keepPreviousData,
   })
   const exportar = (formato: 'xlsx' | 'pdf') => construirUrl(`/reportes/${actual.clave}/exportar`, { ...filtros, formato })
-  const filtrosActivos = [ubicacion, actual.clientes && cadena, categoria, producto].filter(Boolean).length
+  const filtrosActivos = [
+    ubicacion,
+    (actual.clientes || actual.soloCadena) && cadena,
+    !actual.finanzas && categoria,
+    !actual.finanzas && producto,
+  ].filter(Boolean).length
 
   return (
     <>
       <Encabezado
         titulo="Reportes"
-        descripcion="Ventas, rentabilidad e inventario. Todo se puede exportar a Excel o PDF."
+        descripcion="Ventas, rentabilidad, inventario y finanzas. Todo se puede exportar a Excel o PDF."
         acciones={
           <div className="flex gap-2">
             <a href={exportar('xlsx')} download className={CLASE_BOTON_EXPORTAR} aria-disabled={!fechasValidas}>
@@ -184,7 +201,7 @@ export function Reportes() {
                 ))}
               </Selector>
             </Campo>
-            {actual.clientes && (
+            {(actual.clientes || actual.soloCadena) && (
               <>
                 <Campo etiqueta="Cadena">
                   <Selector value={cadena} onChange={(e) => (setCadena(e.target.value), setSucursal(''))}>
@@ -196,32 +213,38 @@ export function Reportes() {
                     ))}
                   </Selector>
                 </Campo>
-                <Campo etiqueta="Sucursal de cliente">
-                  <Selector value={sucursal} disabled={!cadena} onChange={(e) => setSucursal(e.target.value)}>
-                    <option value="">{cadena ? 'Todas' : 'Primero la cadena'}</option>
-                    {sucursalesCadena.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.nombre}
+                {actual.clientes && (
+                  <Campo etiqueta="Sucursal de cliente">
+                    <Selector value={sucursal} disabled={!cadena} onChange={(e) => setSucursal(e.target.value)}>
+                      <option value="">{cadena ? 'Todas' : 'Primero la cadena'}</option>
+                      {sucursalesCadena.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.nombre}
+                        </option>
+                      ))}
+                    </Selector>
+                  </Campo>
+                )}
+              </>
+            )}
+{!actual.finanzas && (
+              <>
+                <Campo etiqueta="Categoría">
+                  <Selector value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                    <option value="">Todas</option>
+                    {categorias.data?.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
                       </option>
                     ))}
                   </Selector>
                 </Campo>
+                <div className="sm:col-span-2">
+                  <span className="mb-1 block text-sm font-medium text-slate-700">Producto</span>
+                  <SelectorProducto valor={producto} onCambio={setProducto} />
+                </div>
               </>
             )}
-            <Campo etiqueta="Categoría">
-              <Selector value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-                <option value="">Todas</option>
-                {categorias.data?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </Selector>
-            </Campo>
-            <div className="sm:col-span-2">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Producto</span>
-              <SelectorProducto valor={producto} onCambio={setProducto} />
-            </div>
           </div>
         )}
         {!fechasValidas && <p className="text-xs text-red-600">Revise las fechas: «desde» debe ser anterior a «hasta».</p>}
@@ -305,7 +328,7 @@ function TablaDeReporte({ tabla }: { tabla: TablaReporte }) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filas.map((f, i) => (
-              <tr key={i}>
+              <tr key={i} className={f.nivel === 'total' ? 'bg-slate-50 font-semibold' : ''}>
                 {tabla.columnas.map((c) => (
                   <td key={c.clave} className={esNumerico(c.tipo) ? 'text-right whitespace-nowrap tabular-nums' : c.tipo === 'fecha' ? 'whitespace-nowrap' : ''}>
                     {c.clave === 'numero' && f.id ? (
