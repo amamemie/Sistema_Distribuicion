@@ -64,6 +64,7 @@ class Serie(BaseModel):
     titulo: str
     tipo: TipoDato
     forma: Literal["linea", "barras"] = "linea"
+    eje: Literal["tiempo", "categoria"] = "tiempo"  # categoría: barras horizontales con nombre
     claves: list[Columna]  # cada serie del gráfico (p. ej. ingreso, costo, ganancia)
     puntos: list[dict[str, Any]]  # {"etiqueta": "...", <clave>: valor}
 

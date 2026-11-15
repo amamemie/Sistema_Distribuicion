@@ -509,6 +509,7 @@ def productos(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
         series=[
             Serie(
                 clave="top_facturacion",
+                eje="categoria",
                 titulo="Top 10 por facturación",
                 tipo="dinero",
                 forma="barras",
@@ -606,6 +607,7 @@ def clientes(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
         series=[
             Serie(
                 clave="top_sucursales",
+                eje="categoria",
                 titulo="Top 10 sucursales por facturación",
                 tipo="dinero",
                 forma="barras",
@@ -727,6 +729,7 @@ def inventario(db: Session, ctx: Contexto, f: Filtros) -> Reporte:
         series.append(
             Serie(
                 clave="valor_ubicacion",
+                eje="categoria",
                 titulo="Valor a costo por ubicación",
                 tipo="dinero",
                 forma="barras",

@@ -23,7 +23,7 @@ import {
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { api } from '../lib/api'
-import { CLAVE_YO, PERMISOS_PEDIDOS, usePuedeAlguno, useYo } from '../lib/sesion'
+import { CLAVE_YO, PERMISOS_PEDIDOS, PERMISOS_REPORTES, usePuedeAlguno, useYo } from '../lib/sesion'
 import { CambiarPassword } from './CambiarPassword'
 import { Boton } from './ui'
 
@@ -56,7 +56,7 @@ const SECCIONES: { titulo?: string; enlaces: Enlace[] }[] = [
       { a: '/clientes', texto: 'Clientes', icono: Store, permiso: 'catalogo.ver' },
     ],
   },
-  { titulo: 'Análisis', enlaces: [{ a: '/reportes', texto: 'Reportes', icono: ChartLine, proximamente: true }] },
+  { titulo: 'Análisis', enlaces: [{ a: '/reportes', texto: 'Reportes', icono: ChartLine, permiso: PERMISOS_REPORTES }] },
   {
     titulo: 'Administración',
     enlaces: [

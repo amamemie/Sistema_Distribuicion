@@ -7,7 +7,7 @@ import { RequierePermiso, RequiereSesion } from './components/Guardias'
 import { Layout } from './components/Layout'
 import './index.css'
 import { ErrorApi } from './lib/api'
-import { CLAVE_YO, PERMISOS_PEDIDOS } from './lib/sesion'
+import { CLAVE_YO, PERMISOS_PEDIDOS, PERMISOS_REPORTES } from './lib/sesion'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
 
@@ -51,6 +51,7 @@ const NuevoPedido = perezosa(() => import('./pages/pedidos/Pedidos'), 'NuevoPedi
 const DetallePedido = perezosa(() => import('./pages/pedidos/DetallePedido'), 'DetallePedido')
 const Conteos = perezosa(() => import('./pages/inventario/Conteos'), 'Conteos')
 const DetalleConteo = perezosa(() => import('./pages/inventario/Conteos'), 'DetalleConteo')
+const Reportes = perezosa(() => import('./pages/reportes/Reportes'), 'Reportes')
 
 /** Si cualquier petición responde 401, la sesión expiró: se vuelve al login. */
 function alExpirarSesion(error: unknown) {
@@ -105,6 +106,7 @@ const router = createBrowserRouter([
       { path: 'productos', element: conPermiso('catalogo.ver', <Productos />) },
       { path: 'proveedores', element: conPermiso('catalogo.ver', <Proveedores />) },
       { path: 'clientes', element: conPermiso('catalogo.ver', <Clientes />) },
+      { path: 'reportes', element: conPermiso(PERMISOS_REPORTES, <Reportes />) },
       { path: 'usuarios', element: conPermiso('usuarios.ver', <Usuarios />) },
       { path: 'roles', element: conPermiso('roles.ver', <Roles />) },
       { path: 'ubicaciones', element: conPermiso('ubicaciones.gestionar', <Ubicaciones />) },
