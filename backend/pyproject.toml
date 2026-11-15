@@ -15,6 +15,10 @@ dependencies = [
     "argon2-cffi>=23.1",
     "celery[redis]>=5.4",
     "python-multipart>=0.0.20",
+    "rapidocr>=3.10",
+    "onnxruntime>=1.20",
+    "opencv-python-headless>=4.10",
+    "pdfplumber>=0.11",
 ]
 
 [dependency-groups]

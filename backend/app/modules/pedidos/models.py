@@ -111,6 +111,8 @@ class Pedido(ConId, ConFechas, DeEmpresa, Base):
     entrega_observacion: Mapped[str | None] = mapped_column(String(500))
     constancia_foto_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("archivo.id"))
     constancia_firma_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("archivo.id"))
+    # Confianza de la lectura automática por campo de cabecera (0-1).
+    confianza: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
     ubicacion: Mapped[Ubicacion] = relationship(lazy="joined")
     cadena: Mapped[Cadena | None] = relationship(lazy="joined")
@@ -173,6 +175,7 @@ class PedidoLinea(ConId, Base):
     costo_total: Mapped[Decimal | None] = mapped_column(DINERO)
     ingreso: Mapped[Decimal | None] = mapped_column(DINERO)
     ganancia: Mapped[Decimal | None] = mapped_column(DINERO)
+    confianza: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # lectura automática
 
     producto: Mapped[Producto | None] = relationship(lazy="joined")
     lotes: Mapped[list["PedidoLineaLote"]] = relationship(
@@ -253,3 +256,37 @@ class Equivalencia(ConId, DeEmpresa, Base):
     ultimo_uso: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     producto: Mapped[Producto] = relationship(lazy="joined")
+
+
+class EstadoLectura(StrEnum):
+    PENDIENTE = "PENDIENTE"
+    PROCESANDO = "PROCESANDO"
+    COMPLETADA = "COMPLETADA"
+    FALLIDA = "FALLIDA"
+
+
+class Lectura(ConId, DeEmpresa, Base):
+    """Intento de lectura automática de la OC. Guarda el texto crudo del OCR, el resultado
+    interpretado y, al confirmar, lo que el usuario corrigió (dataset para medir precisión)."""
+
+    __tablename__ = "lectura_oc"
+
+    pedido_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("pedido.id"), index=True)
+    estado: Mapped[EstadoLectura] = mapped_column(
+        _enum(EstadoLectura, "estado_lectura"), default=EstadoLectura.PENDIENTE
+    )
+    reemplazar: Mapped[bool] = mapped_column(default=False)  # sobrescribe lo ya cargado
+    motor: Mapped[str | None] = mapped_column(String(40))
+    plantilla: Mapped[str | None] = mapped_column(String(40))
+    palabras: Mapped[list[Any] | None] = mapped_column(JSONB)  # texto crudo con posiciones
+    resultado: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    confianza: Mapped[Decimal | None] = mapped_column(PORCENTAJE)
+    aritmetica_ok: Mapped[bool | None]
+    aplicada: Mapped[bool] = mapped_column(default=False)
+    error: Mapped[str | None] = mapped_column(String(500))
+    duracion_ms: Mapped[int | None]
+    correcciones: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    precision: Mapped[Decimal | None] = mapped_column(PORCENTAJE)  # % de campos sin corregir
+    solicitado_por_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("usuario.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    terminada_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

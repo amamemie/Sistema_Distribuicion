@@ -56,6 +56,9 @@ services:
 
   worker:
     <<: *backend
+    # Lee las OC (OCR local): necesita los archivos subidos.
+    volumes:
+      - archivos:/datos/archivos
     command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
 
   web:

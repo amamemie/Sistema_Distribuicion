@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.modules.catalogo.schemas import ProductoSalida
 from app.modules.inventario.models import EstadoAjuste
-from app.modules.pedidos.models import EstadoPedido
+from app.modules.pedidos.models import EstadoLectura, EstadoPedido
 
 
 class Referencia(BaseModel):
@@ -129,6 +129,7 @@ class PedidoLineaSalida(BaseModel):
     ingreso: Decimal | None = None
     ganancia: Decimal | None = None
     margen: Decimal | None = None
+    confianza: dict[str, float] | None = None  # lectura automática, por campo (0-1)
 
 
 class EventoSalida(BaseModel):
@@ -157,6 +158,29 @@ class DevolucionSalida(BaseModel):
     motivo: str
     usuario_nombre: str
     lineas: list[DevolucionLineaSalida]
+
+
+class LecturaSalida(BaseModel):
+    id: uuid.UUID
+    estado: EstadoLectura
+    plantilla: str | None
+    motor: str | None
+    confianza: Decimal | None
+    aritmetica_ok: bool | None
+    aplicada: bool
+    error: str | None
+    duracion_ms: int | None
+    precision: Decimal | None
+    created_at: datetime
+    terminada_at: datetime | None
+
+
+class PrecisionLectura(BaseModel):
+    plantilla: str
+    lecturas: int
+    confirmadas: int
+    precision_promedio: Decimal | None
+    confianza_promedio: Decimal | None
 
 
 class PedidoResumen(BaseModel):
@@ -198,6 +222,8 @@ class PedidoDetalle(PedidoResumen):
     entregado_at: datetime | None
     ingreso: Decimal | None = None
     costo: Decimal | None = None
+    confianza: dict[str, Any] | None = None
+    lectura: LecturaSalida | None = None
 
 
 class Sugerencia(BaseModel):

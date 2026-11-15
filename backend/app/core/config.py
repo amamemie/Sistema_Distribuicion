@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     # Archivos subidos (OC, constancias de entrega). En Docker es un volumen respaldado.
     archivos_dir: str = "/datos/archivos"
     archivo_max_mb: int = 15
+    # Lectura automática de OC (local, sin costo). Se puede apagar si el equipo es muy lento.
+    lectura_automatica: bool = True
 
     log_nivel: str = "INFO"
 

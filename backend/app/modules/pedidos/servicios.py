@@ -49,12 +49,14 @@ from app.modules.inventario.models import (
 from app.modules.inventario.schemas import AjusteEntrada, AjusteLineaEntrada
 from app.modules.organizacion import servicios as ubicaciones
 from app.modules.organizacion.models import TipoUbicacion, Ubicacion
-from app.modules.pedidos import dominio
+from app.modules.pedidos import dominio, lectura
 from app.modules.pedidos.models import (
     Devolucion,
     DevolucionLinea,
     Equivalencia,
+    EstadoLectura,
     EstadoPedido,
+    Lectura,
     Pedido,
     PedidoDocumento,
     PedidoEvento,
@@ -70,12 +72,14 @@ from app.modules.pedidos.schemas import (
     DevolucionSalida,
     DocumentoSalida,
     EventoSalida,
+    LecturaSalida,
     LoteSalida,
     PedidoBorradorEntrada,
     PedidoCrear,
     PedidoDetalle,
     PedidoLineaSalida,
     PedidoResumen,
+    PrecisionLectura,
     Referencia,
     Sugerencia,
     Validacion,
@@ -245,7 +249,29 @@ def agregar_documentos(
         entidad_id=pedido.id,
         despues={"archivos": nombres},
     )
+    nueva = (
+        lectura.solicitar(db, ctx, pedido, reemplazar=False)
+        if lectura.debe_leer_al_subir(db, pedido)
+        else None
+    )
     db.commit()
+    if nueva:
+        lectura.encolar(nueva.id)
+    db.refresh(pedido)
+    return pedido
+
+
+def leer(db: Session, ctx: Contexto, pedido_id: uuid.UUID) -> Pedido:
+    """Vuelve a leer la OC automáticamente; reemplaza lo cargado en el borrador."""
+    pedido = _bloqueado(db, ctx, pedido_id)
+    _exigir_estado(pedido, EstadoPedido.BORRADOR)
+    if not _documentos_activos(pedido):
+        raise ReglaNegocio("Adjunte primero la OC (foto o PDF).")
+    nueva = lectura.solicitar(db, ctx, pedido, reemplazar=True)
+    _evento(db, ctx, pedido, "LECTURA_SOLICITADA")
+    db.commit()
+    if nueva:
+        lectura.encolar(nueva.id)
     db.refresh(pedido)
     return pedido
 
@@ -361,9 +387,19 @@ def guardar_borrador(
                 f"Línea {orden}: no se puede confirmar más de lo que pide la OC "
                 f"({dominio_inv.formatear_cantidad(linea.cantidad_oc)})."
             )
+        previa = pedido.lineas[orden - 1] if orden - 1 < len(pedido.lineas) else None
         nuevas.append(
             PedidoLinea(
                 orden=orden,
+                # La confianza de la lectura se conserva mientras la línea no cambie.
+                confianza=(
+                    previa.confianza
+                    if previa
+                    and previa.confianza
+                    and (previa.cantidad_oc, previa.precio_oc, previa.total_linea_oc)
+                    == (linea.cantidad_oc, linea.precio_oc, linea.total_linea_oc)
+                    else None
+                ),
                 codigo_cliente=(linea.codigo_cliente or "").strip() or None,
                 descripcion_cliente=linea.descripcion_cliente.strip(),
                 producto_id=linea.producto_id,
@@ -605,6 +641,7 @@ def confirmar(db: Session, ctx: Contexto, pedido_id: uuid.UUID) -> Pedido:
     pedido.confirmado_por_id = ctx.usuario.id
     pedido.confirmado_at = ahora()
     aprendidas = _aprender_equivalencias(db, ctx, pedido)
+    lectura.registrar_correcciones(db, pedido)
     _evento(db, ctx, pedido, "CONFIRMADO", {"lineas": len(por_producto)})
     auditoria.registrar_ctx(
         db,
@@ -1268,6 +1305,7 @@ def detalle(db: Session, ctx: Contexto, p: Pedido) -> PedidoDetalle:
                 ingreso=x.ingreso,
                 ganancia=x.ganancia if ver_costos else None,
                 margen=margen,
+                confianza=x.confianza,
             )
         )
 
@@ -1330,7 +1368,37 @@ def detalle(db: Session, ctx: Contexto, p: Pedido) -> PedidoDetalle:
         entregado_at=p.entregado_at,
         ingreso=p.ingreso,
         costo=p.costo if ver_costos else None,
+        confianza=p.confianza,
+        lectura=LecturaSalida.model_validate(ultima, from_attributes=True)
+        if (ultima := lectura.ultima(db, p.id))
+        else None,
     )
+
+
+def precision_lectura(db: Session, ctx: Contexto) -> list[PrecisionLectura]:
+    """Precisión de la lectura automática por formato (lo que no hubo que corregir)."""
+    filas = db.execute(
+        select(
+            Lectura.plantilla,
+            func.count(),
+            func.count(Lectura.precision),
+            func.avg(Lectura.precision),
+            func.avg(Lectura.confianza),
+        )
+        .where(Lectura.empresa_id == ctx.empresa_id, Lectura.estado == EstadoLectura.COMPLETADA)
+        .group_by(Lectura.plantilla)
+        .order_by(Lectura.plantilla)
+    )
+    return [
+        PrecisionLectura(
+            plantilla=plantilla or "—",
+            lecturas=n,
+            confirmadas=confirmadas,
+            precision_promedio=round(precision, 2) if precision is not None else None,
+            confianza_promedio=round(confianza, 2) if confianza is not None else None,
+        )
+        for plantilla, n, confirmadas, precision, confianza in filas
+    ]
 
 
 def reservado_por_pedidos(

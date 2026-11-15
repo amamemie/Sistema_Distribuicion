@@ -20,6 +20,7 @@ from app.modules.pedidos.schemas import (
     PedidoCrear,
     PedidoDetalle,
     PedidoResumen,
+    PrecisionLectura,
     Sugerencia,
 )
 
@@ -86,6 +87,13 @@ def emparejar(
     )
 
 
+@router.get("/lectura/precision", response_model=list[PrecisionLectura])
+def precision_lectura(
+    ctx: Contexto = Depends(VER), db: Session = Depends(get_db)
+) -> list[PrecisionLectura]:
+    return servicios.precision_lectura(db, ctx)
+
+
 @router.get("/{pedido_id}", response_model=PedidoDetalle)
 def obtener(
     pedido_id: uuid.UUID, ctx: Contexto = Depends(VER), db: Session = Depends(get_db)
@@ -140,6 +148,14 @@ def descargar_archivo(
         content_disposition_type="inline",
         headers={"Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff"},
     )
+
+
+@router.post("/{pedido_id}/leer", response_model=PedidoDetalle)
+def leer(
+    pedido_id: uuid.UUID, ctx: Contexto = Depends(ESCANEAR), db: Session = Depends(get_db)
+) -> PedidoDetalle:
+    """Vuelve a leer la OC automáticamente (reemplaza lo cargado en el borrador)."""
+    return servicios.detalle(db, ctx, servicios.leer(db, ctx, pedido_id))
 
 
 @router.post("/{pedido_id}/confirmar", response_model=PedidoDetalle)
