@@ -32,7 +32,7 @@ export function Boton({
     <button
       type="button"
       className={cx(
-        'inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium',
+        'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium',
         'transition-colors focus-visible:outline-2 focus-visible:outline-offset-2',
         'focus-visible:outline-marca-600 disabled:cursor-not-allowed',
         VARIANTES[variante],
@@ -44,7 +44,7 @@ export function Boton({
 }
 
 const CLASE_CAMPO =
-  'block w-full min-h-10 rounded-md border border-slate-300 bg-white px-3 text-sm ' +
+  'block w-full min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 ' +
   'focus:border-marca-600 focus:ring-2 focus:ring-marca-100 focus:outline-none ' +
   'disabled:bg-slate-100 aria-invalid:border-red-500'
 
@@ -120,7 +120,7 @@ export function Insignia({
 
 export function Tarjeta({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cx('rounded-lg border border-slate-200 bg-white shadow-sm', className)}>
+    <div className={cx('rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5', className)}>
       {children}
     </div>
   )
@@ -180,7 +180,7 @@ export function Modal({
     <dialog
       ref={ref}
       onClose={onCerrar}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-lg bg-white p-0 shadow-xl"
+      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-xl bg-white p-0 text-slate-900 shadow-xl"
     >
       {abierto && (
         <div>
@@ -248,7 +248,7 @@ export function Paginador({
 }
 
 export function Vacio({ children }: { children: ReactNode }) {
-  return <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">{children}</div>
+  return <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">{children}</div>
 }
 
 export const CABECERA_TABLA = 'border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500'

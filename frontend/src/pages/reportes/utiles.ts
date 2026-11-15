@@ -76,4 +76,5 @@ export const esNumerico = (tipo: TipoDato) => tipo !== 'texto' && tipo !== 'fech
  * Colores de las series en orden fijo (paleta validada: separables con daltonismo en pares
  * contiguos). Los de poco contraste siempre van con leyenda, valor visible o la tabla.
  */
-export const COLORES_SERIE = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948']
+/** Colores de las series: variables CSS con valores validados para claro y oscuro (index.css). */
+export const COLORES_SERIE = Array.from({ length: 8 }, (_, i) => `var(--serie-${i + 1})`)

@@ -11,12 +11,15 @@ import {
   LogOut,
   MapPin,
   Menu,
+  Monitor,
+  Moon,
   Package,
   PackageCheck,
   ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
   Store,
+  Sun,
   Truck,
   Users,
   Wallet,
@@ -25,10 +28,22 @@ import {
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { api } from '../lib/api'
+import { siguienteTema, useTema, type Tema } from '../lib/tema'
 import { CLAVE_YO, PERMISOS_PEDIDOS, PERMISOS_REPORTES, PERMISOS_REPOSICION, usePuedeAlguno, useYo } from '../lib/sesion'
 import { Campana } from './Campana'
 import { CambiarPassword } from './CambiarPassword'
 import { Boton } from './ui'
+
+const TEMAS: Record<Tema, { icono: LucideIcon; texto: string }> = {
+  claro: { icono: Sun, texto: 'Tema claro' },
+  oscuro: { icono: Moon, texto: 'Tema oscuro' },
+  sistema: { icono: Monitor, texto: 'Tema del sistema' },
+}
+
+/** Iniciales para el avatar del usuario. */
+function iniciales(nombre?: string, apellido?: string): string {
+  return `${nombre?.[0] ?? ''}${apellido?.[0] ?? ''}`.toUpperCase() || '?'
+}
 
 interface Enlace {
   a: string
@@ -83,6 +98,8 @@ export function Layout() {
   const puede = usePuedeAlguno()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [cambiandoClave, setCambiandoClave] = useState(false)
+  const [tema, setTema] = useTema()
+  const IconoTema = TEMAS[tema].icono
   const queryClient = useQueryClient()
   const navegar = useNavigate()
 
@@ -122,8 +139,10 @@ export function Layout() {
             end={e.a === '/'}
             onClick={() => setMenuAbierto(false)}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
-                isActive ? 'bg-marca-50 text-marca-800' : 'text-slate-700 hover:bg-slate-100'
+              `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-marca-50 text-marca-800 before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-marca-600'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
               }`
             }
           >
@@ -144,9 +163,12 @@ export function Layout() {
         className={`fixed inset-y-0 left-0 z-30 flex w-64 transform flex-col border-r border-slate-200 bg-white
           transition-transform lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 ${menuAbierto ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="flex h-16 items-center gap-2 border-b border-slate-200 px-5">
-          <img src="/icono.svg" alt="" className="size-8" />
-          <span className="font-semibold">Inventario</span>
+        <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
+          <img src="/icono.svg" alt="" className="size-9 rounded-lg shadow-sm" />
+          <div className="leading-tight">
+            <div className="font-semibold tracking-tight">Inventario</div>
+            <div className="text-xs text-slate-500">Distribuidora</div>
+          </div>
         </div>
         {navegacion}
       </aside>
@@ -168,13 +190,30 @@ export function Layout() {
           >
             <Menu size={20} />
           </Boton>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <Boton
+              variante="fantasma"
+              className="px-2"
+              onClick={() => setTema(siguienteTema(tema))}
+              aria-label={`${TEMAS[tema].texto}. Cambiar a ${TEMAS[siguienteTema(tema)].texto.toLowerCase()}`}
+              title={`${TEMAS[tema].texto} (tocar para cambiar)`}
+            >
+              <IconoTema size={18} />
+            </Boton>
             <Campana />
-            <div className="hidden text-right sm:block">
-              <div className="text-sm font-medium">
-                {yo?.nombre} {yo?.apellido}
+            <div className="ml-1 hidden items-center gap-2 sm:flex">
+              <span
+                aria-hidden
+                className="inline-flex size-9 items-center justify-center rounded-full bg-marca-100 text-sm font-semibold text-marca-800"
+              >
+                {iniciales(yo?.nombre, yo?.apellido)}
+              </span>
+              <div className="text-left leading-tight">
+                <div className="text-sm font-medium">
+                  {yo?.nombre} {yo?.apellido}
+                </div>
+                <div className="text-xs text-slate-500">{yo?.roles.map((r) => r.nombre).join(', ')}</div>
               </div>
-              <div className="text-xs text-slate-500">{yo?.roles.map((r) => r.nombre).join(', ')}</div>
             </div>
             <Boton
               variante="fantasma"

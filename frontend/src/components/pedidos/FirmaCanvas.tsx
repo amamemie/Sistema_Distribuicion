@@ -46,7 +46,8 @@ export function FirmaCanvas({ onCambio }: { onCambio: (firma: Blob | null) => vo
       <canvas
         ref={lienzo}
         aria-label="Recuadro de firma"
-        className="h-36 w-full touch-none rounded-md border border-dashed border-slate-400 bg-white"
+        className="h-36 w-full touch-none rounded-md border border-dashed border-slate-400"
+        style={{ background: '#ffffff' }} // la firma se dibuja en tinta oscura: fondo blanco también en modo oscuro
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
           const ctx = e.currentTarget.getContext('2d')

@@ -103,7 +103,7 @@ function PorTiempo({ serie }: { serie: SerieReporte }) {
         >
           {marcas.map((v) => (
             <g key={v}>
-              <line x1={MARGEN.izquierda} x2={ancho - MARGEN.derecha} y1={y(v)} y2={y(v)} stroke={v === 0 ? '#94a3b8' : '#e2e8f0'} strokeWidth={1} />
+              <line x1={MARGEN.izquierda} x2={ancho - MARGEN.derecha} y1={y(v)} y2={y(v)} stroke={v === 0 ? 'var(--color-slate-400)' : 'var(--color-slate-200)'} strokeWidth={1} />
               <text x={MARGEN.izquierda - 8} y={y(v)} dy="0.32em" textAnchor="end" className="fill-slate-500 text-[11px] tabular-nums">
                 {formatoCorto(v, serie.tipo)}
               </text>
@@ -116,7 +116,7 @@ function PorTiempo({ serie }: { serie: SerieReporte }) {
               </text>
             ) : null,
           )}
-          {activo !== null && <rect x={MARGEN.izquierda + banda * activo} y={MARGEN.arriba} width={banda} height={plotH} fill="#f1f5f9" />}
+          {activo !== null && <rect x={MARGEN.izquierda + banda * activo} y={MARGEN.arriba} width={banda} height={plotH} fill="var(--color-slate-100)" />}
           {lineas
             ? serie.claves.map((c, k) => {
                 const color = COLORES_SERIE[k % COLORES_SERIE.length]
@@ -131,7 +131,7 @@ function PorTiempo({ serie }: { serie: SerieReporte }) {
                   <g key={c.clave}>
                     <path d={`M${d}`} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
                     {activo !== null && num(serie.puntos[activo][c.clave]) !== null && (
-                      <circle cx={cx(activo)} cy={y(num(serie.puntos[activo][c.clave]) ?? 0)} r={4.5} fill={color} stroke="#fff" strokeWidth={2} />
+                      <circle cx={cx(activo)} cy={y(num(serie.puntos[activo][c.clave]) ?? 0)} r={4.5} fill={color} stroke="var(--superficie)" strokeWidth={2} />
                     )}
                   </g>
                 )

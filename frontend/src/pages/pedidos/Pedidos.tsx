@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CloudOff, FileUp, PencilLine, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { useCallback, useState, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { SelectorArchivos } from '../../components/pedidos/SelectorArchivos'
 import { Aviso, Boton, CABECERA_TABLA, Campo, Encabezado, Entrada, Insignia, Paginador, Selector, Tabla, Tarjeta, Vacio } from '../../components/ui'
 import { api, ErrorApi, mensajeError } from '../../lib/api'
@@ -31,7 +31,11 @@ export function Pedidos() {
   const puede = usePuede()
   const queryClient = useQueryClient()
   const cadenas = useCadenas()
-  const [estado, setEstado] = useState<EstadoPedido | ''>('')
+  const [params] = useSearchParams()
+  const [estado, setEstado] = useState<EstadoPedido | ''>(() => {
+    const inicial = params.get('estado') as EstadoPedido | null
+    return inicial && ESTADOS.includes(inicial) ? inicial : ''
+  })
   const [cadena, setCadena] = useState('')
   const [buscar, setBuscar] = useState('')
   const [pagina, setPagina] = useState(1)

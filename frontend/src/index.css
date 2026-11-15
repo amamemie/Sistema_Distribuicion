@@ -1,18 +1,143 @@
 @import 'tailwindcss';
 
+/* El modo oscuro se activa con la clase `dark` en <html> (ver lib/tema.ts). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --color-marca-50: #eff6ff;
   --color-marca-100: #dbeafe;
+  --color-marca-200: #bfdbfe;
+  --color-marca-500: #3b82f6;
   --color-marca-600: #2563eb;
   --color-marca-700: #1d4ed8;
   --color-marca-800: #1e40af;
+  --color-marca-900: #1e3a8a;
+}
+
+/* Tokens propios: superficie de tarjetas y colores de las series de los gráficos (paleta validada
+   para daltonismo en claro y en oscuro). */
+:root {
+  --superficie: #ffffff;
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --serie-4: #eda100;
+  --serie-5: #e87ba4;
+  --serie-6: #008300;
+  --serie-7: #6250d6;
+  --serie-8: #e34948;
+}
+
+/*
+ * Modo oscuro. Las pantallas usan las clases de Tailwind de siempre (bg-white, text-slate-600,
+ * bg-red-50…); aquí se reasignan esas variables de color para fondo oscuro, así toda la app
+ * cambia sin repetir `dark:` en cada componente. La escala slate se invierte; en los colores de
+ * estado los tonos claros (fondos) pasan a oscuros y los oscuros (texto) a claros.
+ */
+.dark {
+  color-scheme: dark;
+  --superficie: #111a2b;
+
+  --color-slate-50: #0b1220;
+  --color-slate-100: #1a2436;
+  --color-slate-200: #273247;
+  --color-slate-300: #36435a;
+  --color-slate-400: #6b7a93;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #a7b4c7;
+  --color-slate-700: #c3cddb;
+  --color-slate-800: #dbe2ec;
+  --color-slate-900: #eef2f7;
+  --color-slate-950: #f8fafc;
+
+  --color-marca-50: #13233f;
+  --color-marca-100: #182d52;
+  --color-marca-200: #213d6e;
+  --color-marca-700: #93c5fd;
+  --color-marca-800: #bfdbfe;
+  --color-marca-900: #dbeafe;
+
+  --color-red-50: #2a1517;
+  --color-red-100: #3b1a1e;
+  --color-red-200: #5c2328;
+  --color-red-300: #7f2d33;
+  --color-red-600: #f87171;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-red-900: #fee2e2;
+
+  --color-amber-50: #2a1f0c;
+  --color-amber-100: #3a2a0f;
+  --color-amber-200: #5a4113;
+  --color-amber-300: #7a5816;
+  --color-amber-700: #fbbf24;
+  --color-amber-800: #fcd34d;
+  --color-amber-900: #fde68a;
+
+  --color-emerald-50: #0f2a20;
+  --color-emerald-100: #123527;
+  --color-emerald-200: #1a4a37;
+  --color-emerald-600: #34d399;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --serie-3: #199e70;
+  --serie-4: #c98500;
+  --serie-5: #d55181;
+  --serie-6: #0ca30c;
+  --serie-7: #9085e9;
+  --serie-8: #e66767;
+}
+
+/* Reglas fuera de capas: ganan a las utilidades de Tailwind. Superficies blancas → superficie
+   oscura; botones de color conservan su tono (con texto blanco) aunque su variable cambió. */
+.dark .bg-white {
+  background-color: var(--superficie);
+}
+.dark .bg-white\/90,
+.dark .bg-white\/95 {
+  background-color: color-mix(in oklab, var(--superficie) 92%, transparent);
+}
+.dark .bg-slate-900\/40 {
+  background-color: rgb(0 0 0 / 0.55);
+}
+.dark .bg-marca-700,
+.dark .bg-marca-800 {
+  background-color: #2563eb;
+}
+.dark .hover\:bg-marca-800:hover {
+  background-color: #1d4ed8;
+}
+.dark .disabled\:bg-marca-700\/60:disabled {
+  background-color: rgb(37 99 235 / 0.5);
+}
+.dark .bg-red-600 {
+  background-color: #dc2626;
+}
+.dark .bg-red-700,
+.dark .hover\:bg-red-700:hover {
+  background-color: #b91c1c;
+}
+.dark .accent-marca-700,
+.dark .accent-marca-600 {
+  accent-color: #3b82f6;
+}
+.dark .shadow-sm,
+.dark .shadow-xl {
+  --tw-shadow-color: rgb(0 0 0 / 0.5);
 }
 
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
+  transition: background-color 0.2s ease;
 }
 
 dialog::backdrop {
   background: rgb(15 23 42 / 0.45);
+}
+.dark dialog::backdrop {
+  background: rgb(0 0 0 / 0.6);
 }
