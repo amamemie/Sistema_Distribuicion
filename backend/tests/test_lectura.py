@@ -187,7 +187,7 @@ RECEPCION = [
         (525, ":"),
         (530, "22/10/2026"),
     ],
-    [(36, "No."), (53, "O/C."), (80, ":"), (85, "11409941"), (506, "T/C"), (529, "11.68")],
+    [(36, "No."), (53, "O/C."), (80, ":"), (85, "90000123"), (506, "T/C"), (529, "11.68")],
     [(36, "U/N"), (78, ":"), (84, "42"), (96, "U.N."), (118, "EL"), (133, "PRADO")],
     [
         (38, "Cod."),
@@ -252,7 +252,7 @@ def test_plantilla_nota_de_recepcion_hipermaxi() -> None:
     oc = interpretar(_hoja(RECEPCION))
     assert oc.plantilla == "hipermaxi_recepcion"
     assert (oc.numero_oc, oc.numero_documento, oc.fecha_oc) == (
-        "11409941",
+        "90000123",
         "8345686",
         date(2026, 10, 22),
     )
@@ -510,7 +510,7 @@ def test_nota_de_recepcion_completa_el_borrador(
     db.expire_all()
     pedido = pedidos.obtener(db, esc.ctx, pedido.id)
     assert (pedido.cadena_id, pedido.sucursal_cliente_id) == (esc.cadena.id, prado.id)
-    assert (pedido.numero_oc, pedido.fecha_oc, pedido.total_oc) == ("11409941", hoy(), D("2600"))
+    assert (pedido.numero_oc, pedido.fecha_oc, pedido.total_oc) == ("90000123", hoy(), D("2600"))
     assert pedido.observaciones == "Nota de recepción N.º 8345686 · Entregar temprano"
     assert [x.producto_id for x in pedido.lineas] == [None, guante.id]
     assert pedido.lineas[1].codigo_cliente == "660378"
