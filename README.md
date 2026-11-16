@@ -46,6 +46,7 @@ transferencias de ejemplo, y estos usuarios (contraseña `Demo-12345`):
 El sistema se publica en una máquina Oracle Cloud Always Free con HTTPS:
 `scripts/desplegar.sh ubuntu@IP` instala o actualiza. Guía paso a paso en
 [docs/despliegue-oracle.md](docs/despliegue-oracle.md).
+En una PC de oficina con Windows: [docs/instalacion-oficina-windows.md](docs/instalacion-oficina-windows.md).
 
 ## Pasar el sistema a otra computadora
 
