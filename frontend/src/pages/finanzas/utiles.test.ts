@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { agruparPorMes, aTextoBs, cuadra, nombreMes, primerDiaMes, sumarBs, ultimoDiaMes } from './utiles'
+import { agruparPorMes, aTextoBs, cuadra, nombreMes, primerDiaMes, repartir, sumarBs, ultimoDiaMes } from './utiles'
 
 describe('utiles de finanzas', () => {
   it('nombra y delimita los meses', () => {
@@ -23,5 +23,13 @@ describe('utiles de finanzas', () => {
     expect(cuadra(['150.10', '80.20'], '230.3')).toBe(true)
     expect(cuadra(['150', '80'], '229.99')).toBe(false)
     expect(aTextoBs(230.3)).toBe('230.30')
+  })
+})
+
+describe('repartir', () => {
+  it('cubre del más antiguo al más reciente', () => {
+    expect(repartir('120', ['100', '50', '70'])).toEqual([100, 20, 0])
+    expect(repartir('220.10', ['100', '50', '70.10'])).toEqual([100, 50, 70.1])
+    expect(repartir('0', ['10'])).toEqual([0])
   })
 })

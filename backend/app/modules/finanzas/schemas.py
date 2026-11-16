@@ -53,6 +53,13 @@ class CierreSaldoEntrada(BaseModel):
     motivo: str = Field(min_length=3, max_length=300)
 
 
+class AjusteSaldoEntrada(BaseModel):
+    """Rebaja lo que debe una cadena sin transferencia (error reconocido que no se va a pagar)."""
+
+    monto: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
+    motivo: str = Field(min_length=3, max_length=300)
+
+
 # ================================================================ cobros
 
 
@@ -71,7 +78,9 @@ class CobroEntrada(BaseModel):
     banco: str | None = Field(default=None, max_length=80)
     referencia: str | None = Field(default=None, max_length=60)
     observaciones: str | None = Field(default=None, max_length=500)
-    detalles: list[CobroDetalleEntrada] = Field(min_length=1, max_length=500)
+    # Sin detalles (lo normal, T-31): el monto se aplica al total que debe la cadena, del pedido
+    # más antiguo al más reciente. Con detalles: reparto manual pedido por pedido.
+    detalles: list[CobroDetalleEntrada] = Field(default_factory=list, max_length=500)
 
 
 class AnulacionEntrada(BaseModel):

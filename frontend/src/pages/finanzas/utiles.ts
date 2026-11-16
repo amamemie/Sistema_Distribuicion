@@ -49,3 +49,14 @@ export function aTextoBs(valor: number): string {
 export function cuadra(aplicado: (string | number)[], monto: string | number): boolean {
   return aplicado.reduce<number>((s, v) => s + centavos(v), 0) === centavos(monto)
 }
+
+/** Reparte un pago del más antiguo al más reciente (igual que el servidor, T-31).
+ * Devuelve cuánto se aplica a cada deuda, en el mismo orden. */
+export function repartir(monto: string | number, saldos: (string | number)[]): number[] {
+  let resto = centavos(monto)
+  return saldos.map((saldo) => {
+    const aplicado = Math.max(0, Math.min(centavos(saldo), resto))
+    resto -= aplicado
+    return aplicado / 100
+  })
+}

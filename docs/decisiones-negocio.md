@@ -96,6 +96,7 @@ Si una regla de aquí contradice la especificación, **manda este documento**.
 | T-28 | Impuestos | **IVA 13 %** sobre lo facturado en el mes (la venta se reconoce al entregar), menos el **13 % de las compras y gastos con factura** del mes. Si el crédito es mayor, el sobrante pasa al mes siguiente (sin actualización por UFV). **IT 3 %** sobre lo facturado (sin compensar con el IUE). Es una referencia para el contador. | Porcentajes en Parámetros. |
 | T-29 | Estado de resultados | Resultado de gestión con montos que incluyen IVA: ventas − costo de lo vendido − gastos − IVA − IT. El IVA se calcula **sobre lo vendido** (ventas menos el costo comprado con factura y los gastos con factura), para que una compra grande no infle la ganancia del mes en que se compra. | `finanzas/reportes.py`. |
 | T-30 | Compras | Por defecto **al contado y con factura**: se consideran pagadas el día de la compra. A crédito exigen fecha de vencimiento y se marcan como pagadas en Finanzas → Por pagar (avisa 3 días antes). | En el formulario de compra. |
+| T-31 | Cobro por el total | Pedido del dueño: se cobra contra **el total que debe cada empresa**, no pedido por pedido. La transferencia se aplica sola **de la entrega más antigua a la más reciente**; no puede superar lo que debe. Lo que no se va a pagar se **rebaja con motivo** («Rebajar saldo»), también de lo más antiguo; se puede anular. Por pagar sí se muestra compra por compra, con el total por proveedor. | `repartir()` en `finanzas/dominio.py`. |
 
 ## Pendientes de validar
 

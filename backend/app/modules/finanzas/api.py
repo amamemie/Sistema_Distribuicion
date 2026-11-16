@@ -13,6 +13,7 @@ from app.modules.documentos import servicios as documentos
 from app.modules.finanzas import parametros, servicios
 from app.modules.finanzas.parametros import ParametrosFinanzas
 from app.modules.finanzas.schemas import (
+    AjusteSaldoEntrada,
     AnulacionEntrada,
     CategoriaGastoEntrada,
     CategoriaGastoSalida,
@@ -63,6 +64,21 @@ def cerrar_saldo(
     db: Session = Depends(get_db),
 ) -> CobroDetalleCompleto:
     return servicios.cobro_detalle(db, servicios.cerrar_saldo(db, ctx, pedido_id, datos.motivo))
+
+
+@router.post(
+    "/por-cobrar/cadenas/{cadena_id}/ajustar",
+    response_model=CobroDetalleCompleto,
+    status_code=status.HTTP_201_CREATED,
+)
+def ajustar_saldo(
+    cadena_id: uuid.UUID,
+    datos: AjusteSaldoEntrada,
+    ctx: Contexto = Depends(COBROS),
+    db: Session = Depends(get_db),
+) -> CobroDetalleCompleto:
+    cobro = servicios.ajustar_saldo(db, ctx, cadena_id, datos.monto, datos.motivo)
+    return servicios.cobro_detalle(db, cobro)
 
 
 @router.get("/cobros", response_model=Pagina[CobroResumen])

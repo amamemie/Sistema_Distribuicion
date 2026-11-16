@@ -13,7 +13,7 @@ from app.modules.alertas import reglas
 from app.modules.compras import servicios as compras
 from app.modules.compras.models import Compra, CondicionPago
 from app.modules.compras.schemas import CompraEntrada, CompraLineaEntrada
-from app.modules.finanzas import cuentas, impuestos, parametros, servicios
+from app.modules.finanzas import cuentas, dominio, impuestos, parametros, servicios
 from app.modules.finanzas import reportes as rep
 from app.modules.finanzas.cuentas import EstadoCuenta
 from app.modules.finanzas.models import EstadoRegistro
@@ -489,3 +489,49 @@ def test_api_finanzas_y_permisos(
         f"/api/finanzas/cobros/{cobro['id']}/anular", json={"motivo": "Prueba de anulación"}
     )
     assert r.json()["estado"] == EstadoRegistro.ANULADO
+
+
+# ---------------------------------------------------------------- cobro por el total (T-31)
+
+
+def test_repartir_del_mas_antiguo_al_mas_reciente() -> None:
+    saldos = [("oct", D("100")), ("pagado", D("0")), ("nov", D("50")), ("dic", D("70"))]
+    assert dominio.repartir(D("120"), saldos) == [("oct", D("100")), ("nov", D("20"))]
+    assert dominio.repartir(D("220"), saldos) == [
+        ("oct", D("100")),
+        ("nov", D("50")),
+        ("dic", D("70")),
+    ]
+    assert dominio.repartir(D("0"), saldos) == []
+
+
+def test_cobro_por_el_total_de_la_cadena_y_ajuste(
+    db: Session, entregas: tuple[Escenario, Pedido, Pedido]
+) -> None:
+    esc, p1, p2 = entregas  # Bs 150 (más antiguo) y Bs 80: Hipermaxi debe Bs 230
+    cobro = servicios.registrar_cobro(db, esc.ctx, _cobro(esc, "200"))  # sin elegir pedidos
+    assert [(d.pedido_id, d.monto) for d in cobro.detalles] == [
+        (p1.id, D("150.00")),
+        (p2.id, D("50.00")),
+    ]
+    assert _cuenta(db, esc, p1).estado == EstadoCuenta.SALDADA
+    assert _cuenta(db, esc, p2).saldo == D("30.00")
+    assert servicios.por_cobrar(db, esc.ctx, cadena_id=None, todas=False).cadenas[0].pendiente == D(
+        "30.00"
+    )
+
+    with pytest.raises(ReglaNegocio, match="mayor a lo que debe Hipermaxi"):
+        servicios.registrar_cobro(db, esc.ctx, _cobro(esc, "30.01"))
+
+    # Los Bs 30 que faltan no se van a pagar (error en la factura): se rebajan con motivo.
+    with pytest.raises(ReglaNegocio, match="no se puede rebajar"):
+        servicios.ajustar_saldo(db, esc.ctx, esc.cadena.id, D("31"), "Error en la factura")
+    ajuste = servicios.ajustar_saldo(db, esc.ctx, esc.cadena.id, D("30"), "Error en la factura")
+    assert ajuste.monto == 0 and ajuste.detalles[0].diferencia == D("30.00")
+    assert servicios.por_cobrar(db, esc.ctx, cadena_id=None, todas=False).total_pendiente == 0
+    with pytest.raises(ReglaNegocio, match="no tiene saldo pendiente"):
+        servicios.registrar_cobro(db, esc.ctx, _cobro(esc, "1"))
+
+    # Anular el ajuste devuelve la deuda.
+    servicios.anular_cobro(db, esc.ctx, ajuste.id, "Al final sí lo pagan")
+    assert _cuenta(db, esc, p2).saldo == D("30.00")

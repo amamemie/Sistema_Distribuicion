@@ -35,8 +35,9 @@ import type {
   PaginaGastos,
   ParametrosFinanzas,
   PorCobrar,
+  ResumenCadena,
 } from '../../lib/tipos'
-import { agruparPorMes, nombreMes, primerDiaMes, ultimoDiaMes, urlComprobante } from './utiles'
+import { nombreMes, primerDiaMes, ultimoDiaMes, urlComprobante } from './utiles'
 
 const PESTANAS = [
   { clave: 'por-cobrar', titulo: 'Por cobrar' },
@@ -121,167 +122,149 @@ export function InsigniaCuenta({ cuenta }: { cuenta: CuentaPorCobrar }) {
 
 // ================================================================ por cobrar
 
+/** Lo que debe cada empresa (cadena), en total (T-31). El detalle por pedido es secundario. */
 function SeccionPorCobrar() {
   const puede = usePuede()
-  const queryClient = useQueryClient()
-  const [cadena, setCadena] = useState('')
-  const [todas, setTodas] = useState(false)
-  const [cerrando, setCerrando] = useState<CuentaPorCobrar | null>(null)
-  const [motivo, setMotivo] = useState('')
-  const cadenas = useCadenas()
+  const [abierta, setAbierta] = useState<string | null>(null)
+  const [rebajando, setRebajando] = useState<ResumenCadena | null>(null)
   const datos = useQuery({
-    queryKey: ['por-cobrar', cadena, todas],
-    queryFn: () => api<PorCobrar>('/finanzas/por-cobrar', { params: { cadena_id: cadena, todas } }),
+    queryKey: ['por-cobrar', '', false],
+    queryFn: () => api<PorCobrar>('/finanzas/por-cobrar'),
     placeholderData: keepPreviousData,
   })
-  const cerrar = useMutation({
-    mutationFn: () => api(`/finanzas/por-cobrar/${cerrando!.pedido_id}/cerrar`, { metodo: 'POST', cuerpo: { motivo } }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['por-cobrar'] })
-      void queryClient.invalidateQueries({ queryKey: ['cobros'] })
-      setCerrando(null)
-      setMotivo('')
-    },
-  })
   const d = datos.data
+  const cadenas = d?.cadenas.filter((c) => Number(c.pendiente) > 0 || Number(c.a_favor) > 0) ?? []
 
   return (
     <div className="space-y-5">
       {datos.isError && <Aviso>{mensajeError(datos.error)}</Aviso>}
       {d && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          <Cifra titulo="Por cobrar" valor={formatearBs(d.total_pendiente)} />
+          <Cifra titulo="Total por cobrar" valor={formatearBs(d.total_pendiente)} />
           <Cifra titulo="Vencido" valor={formatearBs(d.total_vencido)} tono={Number(d.total_vencido) > 0 ? 'rojo' : undefined} />
           <Cifra titulo="Cobrado este mes" valor={formatearBs(d.cobrado_mes)} />
         </div>
       )}
-      {d && d.cadenas.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-slate-800">Por cadena</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {d.cadenas.map((c) => (
-              <Tarjeta key={c.cadena.id} className="space-y-1 p-4 text-sm">
-                <p className="font-semibold">{c.cadena.nombre}</p>
-                <p>
-                  Debe <strong className="tabular-nums">{formatearBs(c.pendiente)}</strong> · {c.pedidos_pendientes} pedido(s)
-                </p>
-                {Number(c.vencido) > 0 && (
-                  <p className="flex items-center gap-1 text-red-700">
-                    <AlertTriangle size={14} aria-hidden /> Vencido {formatearBs(c.vencido)}
+      {d && cadenas.length === 0 && <Vacio>Ninguna empresa le debe. Todo cobrado.</Vacio>}
+      <div className="grid gap-3 lg:grid-cols-2">
+        {cadenas.map((c) => {
+          const detalle = d?.cuentas.filter((x) => x.cadena.id === c.cadena.id) ?? []
+          const verDetalle = abierta === c.cadena.id
+          return (
+            <Tarjeta key={c.cadena.id} className="space-y-3 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">{c.cadena.nombre}</h2>
+                  <p className="text-sm text-slate-500">Le debe</p>
+                  <p className="text-3xl font-semibold tracking-tight tabular-nums">{formatearBs(c.pendiente)}</p>
+                </div>
+                {puede('finanzas.cobros') && Number(c.pendiente) > 0 && (
+                  <Link to={`/finanzas/cobros/nuevo?cadena=${c.cadena.id}`}>
+                    <Boton>
+                      <Banknote size={16} /> Registrar cobro
+                    </Boton>
+                  </Link>
+                )}
+              </div>
+              <div className="space-y-1 text-sm">
+                {Number(c.vencido) > 0 ? (
+                  <p className="flex items-center gap-1 font-medium text-red-700">
+                    <AlertTriangle size={14} aria-hidden /> Vencido: {formatearBs(c.vencido)}
+                  </p>
+                ) : (
+                  Number(c.pendiente) > 0 && <p className="text-emerald-700">Nada vencido</p>
+                )}
+                {c.mas_antiguo && (
+                  <p className="text-slate-500">
+                    {c.pedidos_pendientes} entrega(s) sin cobrar desde el {formatearDia(c.mas_antiguo)}
                   </p>
                 )}
-                {c.mas_antiguo && <p className="text-xs text-slate-500">Entrega más antigua sin cobrar: {formatearDia(c.mas_antiguo)}</p>}
-                {Number(c.a_favor) > 0 && <p className="text-xs text-slate-600">Saldo a favor de la cadena: {formatearBs(c.a_favor)}</p>}
-              </Tarjeta>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-full sm:w-64">
-          <Campo etiqueta="Cadena">
-            <Selector value={cadena} onChange={(e) => setCadena(e.target.value)}>
-              <option value="">Todas</option>
-              {cadenas.data?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </Selector>
-          </Campo>
-        </div>
-        <Casilla etiqueta="Ver también los cobrados" checked={todas} onChange={(e) => setTodas(e.target.checked)} />
+                {Number(c.a_favor) > 0 && <p className="text-slate-600">Saldo a favor de {c.cadena.nombre}: {formatearBs(c.a_favor)}</p>}
+              </div>
+              <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                <Boton variante="fantasma" className="min-h-8 text-xs" onClick={() => setAbierta(verDetalle ? null : c.cadena.id)} aria-expanded={verDetalle}>
+                  {verDetalle ? 'Ocultar pedidos' : 'Ver de qué pedidos es'}
+                </Boton>
+                {puede('finanzas.cobros') && Number(c.pendiente) > 0 && (
+                  <Boton variante="fantasma" className="min-h-8 text-xs" onClick={() => setRebajando(c)}>
+                    Rebajar saldo
+                  </Boton>
+                )}
+              </div>
+              {verDetalle && (
+                <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 text-sm">
+                  {detalle.map((x) => (
+                    <li key={x.pedido_id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
+                      <div className="min-w-0 flex-1">
+                        <Link to={`/pedidos/${x.pedido_id}`} className="font-medium text-marca-800 hover:underline">
+                          #{x.numero}
+                        </Link>
+                        <span className="text-slate-500">
+                          {' '}
+                          · {x.sucursal ?? x.cadena.nombre}
+                          {x.numero_oc && ` · O/C ${x.numero_oc}`}
+                        </span>
+                        <div className="text-xs text-slate-500">
+                          Entregado {formatearDia(x.fecha)} · vence {formatearDia(x.vencimiento)}
+                        </div>
+                      </div>
+                      <span className="tabular-nums">{formatearBs(x.saldo)}</span>
+                      <InsigniaCuenta cuenta={x} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Tarjeta>
+          )
+        })}
       </div>
-
-      {d && d.cuentas.length === 0 && <Vacio>{todas ? 'No hay pedidos entregados.' : 'No hay nada pendiente de cobro. Todo al día.'}</Vacio>}
-      {d &&
-        agruparPorMes(d.cuentas, (c) => c.fecha).map(([mes, cuentas]) => (
-          <section key={mes} className="space-y-2">
-            <h3 className="flex flex-wrap justify-between gap-2 text-sm font-semibold text-slate-800">
-              <span>Entregas de {nombreMes(mes)}</span>
-              <span className="tabular-nums">Saldo {formatearBs(cuentas.reduce((s, c) => s + Number(c.saldo), 0))}</span>
-            </h3>
-            <Tabla>
-              <thead className={CABECERA_TABLA}>
-                <tr>
-                  <th>Pedido</th>
-                  <th className="hidden md:table-cell">Cliente</th>
-                  <th className="hidden sm:table-cell">Entregado</th>
-                  <th className="hidden text-right sm:table-cell">Monto</th>
-                  <th className="text-right">Saldo</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {cuentas.map((c) => (
-                  <tr key={c.pedido_id}>
-                    <td>
-                      <Link to={`/pedidos/${c.pedido_id}`} className="font-medium text-marca-800 hover:underline">
-                        #{c.numero}
-                      </Link>
-                      <div className="text-xs text-slate-500">
-                        {c.numero_oc ? `O/C ${c.numero_oc}` : 'Sin O/C'}
-                        <span className="md:hidden"> · {c.sucursal ?? c.cadena.nombre}</span>
-                      </div>
-                    </td>
-                    <td className="hidden md:table-cell">
-                      {c.cadena.nombre}
-                      {c.sucursal && <div className="text-xs text-slate-500">{c.sucursal}</div>}
-                    </td>
-                    <td className="hidden whitespace-nowrap sm:table-cell">
-                      {formatearDia(c.fecha)}
-                      <div className="text-xs text-slate-500">vence {formatearDia(c.vencimiento)}</div>
-                    </td>
-                    <td className="hidden text-right whitespace-nowrap tabular-nums sm:table-cell">{formatearBs(c.monto)}</td>
-                    <td className="text-right whitespace-nowrap tabular-nums">
-                      <strong>{formatearBs(c.saldo)}</strong>
-                      {Number(c.diferencia) > 0 && <div className="text-xs text-slate-500">dif. {formatearBs(c.diferencia)}</div>}
-                    </td>
-                    <td>
-                      <div className="flex flex-col items-start gap-1">
-                        <InsigniaCuenta cuenta={c} />
-                        {c.estado === 'PARCIAL' && puede('finanzas.cobros') && (
-                          <button type="button" className="text-xs text-marca-700 hover:underline" onClick={() => setCerrando(c)}>
-                            Cerrar saldo
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Tabla>
-          </section>
-        ))}
-
-      <Modal abierto={!!cerrando} titulo={`Cerrar saldo del pedido #${cerrando?.numero ?? ''}`} onCerrar={() => setCerrando(null)}>
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault()
-            cerrar.mutate()
-          }}
-        >
-          <p className="text-sm text-slate-600">
-            Faltan {formatearBs(cerrando?.saldo)} y el supermercado no los va a pagar (por ejemplo, un error reconocido en la factura). El
-            pedido quedará como cobrado con esa diferencia. Se puede deshacer anulando el cierre en «Cobros».
-          </p>
-          {cerrar.isError && <Aviso>{mensajeError(cerrar.error)}</Aviso>}
-          <Campo etiqueta="Motivo">
-            <Entrada required minLength={3} maxLength={300} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
-          </Campo>
-          <div className="flex justify-end gap-2">
-            <Boton variante="secundario" onClick={() => setCerrando(null)}>
-              Cancelar
-            </Boton>
-            <Boton type="submit" disabled={cerrar.isPending}>
-              Cerrar saldo
-            </Boton>
-          </div>
-        </form>
-      </Modal>
+      {rebajando && <RebajarSaldo cadena={rebajando} onCerrar={() => setRebajando(null)} />}
     </div>
+  )
+}
+
+function RebajarSaldo({ cadena, onCerrar }: { cadena: ResumenCadena; onCerrar: () => void }) {
+  const queryClient = useQueryClient()
+  const [monto, setMonto] = useState('')
+  const [motivo, setMotivo] = useState('')
+  const rebajar = useMutation({
+    mutationFn: () => api(`/finanzas/por-cobrar/cadenas/${cadena.cadena.id}/ajustar`, { metodo: 'POST', cuerpo: { monto, motivo } }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['por-cobrar'] })
+      void queryClient.invalidateQueries({ queryKey: ['cobros'] })
+      onCerrar()
+    },
+  })
+  return (
+    <Modal abierto titulo={`Rebajar lo que debe ${cadena.cadena.nombre}`} onCerrar={onCerrar}>
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          rebajar.mutate()
+        }}
+      >
+        <p className="text-sm text-slate-600">
+          Para lo que la empresa no va a pagar (por ejemplo, un error reconocido en la factura). Hoy debe {formatearBs(cadena.pendiente)}. Queda registrado y se puede
+          deshacer anulándolo en «Cobros».
+        </p>
+        {rebajar.isError && <Aviso>{mensajeError(rebajar.error)}</Aviso>}
+        <Campo etiqueta="Monto a rebajar (Bs)">
+          <Entrada required inputMode="decimal" value={monto} onChange={(e) => setMonto(e.target.value.replace(',', '.'))} />
+        </Campo>
+        <Campo etiqueta="Motivo">
+          <Entrada required minLength={3} maxLength={300} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+        </Campo>
+        <div className="flex justify-end gap-2">
+          <Boton variante="secundario" onClick={onCerrar}>
+            Cancelar
+          </Boton>
+          <Boton type="submit" disabled={rebajar.isPending}>
+            Rebajar saldo
+          </Boton>
+        </div>
+      </form>
+    </Modal>
   )
 }
 
@@ -874,6 +857,22 @@ function SeccionPorPagar() {
       </p>
       {deudas.isError && <Aviso>{mensajeError(deudas.error)}</Aviso>}
       {deudas.data?.length === 0 && <Vacio>No hay compras a crédito pendientes de pago.</Vacio>}
+      {!!deudas.data?.length && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Object.values(
+            deudas.data.reduce<Record<string, { nombre: string; total: number; compras: number }>>((acc, d) => {
+              const x = (acc[d.proveedor.id] ??= { nombre: d.proveedor.nombre, total: 0, compras: 0 })
+              x.total += Number(d.total)
+              x.compras += 1
+              return acc
+            }, {}),
+          ).map((x) => (
+            <Cifra key={x.nombre} titulo={`Se le debe a ${x.nombre}`} valor={formatearBs(x.total)}>
+              <p className="mt-1 text-xs text-slate-500">{x.compras} compra(s) a crédito</p>
+            </Cifra>
+          ))}
+        </div>
+      )}
       {!!deudas.data?.length && (
         <Tabla>
           <thead className={CABECERA_TABLA}>

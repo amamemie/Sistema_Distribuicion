@@ -17,7 +17,7 @@ from app.modules.clientes.models import Cadena
 from app.modules.compras.models import Compra, CondicionPago, EstadoCompra
 from app.modules.documentos import servicios as documentos
 from app.modules.documentos.models import Archivo
-from app.modules.finanzas import cuentas, impuestos, parametros
+from app.modules.finanzas import cuentas, dominio, impuestos, parametros
 from app.modules.finanzas.models import (
     CATEGORIAS_INICIALES,
     CategoriaGasto,
@@ -150,9 +150,6 @@ def registrar_cobro(db: Session, ctx: Contexto, datos: CobroEntrada) -> Cobro:
     cadena = _cadena(db, ctx, datos.cadena_id)
     if datos.fecha > hoy():
         raise ReglaNegocio("La fecha del cobro no puede ser futura.")
-    ids = [d.pedido_id for d in datos.detalles]
-    if len(set(ids)) != len(ids):
-        raise ReglaNegocio("Un pedido aparece dos veces en el cobro.")
     referencia = _texto(datos.referencia)
     if referencia and db.scalar(
         select(Cobro.numero).where(
@@ -166,6 +163,77 @@ def registrar_cobro(db: Session, ctx: Contexto, datos: CobroEntrada) -> Cobro:
             f"Ya se registró una transferencia de {cadena.nombre} con el N.º de operación "
             f"{referencia}."
         )
+    if datos.detalles:
+        detalles = _detalles_manuales(db, ctx, cadena, datos)
+    else:
+        detalles = _detalles_por_total(db, ctx, cadena, datos.monto)
+    aplicado = sum((d.monto for d in detalles), CERO)
+    if aplicado != datos.monto:
+        raise ReglaNegocio(
+            f"Lo aplicado a los pedidos ({_bs(aplicado)}) no coincide con el monto de la "
+            f"transferencia ({_bs(datos.monto)})."
+        )
+    cobro = Cobro(
+        empresa_id=ctx.empresa_id,
+        cadena_id=cadena.id,
+        fecha=datos.fecha,
+        monto=datos.monto,
+        banco=_texto(datos.banco),
+        referencia=referencia,
+        observaciones=_texto(datos.observaciones),
+        usuario_id=ctx.usuario.id,
+        detalles=detalles,
+    )
+    db.add(cobro)
+    db.flush()
+    _auditar_cobro(db, ctx, cobro, cadena, "cobro.registrar")
+    db.commit()
+    db.refresh(cobro)
+    return cobro
+
+
+def _pendientes(db: Session, ctx: Contexto, cadena: Cadena) -> list[cuentas.Cuenta]:
+    """Pedidos de la cadena con saldo, del más antiguo al más reciente, ya bloqueados."""
+    p = parametros.leer(db, ctx.empresa_id)
+    ids = [
+        c.pedido_id
+        for c in cuentas.cuentas(db, ctx.empresa_id, p.dias_credito, cadena_id=cadena.id)
+        if c.saldo > 0
+    ]
+    if not ids:
+        raise ReglaNegocio(f"{cadena.nombre} no tiene saldo pendiente de cobro.")
+    _bloquear_pedidos(db, ctx, ids)
+    # Se vuelve a leer después del bloqueo: otro cobro pudo terminar mientras tanto.
+    lista = cuentas.cuentas(db, ctx.empresa_id, p.dias_credito, pedido_ids=ids)
+    return sorted((c for c in lista if c.saldo > 0), key=lambda c: (c.fecha, c.numero))
+
+
+def _detalles_por_total(
+    db: Session, ctx: Contexto, cadena: Cadena, monto: Decimal
+) -> list[CobroDetalle]:
+    """El pago se aplica al total que debe la cadena, del pedido más antiguo al más reciente."""
+    pendientes = _pendientes(db, ctx, cadena)
+    total = sum((c.saldo for c in pendientes), CERO)
+    if monto > total:
+        raise ReglaNegocio(
+            f"La transferencia ({_bs(monto)}) es mayor a lo que debe {cadena.nombre} "
+            f"({_bs(total)}). Revise el monto."
+        )
+    return [
+        CobroDetalle(pedido_id=pid, orden=orden, monto=aplicado, diferencia=CERO)
+        for orden, (pid, aplicado) in enumerate(
+            dominio.repartir(monto, [(c.pedido_id, c.saldo) for c in pendientes]), start=1
+        )
+    ]
+
+
+def _detalles_manuales(
+    db: Session, ctx: Contexto, cadena: Cadena, datos: CobroEntrada
+) -> list[CobroDetalle]:
+    """Reparto indicado pedido por pedido (con diferencias cerradas con motivo, D-28)."""
+    ids = [d.pedido_id for d in datos.detalles]
+    if len(set(ids)) != len(ids):
+        raise ReglaNegocio("Un pedido aparece dos veces en el cobro.")
     _bloquear_pedidos(db, ctx, ids)
     p = parametros.leer(db, ctx.empresa_id)
     por_pedido = {
@@ -210,26 +278,44 @@ def registrar_cobro(db: Session, ctx: Contexto, datos: CobroEntrada) -> Cobro:
                 motivo_diferencia=motivo if diferencia > 0 else None,
             )
         )
-    aplicado = sum((d.monto for d in detalles), CERO)
-    if aplicado != datos.monto:
-        raise ReglaNegocio(
-            f"Lo aplicado a los pedidos ({_bs(aplicado)}) no coincide con el monto de la "
-            f"transferencia ({_bs(datos.monto)})."
-        )
+    return detalles
+
+
+def ajustar_saldo(
+    db: Session, ctx: Contexto, cadena_id: uuid.UUID, monto: Decimal, motivo: str
+) -> Cobro:
+    """Rebaja lo que debe una cadena sin transferencia (p. ej. un error de la factura que no
+    van a pagar, D-28). Se aplica del pedido más antiguo al más reciente como diferencia
+    cerrada; queda como un cobro de Bs 0 que se puede anular."""
+    cadena = _cadena(db, ctx, cadena_id)
+    pendientes = _pendientes(db, ctx, cadena)
+    total = sum((c.saldo for c in pendientes), CERO)
+    if monto > total:
+        raise ReglaNegocio(f"{cadena.nombre} debe {_bs(total)}: no se puede rebajar {_bs(monto)}.")
+    motivo = motivo.strip()
     cobro = Cobro(
         empresa_id=ctx.empresa_id,
         cadena_id=cadena.id,
-        fecha=datos.fecha,
-        monto=datos.monto,
-        banco=_texto(datos.banco),
-        referencia=referencia,
-        observaciones=_texto(datos.observaciones),
+        fecha=hoy(),
+        monto=CERO,
+        observaciones=f"Ajuste de saldo: {motivo}"[:500],
         usuario_id=ctx.usuario.id,
-        detalles=detalles,
+        detalles=[
+            CobroDetalle(
+                pedido_id=pid,
+                orden=orden,
+                monto=CERO,
+                diferencia=aplicado,
+                motivo_diferencia=motivo,
+            )
+            for orden, (pid, aplicado) in enumerate(
+                dominio.repartir(monto, [(c.pedido_id, c.saldo) for c in pendientes]), start=1
+            )
+        ],
     )
     db.add(cobro)
     db.flush()
-    _auditar_cobro(db, ctx, cobro, cadena, "cobro.registrar")
+    _auditar_cobro(db, ctx, cobro, cadena, "cobro.ajustar_saldo")
     db.commit()
     db.refresh(cobro)
     return cobro
