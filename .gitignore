@@ -21,3 +21,6 @@ dev-dist/
 *.swp
 .idea/
 .vscode/
+
+# Paquetes de migración (contienen .env y datos)
+migracion_*.tar.gz

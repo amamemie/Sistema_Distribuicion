@@ -47,6 +47,14 @@ El sistema se publica en una máquina Oracle Cloud Always Free con HTTPS:
 `scripts/desplegar.sh ubuntu@IP` instala o actualiza. Guía paso a paso en
 [docs/despliegue-oracle.md](docs/despliegue-oracle.md).
 
+## Pasar el sistema a otra computadora
+
+1. En la computadora actual: `scripts/migrar-exportar.sh` → crea `migracion_FECHA.tar.gz`
+   (respaldo de la base, archivos subidos y `.env`). **Contiene claves y datos:** cópielo por USB.
+2. En la nueva (Linux con Docker y Git): `git clone` del repositorio, copiar el paquete y
+   ejecutar `scripts/migrar-importar.sh migracion_FECHA.tar.gz`.
+3. Apagar el sistema en la computadora anterior (`docker compose stop`) para no tener dos copias.
+
 ## Desarrollo
 
 ```bash
