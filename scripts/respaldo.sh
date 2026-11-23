@@ -10,6 +10,8 @@
 # IMPORTANTE: copie periódicamente la carpeta respaldos/ fuera de este equipo
 # (disco externo o nube). Un respaldo en el mismo disco no protege contra su falla.
 set -euo pipefail
+# En Git Bash (Windows) evita que rutas del contenedor como /datos se conviertan a C:/...
+export MSYS_NO_PATHCONV=1
 
 cd "$(dirname "$0")/.."
 

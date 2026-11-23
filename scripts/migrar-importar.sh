@@ -5,6 +5,8 @@
 #
 #   scripts/migrar-importar.sh /ruta/migracion_AAAAMMDD_HHMMSS.tar.gz
 set -euo pipefail
+# En Git Bash (Windows) evita que rutas del contenedor como /datos se conviertan a C:/...
+export MSYS_NO_PATHCONV=1
 cd "$(dirname "$0")/.."
 
 paquete="${1:?Uso: scripts/migrar-importar.sh migracion_....tar.gz}"
