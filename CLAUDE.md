@@ -43,8 +43,14 @@ Antes de dar una tarea por terminada: formato, lint, tipos y pruebas en verde, e
 
 ## Reglas del código
 
-- **Idioma:** dominio, interfaz, mensajes de error y commits en español. Los identificadores van
+- **Idioma:** dominio, mensajes de error del backend y commits en español. Los identificadores van
   sin tildes ni ñ (`anio`, `ubicacion`). Términos técnicos del framework en inglés.
+- **Interfaz bilingüe (español/inglés):** todo texto visible del frontend pasa por `t()` de
+  `react-i18next`, con el texto en español como clave (`t('Nuevo pedido')`); la traducción va en
+  `frontend/src/i18n/en.json` (una prueba verifica que conserve las variables `{{x}}`). Fechas y
+  montos con `lib/formato.ts`, que sigue el idioma. Ver `docs/idiomas.md`.
+- **Diseño:** `docs/DESIGN.md` es la fuente de verdad visual. Usar los tokens (`bg-superficie`,
+  `text-tinta`, `bg-acento`…) y los componentes de `components/ui.tsx`; nada de colores sueltos.
 - **Terminología:** Depósito / Sucursal (de la empresa) = `Ubicacion.tipo`; Cadena y
   SucursalCliente (del supermercado). Nunca uses "sucursal" a secas para el cliente.
 - **Módulos** en `backend/app/modules/<modulo>/` con `models.py`, `schemas.py`, `servicios.py` y
