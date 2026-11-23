@@ -16,8 +16,8 @@ export default defineConfig({
         short_name: 'Inventario',
         description: 'Inventario, pedidos y rentabilidad',
         lang: 'es',
-        theme_color: '#1d4ed8',
-        background_color: '#f8fafc',
+        theme_color: '#0f766e',
+        background_color: '#f6f7f9',
         display: 'standalone',
         start_url: '/',
         icons: [{ src: '/icono.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
@@ -29,7 +29,8 @@ export default defineConfig({
     }),
   ],
   server: {
-    proxy: { '/api': 'http://localhost:8000' },
+    // API_PROXY permite apuntar a otra instancia (p. ej. una copia de prueba en :8091).
+    proxy: { '/api': process.env.API_PROXY ?? 'http://localhost:8000' },
   },
   test: {
     environment: 'node',

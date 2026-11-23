@@ -1,24 +1,104 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/inter';
 
-/* El modo oscuro se activa con la clase `dark` en <html> (ver lib/tema.ts). */
+/* Sistema visual: docs/DESIGN.md. El tema oscuro se activa con la clase `dark` en <html>
+   (src/lib/tema.ts). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --color-marca-50: #eff6ff;
-  --color-marca-100: #dbeafe;
-  --color-marca-200: #bfdbfe;
-  --color-marca-500: #3b82f6;
-  --color-marca-600: #2563eb;
-  --color-marca-700: #1d4ed8;
-  --color-marca-800: #1e40af;
-  --color-marca-900: #1e3a8a;
+/* Tokens semánticos como utilidades de Tailwind (bg-superficie, text-tinta, bg-acento…).
+   `inline` hace que la utilidad lea la variable en tiempo de ejecución: cambian con el tema. */
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-lienzo: var(--t-lienzo);
+  --color-superficie: var(--t-superficie);
+  --color-superficie-2: var(--t-superficie-2);
+  --color-superficie-3: var(--t-superficie-3);
+  --color-linea: var(--t-linea);
+  --color-linea-fuerte: var(--t-linea-fuerte);
+  --color-tinta: var(--t-tinta);
+  --color-tinta-2: var(--t-tinta-2);
+  --color-tinta-3: var(--t-tinta-3);
+  --color-acento: var(--t-acento);
+  --color-acento-hover: var(--t-acento-hover);
+  --color-sobre-acento: var(--t-sobre-acento);
+  --color-acento-suave: var(--t-acento-suave);
+  --color-exito: var(--t-exito);
+  --color-exito-suave: var(--t-exito-suave);
+  --color-aviso: var(--t-aviso);
+  --color-aviso-suave: var(--t-aviso-suave);
+  --color-peligro: var(--t-peligro);
+  --color-peligro-suave: var(--t-peligro-suave);
+  --color-info: var(--t-info);
+  --color-info-suave: var(--t-info-suave);
+  --ease-salida: cubic-bezier(0.2, 0, 0, 1);
+  --ease-entrada: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Tokens propios: superficie de tarjetas y colores de las series de los gráficos (paleta validada
-   para daltonismo en claro y en oscuro). */
+/* ------------------------------------------------------------------ tema claro */
 :root {
-  --superficie: #ffffff;
+  color-scheme: light;
+  --t-lienzo: #f6f7f9;
+  --t-superficie: #ffffff;
+  --t-superficie-2: #f1f3f6;
+  --t-superficie-3: #e9ecf1;
+  --t-linea: #e3e7ed;
+  --t-linea-fuerte: #8a94a3;
+  --t-tinta: #11161d;
+  --t-tinta-2: #3f4957;
+  --t-tinta-3: #5f6a7a;
+  --t-acento: #0f766e;
+  --t-acento-hover: #115e59;
+  --t-sobre-acento: #ffffff;
+  --t-acento-suave: #e6f4f2;
+  --t-exito: #166534;
+  --t-exito-suave: #e8f5ec;
+  --t-aviso: #854d0e;
+  --t-aviso-suave: #fbf3e1;
+  --t-peligro: #b91c1c;
+  --t-peligro-suave: #fcebeb;
+  --t-info: #1d4ed8;
+  --t-info-suave: #e9effd;
+  --sombra-2: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 12px rgb(15 23 42 / 0.05);
+  --sombra-3: 0 12px 32px rgb(15 23 42 / 0.14);
+
+  /* Las pantallas existentes usan la escala slate/marca de Tailwind: se reasigna a la paleta del
+     sistema para que todas adopten el diseño sin reescribirlas. */
+  --color-slate-50: #f6f7f9;
+  --color-slate-100: #f1f3f6;
+  --color-slate-200: #e3e7ed;
+  --color-slate-300: #cfd5de;
+  --color-slate-400: #8a94a3;
+  --color-slate-500: #5f6a7a;
+  --color-slate-600: #4a5462;
+  --color-slate-700: #3f4957;
+  --color-slate-800: #1f2630;
+  --color-slate-900: #11161d;
+  --color-slate-950: #0a0e13;
+  --color-marca-50: #e6f4f2;
+  --color-marca-100: #cdeae5;
+  --color-marca-200: #9fd6cd;
+  --color-marca-500: #14b8a6;
+  --color-marca-600: #0d9488;
+  --color-marca-700: #0f766e;
+  --color-marca-800: #115e59;
+  --color-marca-900: #134e4a;
+  --color-emerald-50: #e8f5ec;
+  --color-emerald-100: #d6efdf;
+  --color-emerald-600: #15803d;
+  --color-emerald-700: #166534;
+  --color-emerald-800: #166534;
+  --color-amber-50: #fbf3e1;
+  --color-amber-100: #f7e7c2;
+  --color-amber-700: #854d0e;
+  --color-amber-800: #854d0e;
+  --color-amber-900: #713f12;
+  --color-red-50: #fcebeb;
+  --color-red-100: #f9d9d9;
+  --color-red-600: #b91c1c;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+
+  /* Series de los gráficos: paleta validada para daltonismo (claro y oscuro). */
   --serie-1: #2a78d6;
   --serie-2: #eb6834;
   --serie-3: #1baf7a;
@@ -27,60 +107,80 @@
   --serie-6: #008300;
   --serie-7: #6250d6;
   --serie-8: #e34948;
+  --superficie: var(--t-superficie);
+
+  /* Escena del login y del inicio (lib/escena). */
+  --escena-fondo-1: #e9f6f4;
+  --escena-fondo-2: #f3f6f9;
+  --escena-fondo-3: #eef1f6;
+  --escena-caja: #ffffff;
+  --escena-caja-2: #e7ecf2;
+  --escena-caja-3: #d5dde7;
+  --escena-cinta: #0f766e;
+  --escena-ruta: #9ccfc8;
 }
 
-/*
- * Modo oscuro. Las pantallas usan las clases de Tailwind de siempre (bg-white, text-slate-600,
- * bg-red-50…); aquí se reasignan esas variables de color para fondo oscuro, así toda la app
- * cambia sin repetir `dark:` en cada componente. La escala slate se invierte; en los colores de
- * estado los tonos claros (fondos) pasan a oscuros y los oscuros (texto) a claros.
- */
+/* ------------------------------------------------------------------ tema oscuro */
 .dark {
   color-scheme: dark;
-  --superficie: #111a2b;
+  --t-lienzo: #0c1017;
+  --t-superficie: #131922;
+  --t-superficie-2: #1a212c;
+  --t-superficie-3: #212937;
+  --t-linea: #252e3b;
+  --t-linea-fuerte: #5b677a;
+  --t-tinta: #e8ecf2;
+  --t-tinta-2: #b4bfcd;
+  --t-tinta-3: #8592a3;
+  --t-acento: #2dd4bf;
+  --t-acento-hover: #5eead4;
+  --t-sobre-acento: #04201d;
+  --t-acento-suave: #0f2a28;
+  --t-exito: #4ade80;
+  --t-exito-suave: #10291a;
+  --t-aviso: #facc15;
+  --t-aviso-suave: #2b240c;
+  --t-peligro: #f87171;
+  --t-peligro-suave: #2e1517;
+  --t-info: #7aa2ff;
+  --t-info-suave: #141f3a;
+  --sombra-2: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 16px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --sombra-3: 0 16px 40px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.05);
 
-  --color-slate-50: #0b1220;
-  --color-slate-100: #1a2436;
-  --color-slate-200: #273247;
-  --color-slate-300: #36435a;
-  --color-slate-400: #6b7a93;
-  --color-slate-500: #94a3b8;
-  --color-slate-600: #a7b4c7;
-  --color-slate-700: #c3cddb;
-  --color-slate-800: #dbe2ec;
-  --color-slate-900: #eef2f7;
-  --color-slate-950: #f8fafc;
-
-  --color-marca-50: #13233f;
-  --color-marca-100: #182d52;
-  --color-marca-200: #213d6e;
-  --color-marca-700: #93c5fd;
-  --color-marca-800: #bfdbfe;
-  --color-marca-900: #dbeafe;
-
-  --color-red-50: #2a1517;
+  --color-slate-50: #0c1017;
+  --color-slate-100: #1a212c;
+  --color-slate-200: #252e3b;
+  --color-slate-300: #333d4c;
+  --color-slate-400: #5b677a;
+  --color-slate-500: #8592a3;
+  --color-slate-600: #a3aebd;
+  --color-slate-700: #b4bfcd;
+  --color-slate-800: #d3dae3;
+  --color-slate-900: #e8ecf2;
+  --color-slate-950: #f5f7fa;
+  --color-marca-50: #0f2a28;
+  --color-marca-100: #12332f;
+  --color-marca-200: #1a4a44;
+  --color-marca-500: #2dd4bf;
+  --color-marca-600: #2dd4bf;
+  --color-marca-700: #5eead4;
+  --color-marca-800: #99f6e4;
+  --color-marca-900: #ccfbf1;
+  --color-emerald-50: #10291a;
+  --color-emerald-100: #133220;
+  --color-emerald-600: #4ade80;
+  --color-emerald-700: #4ade80;
+  --color-emerald-800: #86efac;
+  --color-amber-50: #2b240c;
+  --color-amber-100: #372d0d;
+  --color-amber-700: #facc15;
+  --color-amber-800: #fde047;
+  --color-amber-900: #fef08a;
+  --color-red-50: #2e1517;
   --color-red-100: #3b1a1e;
-  --color-red-200: #5c2328;
-  --color-red-300: #7f2d33;
   --color-red-600: #f87171;
   --color-red-700: #fca5a5;
   --color-red-800: #fecaca;
-  --color-red-900: #fee2e2;
-
-  --color-amber-50: #2a1f0c;
-  --color-amber-100: #3a2a0f;
-  --color-amber-200: #5a4113;
-  --color-amber-300: #7a5816;
-  --color-amber-700: #fbbf24;
-  --color-amber-800: #fcd34d;
-  --color-amber-900: #fde68a;
-
-  --color-emerald-50: #0f2a20;
-  --color-emerald-100: #123527;
-  --color-emerald-200: #1a4a37;
-  --color-emerald-600: #34d399;
-  --color-emerald-700: #6ee7b7;
-  --color-emerald-800: #a7f3d0;
 
   --serie-1: #3987e5;
   --serie-2: #d95926;
@@ -90,29 +190,27 @@
   --serie-6: #0ca30c;
   --serie-7: #9085e9;
   --serie-8: #e66767;
+
+  --escena-fondo-1: #12312e;
+  --escena-fondo-2: #0f1622;
+  --escena-fondo-3: #0c1017;
+  --escena-caja: #2a3442;
+  --escena-caja-2: #222b37;
+  --escena-caja-3: #1a222d;
+  --escena-cinta: #2dd4bf;
+  --escena-ruta: #1f5f58;
 }
 
-/* Reglas fuera de capas: ganan a las utilidades de Tailwind. Superficies blancas → superficie
-   oscura; botones de color conservan su tono (con texto blanco) aunque su variable cambió. */
+/* Reglas fuera de capas (ganan a las utilidades): superficies blancas y botones de color en oscuro. */
 .dark .bg-white {
-  background-color: var(--superficie);
+  background-color: var(--t-superficie);
 }
 .dark .bg-white\/90,
 .dark .bg-white\/95 {
-  background-color: color-mix(in oklab, var(--superficie) 92%, transparent);
+  background-color: color-mix(in oklab, var(--t-superficie) 90%, transparent);
 }
 .dark .bg-slate-900\/40 {
   background-color: rgb(0 0 0 / 0.55);
-}
-.dark .bg-marca-700,
-.dark .bg-marca-800 {
-  background-color: #2563eb;
-}
-.dark .hover\:bg-marca-800:hover {
-  background-color: #1d4ed8;
-}
-.dark .disabled\:bg-marca-700\/60:disabled {
-  background-color: rgb(37 99 235 / 0.5);
 }
 .dark .bg-red-600 {
   background-color: #dc2626;
@@ -121,23 +219,91 @@
 .dark .hover\:bg-red-700:hover {
   background-color: #b91c1c;
 }
-.dark .accent-marca-700,
-.dark .accent-marca-600 {
-  accent-color: #3b82f6;
-}
-.dark .shadow-sm,
-.dark .shadow-xl {
-  --tw-shadow-color: rgb(0 0 0 / 0.5);
-}
 
+/* ------------------------------------------------------------------ base */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
-  transition: background-color 0.2s ease;
+  @apply bg-lienzo font-sans text-sm text-tinta antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+  transition: background-color 0.2s var(--ease-salida);
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+button,
+a,
+input,
+select,
+textarea,
+label {
+  touch-action: manipulation;
+}
+select {
+  background-color: var(--t-superficie);
+  color: var(--t-tinta);
+}
+:focus-visible {
+  outline: 2px solid var(--t-acento);
+  outline-offset: 2px;
 }
 
+/* Diálogos: entran con escala y profundidad; el fondo se oscurece. */
+dialog {
+  overscroll-behavior: contain;
+}
+dialog[open] {
+  animation: dialogo-entra 0.32s var(--ease-entrada);
+}
 dialog::backdrop {
   background: rgb(15 23 42 / 0.45);
+  backdrop-filter: blur(2px);
+  animation: fondo-entra 0.2s var(--ease-salida);
 }
 .dark dialog::backdrop {
   background: rgb(0 0 0 / 0.6);
+}
+@keyframes dialogo-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+@keyframes menu-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+}
+@keyframes fondo-entra {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Esqueleto de carga. */
+.esqueleto {
+  background: linear-gradient(90deg, var(--t-superficie-2) 25%, var(--t-superficie-3) 50%, var(--t-superficie-2) 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.4s ease-in-out infinite;
+}
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Movimiento reducido: todo queda quieto y visible. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -23,7 +23,7 @@ export function esOscuro(tema: Tema): boolean {
 export function aplicarTema(tema: Tema): void {
   const oscuro = esOscuro(tema)
   document.documentElement.classList.toggle('dark', oscuro)
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', oscuro ? '#0b1220' : '#1d4ed8')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', oscuro ? '#0c1017' : '#f6f7f9')
 }
 
 /** Siguiente tema al tocar el botón: claro → oscuro → sistema → claro. */
