@@ -4,11 +4,15 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
+// `--mode demo`: versión de demostración para GitHub Pages (sin servidor, datos de ejemplo).
+export default defineConfig(({ mode }) => ({
+  base: mode === 'demo' ? '/Sistema_Distribuicion/' : '/',
+  build: mode === 'demo' ? { outDir: 'dist-demo' } : undefined,
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
+      disable: mode === 'demo',
       registerType: 'autoUpdate',
       includeAssets: ['icono.svg'],
       manifest: {
@@ -35,4 +39,4 @@ export default defineConfig({
   test: {
     environment: 'node',
   },
-})
+}))

@@ -49,7 +49,21 @@ interface Opciones {
   params?: Params
 }
 
+/** Demo pública (GitHub Pages): sin servidor, responde con datos de ejemplo de solo lectura. */
+export const MODO_DEMO = import.meta.env.VITE_DEMO === '1'
+
+async function apiDemo<T>(ruta: string, metodo: string, params?: Params): Promise<T> {
+  const { responder, ErrorDemo } = await import('../demo/servidor')
+  try {
+    return (await responder(new URL(construirUrl(ruta, params), location.origin), metodo)) as T
+  } catch (e) {
+    if (e instanceof ErrorDemo) throw new ErrorApi(e.status, 'demo', e.message)
+    throw e
+  }
+}
+
 export async function api<T>(ruta: string, { metodo = 'GET', cuerpo, params }: Opciones = {}) {
+  if (MODO_DEMO) return apiDemo<T>(ruta, metodo, params)
   // Accept-Language: el servidor podrá responder sus mensajes en el idioma del usuario.
   const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': idiomaActual() }
   const esFormulario = cuerpo instanceof FormData

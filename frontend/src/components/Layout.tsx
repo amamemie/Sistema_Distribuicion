@@ -25,7 +25,7 @@ import { domAnimation, LazyMotion, m, MotionConfig } from 'motion/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
-import { api } from '../lib/api'
+import { api, MODO_DEMO } from '../lib/api'
 import { CLAVE_YO, PERMISOS_PEDIDOS, PERMISOS_REPORTES, PERMISOS_REPOSICION, usePuedeAlguno, useYo } from '../lib/sesion'
 import { Campana } from './Campana'
 import { CambiarPassword } from './CambiarPassword'
@@ -196,6 +196,11 @@ export function Layout() {
                 />
               </div>
             </header>
+            {MODO_DEMO && (
+              <div role="note" className="border-b border-aviso/25 bg-aviso-suave px-4 py-2 text-center text-[13px] text-aviso">
+                {t('Demo con datos de ejemplo: puede recorrer todo, pero los cambios no se guardan.')}
+              </div>
+            )}
             <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 p-4 outline-none sm:p-6">
               <m.div
                 key={ubicacion.pathname}

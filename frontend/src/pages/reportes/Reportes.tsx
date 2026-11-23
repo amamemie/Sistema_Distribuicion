@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router'
 import { Grafico } from '../../components/reportes/Grafico'
 import { SelectorProducto } from '../../components/SelectorProducto'
 import { Aviso, Boton, CABECERA_TABLA, Campo, Encabezado, Entrada, Selector, Tabla, Tarjeta } from '../../components/ui'
-import { api, construirUrl, mensajeError } from '../../lib/api'
+import { api, construirUrl, mensajeError, MODO_DEMO } from '../../lib/api'
 import { useCadenas, useCategorias, useUbicaciones } from '../../lib/consultas'
 import { hoyLaPaz } from '../../lib/formato'
 import { PERMISOS_REPORTES_OPERATIVOS, usePuede } from '../../lib/sesion'
@@ -118,10 +118,10 @@ export function Reportes() {
         descripcion={t("Ventas, rentabilidad, inventario y finanzas. Todo se puede exportar a Excel o PDF.")}
         acciones={
           <div className="flex gap-2">
-            <a href={exportar('xlsx')} download className={CLASE_BOTON_EXPORTAR} aria-disabled={!fechasValidas}>
+            <a href={exportar('xlsx')} download className={CLASE_BOTON_EXPORTAR} aria-disabled={!fechasValidas || MODO_DEMO}>
               <FileSpreadsheet size={16} /> Excel
             </a>
-            <a href={exportar('pdf')} download className={CLASE_BOTON_EXPORTAR} aria-disabled={!fechasValidas}>
+            <a href={exportar('pdf')} download className={CLASE_BOTON_EXPORTAR} aria-disabled={!fechasValidas || MODO_DEMO}>
               <FileText size={16} /> PDF
             </a>
           </div>
