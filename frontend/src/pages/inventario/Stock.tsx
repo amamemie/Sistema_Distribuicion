@@ -8,6 +8,7 @@ import { useCategorias, useUbicaciones } from '../../lib/consultas'
 import { formatearBs, formatearCantidad } from '../../lib/formato'
 import { usePuede } from '../../lib/sesion'
 import type { Pagina, StockEnUbicacion, StockProducto } from '../../lib/tipos'
+import { useTranslation } from 'react-i18next'
 
 const TAMANO = 50
 
@@ -17,20 +18,22 @@ function aportaDesglose(desglose: string, unidad: string): boolean {
 }
 
 function Celda({ s, unidad }: { s: StockEnUbicacion; unidad: string }) {
+  const { t } = useTranslation()
   const comprometido = Number(s.comprometido) > 0
   return (
     <div className={s.bajo_minimo ? 'text-red-700' : Number(s.fisico) === 0 ? 'text-slate-400' : ''}>
       <div className="flex items-center gap-1 font-medium">
-        {s.bajo_minimo && <AlertTriangle size={14} aria-label="Bajo el mínimo" />}
+        {s.bajo_minimo && <AlertTriangle size={14} aria-label={t("Bajo el mínimo")} />}
         {formatearCantidad(s.disponible)} <span className="text-xs font-normal text-slate-500">{unidad}</span>
       </div>
       {Number(s.fisico) > 0 && aportaDesglose(s.desglose, unidad) && <div className="text-xs text-slate-500">{s.desglose}</div>}
-      {comprometido && <div className="text-xs text-amber-700">{formatearCantidad(s.comprometido)} reservado</div>}
+      {comprometido && <div className="text-xs text-amber-700">{formatearCantidad(s.comprometido)} {t("reservado")}</div>}
     </div>
   )
 }
 
 export function Stock() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const verCostos = puede('costos.ver')
   const ubicaciones = useUbicaciones()
@@ -57,14 +60,14 @@ export function Stock() {
 
   return (
     <>
-      <Encabezado titulo="Stock" descripcion="Cantidad disponible por ubicación (físico menos lo reservado para pedidos)." />
+      <Encabezado titulo={t("Stock")} descripcion={t("Cantidad disponible por ubicación (físico menos lo reservado para pedidos).")} />
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_12rem_12rem_auto] lg:items-end">
-        <Campo etiqueta="Buscar">
-          <Entrada value={buscar} placeholder="Producto o SKU" onChange={(e) => filtrar(setBuscar)(e.target.value)} />
+        <Campo etiqueta={t("Buscar")}>
+          <Entrada value={buscar} placeholder={t("Producto o SKU")} onChange={(e) => filtrar(setBuscar)(e.target.value)} />
         </Campo>
-        <Campo etiqueta="Ubicación">
+        <Campo etiqueta={t("Ubicación")}>
           <Selector value={ubicacion} onChange={(e) => filtrar(setUbicacion)(e.target.value)}>
-            <option value="">Todas</option>
+            <option value="">{t("Todas")}</option>
             {ubicaciones.data?.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.nombre}
@@ -72,9 +75,9 @@ export function Stock() {
             ))}
           </Selector>
         </Campo>
-        <Campo etiqueta="Categoría">
+        <Campo etiqueta={t("Categoría")}>
           <Selector value={categoria} onChange={(e) => filtrar(setCategoria)(e.target.value)}>
-            <option value="">Todas</option>
+            <option value="">{t("Todas")}</option>
             {categorias.data?.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.nombre}
@@ -82,10 +85,10 @@ export function Stock() {
             ))}
           </Selector>
         </Campo>
-        <Casilla etiqueta="Solo con stock" checked={soloConStock} onChange={(e) => filtrar(setSoloConStock)(e.target.checked)} />
+        <Casilla etiqueta={t("Solo con stock")} checked={soloConStock} onChange={(e) => filtrar(setSoloConStock)(e.target.checked)} />
       </div>
       {stock.isError && <Aviso>{mensajeError(stock.error)}</Aviso>}
-      {stock.data?.items.length === 0 && <Vacio>No hay productos para estos filtros.</Vacio>}
+      {stock.data?.items.length === 0 && <Vacio>{t("No hay productos para estos filtros.")}</Vacio>}
 
       {/* Escritorio: tabla con una columna por ubicación */}
       {!!stock.data?.items.length && (
@@ -93,15 +96,15 @@ export function Stock() {
           <Tabla>
             <thead className={CABECERA_TABLA}>
               <tr>
-                <th>Producto</th>
+                <th>{t("Producto")}</th>
                 {columnas.map((u) => (
                   <th key={u.ubicacion_id}>
                     {u.ubicacion_nombre}
-                    <div className="text-[10px] font-normal normal-case">{u.ubicacion_tipo === 'DEPOSITO' ? 'Depósito' : 'Sucursal'}</div>
+                    <div className="text-[10px] font-normal normal-case">{u.ubicacion_tipo === 'DEPOSITO' ? t("Depósito") : t("Sucursal")}</div>
                   </th>
                 ))}
-                {columnas.length > 1 && <th>Total</th>}
-                {verCostos && <th className="text-right">Valor</th>}
+                {columnas.length > 1 && <th>{t("Total")}</th>}
+                {verCostos && <th className="text-right">{t("Valor")}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 align-top">
@@ -144,7 +147,7 @@ export function Stock() {
               {p.nombre}
             </Link>
             <div className="mb-2 text-xs text-slate-500">
-              {p.sku} · Total {formatearCantidad(p.total_disponible)} {p.unidad_base}
+              {p.sku} {t("· Total")} {formatearCantidad(p.total_disponible)} {p.unidad_base}
             </div>
             <dl className="divide-y divide-slate-100 text-sm">
               {p.ubicaciones.map((s) => (

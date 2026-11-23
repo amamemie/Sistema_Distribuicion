@@ -4,6 +4,7 @@ import { formatearCantidad } from '../lib/formato'
 import { cantidadBase, factorDe, type LineaBase } from '../lib/lineas'
 import { SelectorProducto } from './SelectorProducto'
 import { Boton, Entrada, Selector } from './ui'
+import { useTranslation } from 'react-i18next'
 
 /** Editor de líneas producto + presentación + cantidad, con campos extra por línea. */
 export function EditorLineas<T extends LineaBase>({
@@ -19,6 +20,7 @@ export function EditorLineas<T extends LineaBase>({
   extra?: (linea: T, actualizar: (cambios: Partial<T>) => void) => ReactNode
   etiquetaCantidad?: string
 }) {
+  const { t } = useTranslation()
   const actualizar = (clave: string, cambios: Partial<T>) =>
     onCambio(lineas.map((l) => (l.clave === clave ? { ...l, ...cambios } : l)))
 
@@ -30,12 +32,12 @@ export function EditorLineas<T extends LineaBase>({
         return (
           <div key={linea.clave} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase">Línea {i + 1}</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase">{t("Línea")} {i + 1}</span>
               <Boton
                 variante="fantasma"
                 className="min-h-8 px-2 text-red-600"
                 onClick={() => onCambio(lineas.filter((l) => l.clave !== linea.clave))}
-                aria-label={`Quitar línea ${i + 1}`}
+                aria-label={t("Quitar línea {{v0}}", { v0: i + 1 })}
               >
                 <Trash2 size={16} />
               </Boton>
@@ -46,7 +48,7 @@ export function EditorLineas<T extends LineaBase>({
                 onCambio={(producto) => actualizar(linea.clave, { producto, presentacion_id: producto?.presentaciones.find((p) => p.activo)?.id ?? '' } as Partial<T>)}
               />
               <Selector
-                aria-label="Presentación"
+                aria-label={t("Presentación")}
                 value={linea.presentacion_id}
                 disabled={!linea.producto}
                 onChange={(e) => actualizar(linea.clave, { presentacion_id: e.target.value } as Partial<T>)}
@@ -56,11 +58,11 @@ export function EditorLineas<T extends LineaBase>({
                     {p.nombre} ({formatearCantidad(p.factor)} {linea.producto?.unidad_base})
                   </option>
                 ))}
-                <option value="">{linea.producto ? `${linea.producto.unidad_base} (unidad base)` : 'Presentación'}</option>
+                <option value="">{linea.producto ? t("{{v0}} (unidad base)", { v0: linea.producto.unidad_base }) : t("Presentación")}</option>
               </Selector>
               <Entrada
-                aria-label={etiquetaCantidad}
-                placeholder={etiquetaCantidad}
+                aria-label={t(etiquetaCantidad)}
+                placeholder={t(etiquetaCantidad)}
                 inputMode="decimal"
                 value={linea.cantidad}
                 onChange={(e) => actualizar(linea.clave, { cantidad: e.target.value.replace(',', '.') } as Partial<T>)}
@@ -76,7 +78,7 @@ export function EditorLineas<T extends LineaBase>({
         )
       })}
       <Boton variante="secundario" onClick={() => onCambio([...lineas, nueva()])}>
-        <Plus size={16} /> Agregar producto
+        <Plus size={16} /> {t("Agregar producto")}
       </Boton>
     </div>
   )

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { SerieReporte } from '../../lib/tipos'
 import { COLORES_SERIE, formatear, formatoCorto, marcasEje } from '../../pages/reportes/utiles'
+import { useTranslation } from 'react-i18next'
 
 const ALTO = 240
 const MARGEN = { arriba: 12, derecha: 12, abajo: 28, izquierda: 64 }
@@ -22,6 +23,7 @@ const num = (v: unknown) => (v === null || v === undefined || v === '' ? null : 
 
 /** Gráfico de una serie del reporte: por tiempo (barras o líneas) o ranking (barras horizontales). */
 export function Grafico({ serie }: { serie: SerieReporte }) {
+  const { t } = useTranslation()
   const vacia = serie.puntos.every((p) => serie.claves.every((c) => !num(p[c.clave])))
   return (
     <figure className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -30,7 +32,7 @@ export function Grafico({ serie }: { serie: SerieReporte }) {
         {serie.claves.length > 1 && <Leyenda serie={serie} />}
       </figcaption>
       {vacia ? (
-        <p className="py-10 text-center text-sm text-slate-500">Sin datos en el período.</p>
+        <p className="py-10 text-center text-sm text-slate-500">{t("Sin datos en el período.")}</p>
       ) : serie.eje === 'categoria' ? (
         <Ranking serie={serie} />
       ) : (
@@ -68,6 +70,7 @@ function barra(x: number, y0: number, y1: number, ancho: number): string {
 }
 
 function PorTiempo({ serie }: { serie: SerieReporte }) {
+  const { t } = useTranslation()
   const [ref, ancho] = useAncho<HTMLDivElement>()
   const [activo, setActivo] = useState<number | null>(null)
   const n = serie.puntos.length
@@ -96,7 +99,7 @@ function PorTiempo({ serie }: { serie: SerieReporte }) {
           width={ancho}
           height={ALTO}
           role="img"
-          aria-label={`${serie.titulo}. Los valores están en la tabla del reporte.`}
+          aria-label={t("{{v0}}. Los valores están en la tabla del reporte.", { v0: serie.titulo })}
           onPointerMove={(e) => mover(e.clientX, e.currentTarget.getBoundingClientRect())}
           onPointerLeave={() => setActivo(null)}
           className="touch-pan-y select-none"

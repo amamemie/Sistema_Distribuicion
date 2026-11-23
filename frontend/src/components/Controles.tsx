@@ -127,7 +127,7 @@ export function MenuUsuario({
       {abierto && (
         <div
           role="menu"
-          className="absolute right-0 z-40 mt-2 w-60 origin-top-right animate-[menu-entra_.18s_var(--ease-entrada)] rounded-xl border border-linea bg-superficie p-1.5 shadow-[var(--sombra-3)]"
+          className="absolute right-0 z-40 mt-2 w-60 origin-top-right animate-[menu-entra_.18s_var(--ease-entrada)] rounded-xl border border-linea bg-superficie p-1.5 shadow-(--sombra-3)"
         >
           <div className="border-b border-linea px-2.5 pt-1.5 pb-2.5 sm:hidden">
             <div className="text-sm font-medium">

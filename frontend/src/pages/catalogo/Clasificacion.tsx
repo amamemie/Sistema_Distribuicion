@@ -6,12 +6,14 @@ import { api, mensajeError } from '../../lib/api'
 import { useCategorias, useMarcas } from '../../lib/consultas'
 import { usePuede } from '../../lib/sesion'
 import type { Categoria } from '../../lib/tipos'
+import { useTranslation } from 'react-i18next'
 
 export function Clasificacion() {
+  const { t } = useTranslation()
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <ListaSimple titulo="Categorías" ruta="/categorias" clave="categorias" consulta={useCategorias()} />
-      <ListaSimple titulo="Marcas" ruta="/marcas" clave="marcas" consulta={useMarcas()} />
+      <ListaSimple titulo={t("Categorías")} ruta="/categorias" clave="categorias" consulta={useCategorias()} />
+      <ListaSimple titulo={t("Marcas")} ruta="/marcas" clave="marcas" consulta={useMarcas()} />
     </div>
   )
 }
@@ -27,6 +29,7 @@ function ListaSimple({
   clave: string
   consulta: UseQueryResult<Categoria[]>
 }) {
+  const { t } = useTranslation()
   const puede = usePuede()
   const editable = puede('catalogo.gestionar')
   const queryClient = useQueryClient()
@@ -64,14 +67,14 @@ function ListaSimple({
                     if (nombre && nombre.trim() !== c.nombre) actualizar.mutate({ id: c.id, nombre: nombre.trim() })
                   }}
                 >
-                  Renombrar
+                  {t("Renombrar")}
                 </Boton>
                 <Boton variante="fantasma" className="min-h-8 px-2" onClick={() => actualizar.mutate({ id: c.id, activo: !c.activo })}>
-                  {c.activo ? 'Desactivar' : 'Activar'}
+                  {c.activo ? t("Desactivar") : t("Activar")}
                 </Boton>
               </span>
             ) : (
-              !c.activo && <Insignia tono="rojo">Inactiva</Insignia>
+              !c.activo && <Insignia tono="rojo">{t("Inactiva")}</Insignia>
             )}
           </li>
         ))}
@@ -84,8 +87,8 @@ function ListaSimple({
             if (nuevo.trim()) crear.mutate(nuevo.trim())
           }}
         >
-          <Entrada placeholder={`Nueva ${titulo.toLowerCase().slice(0, -1)}`} value={nuevo} onChange={(e) => setNuevo(e.target.value)} />
-          <Boton type="submit" className="px-3" aria-label="Agregar" disabled={crear.isPending}>
+          <Entrada placeholder={t("Nueva {{v0}}", { v0: titulo.toLowerCase().slice(0, -1) })} value={nuevo} onChange={(e) => setNuevo(e.target.value)} />
+          <Boton type="submit" className="px-3" aria-label={t("Agregar")} disabled={crear.isPending}>
             <Plus size={16} />
           </Boton>
         </form>

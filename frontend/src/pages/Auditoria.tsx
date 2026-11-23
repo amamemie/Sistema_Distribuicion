@@ -4,6 +4,7 @@ import { Aviso, Boton, Campo, Encabezado, Entrada, Selector, Tabla } from '../co
 import { api, mensajeError } from '../lib/api'
 import { formatearFecha } from '../lib/formato'
 import type { Pagina, RegistroAuditoria } from '../lib/tipos'
+import { useTranslation } from 'react-i18next'
 
 const ENTIDADES = [
   { valor: '', texto: 'Todas' },
@@ -15,6 +16,7 @@ const ENTIDADES = [
 const TAMANO = 50
 
 export function Auditoria() {
+  const { t } = useTranslation()
   const [entidad, setEntidad] = useState('')
   const [accion, setAccion] = useState('')
   const [desde, setDesde] = useState('')
@@ -47,24 +49,24 @@ export function Auditoria() {
 
   return (
     <>
-      <Encabezado titulo="Auditoría" descripcion="Registro inmutable de quién hizo qué y cuándo." />
+      <Encabezado titulo={t("Auditoría")} descripcion={t("Registro inmutable de quién hizo qué y cuándo.")} />
       <div className="mb-4 grid gap-3 sm:grid-cols-4">
-        <Campo etiqueta="Entidad">
+        <Campo etiqueta={t("Entidad")}>
           <Selector value={entidad} onChange={(e) => filtrar(setEntidad)(e.target.value)}>
             {ENTIDADES.map((e) => (
               <option key={e.valor} value={e.valor}>
-                {e.texto}
+                {t(e.texto)}
               </option>
             ))}
           </Selector>
         </Campo>
-        <Campo etiqueta="Acción (empieza con)">
-          <Entrada value={accion} placeholder="usuario." onChange={(e) => filtrar(setAccion)(e.target.value)} />
+        <Campo etiqueta={t("Acción (empieza con)")}>
+          <Entrada value={accion} placeholder={t("usuario.")} onChange={(e) => filtrar(setAccion)(e.target.value)} />
         </Campo>
-        <Campo etiqueta="Desde">
+        <Campo etiqueta={t("Desde")}>
           <Entrada type="date" value={desde} onChange={(e) => filtrar(setDesde)(e.target.value)} />
         </Campo>
-        <Campo etiqueta="Hasta">
+        <Campo etiqueta={t("Hasta")}>
           <Entrada type="date" value={hasta} onChange={(e) => filtrar(setHasta)(e.target.value)} />
         </Campo>
       </div>
@@ -72,10 +74,10 @@ export function Auditoria() {
       <Tabla>
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
-            <th>Fecha</th>
-            <th>Usuario</th>
-            <th>Acción</th>
-            <th className="hidden md:table-cell">IP</th>
+            <th>{t("Fecha")}</th>
+            <th>{t("Usuario")}</th>
+            <th>{t("Acción")}</th>
+            <th className="hidden md:table-cell">{t("IP")}</th>
             <th />
           </tr>
         </thead>
@@ -91,23 +93,23 @@ export function Auditoria() {
           {registros.data?.items.length === 0 && (
             <tr>
               <td colSpan={5} className="text-center text-slate-500">
-                Sin registros para estos filtros.
+                {t("Sin registros para estos filtros.")}
               </td>
             </tr>
           )}
         </tbody>
       </Tabla>
       <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-        <span>{total} registros</span>
+        <span>{total} {t("registros")}</span>
         <div className="flex items-center gap-2">
           <Boton variante="secundario" disabled={pagina <= 1} onClick={() => setPagina(pagina - 1)}>
-            Anterior
+            {t("Anterior")}
           </Boton>
           <span>
             {pagina} / {paginas}
           </span>
           <Boton variante="secundario" disabled={pagina >= paginas} onClick={() => setPagina(pagina + 1)}>
-            Siguiente
+            {t("Siguiente")}
           </Boton>
         </div>
       </div>
@@ -124,12 +126,13 @@ function FilaAuditoria({
   abierto: boolean
   onAlternar: () => void
 }) {
+  const { t } = useTranslation()
   const tieneDetalle = r.antes || r.despues
   return (
     <>
       <tr>
         <td className="whitespace-nowrap text-slate-600">{formatearFecha(r.fecha)}</td>
-        <td>{r.usuario_nombre ?? 'Sistema'}</td>
+        <td>{r.usuario_nombre ?? t("Sistema")}</td>
         <td>
           <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{r.accion}</code>
         </td>
@@ -137,7 +140,7 @@ function FilaAuditoria({
         <td className="text-right">
           {tieneDetalle && (
             <Boton variante="fantasma" onClick={onAlternar}>
-              {abierto ? 'Ocultar' : 'Detalle'}
+              {abierto ? t("Ocultar") : t("Detalle")}
             </Boton>
           )}
         </td>
@@ -146,8 +149,8 @@ function FilaAuditoria({
         <tr className="bg-slate-50">
           <td colSpan={5}>
             <div className="grid gap-3 md:grid-cols-2">
-              <Json titulo="Antes" valor={r.antes} />
-              <Json titulo="Después" valor={r.despues} />
+              <Json titulo={t("Antes")} valor={r.antes} />
+              <Json titulo={t("Después")} valor={r.despues} />
             </div>
           </td>
         </tr>

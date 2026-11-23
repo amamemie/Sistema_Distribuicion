@@ -5,8 +5,10 @@ import { Aviso, Boton, Casilla, Encabezado, Entrada, Tarjeta } from '../componen
 import { api, mensajeError } from '../lib/api'
 import { usePuede } from '../lib/sesion'
 import type { Permiso, Rol } from '../lib/tipos'
+import { useTranslation } from 'react-i18next'
 
 export function Roles() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const queryClient = useQueryClient()
   const roles = useQuery({ queryKey: ['roles'], queryFn: () => api<Rol[]>('/roles') })
@@ -33,8 +35,8 @@ export function Roles() {
   return (
     <>
       <Encabezado
-        titulo="Roles y permisos"
-        descripcion="Cada rol es un conjunto de permisos. El rol Dueño siempre tiene acceso total."
+        titulo={t("Roles y permisos")}
+        descripcion={t("Cada rol es un conjunto de permisos. El rol Dueño siempre tiene acceso total.")}
       />
       {(roles.isError || crear.isError) && <Aviso>{mensajeError(roles.error ?? crear.error)}</Aviso>}
       <div className="grid gap-4 md:grid-cols-[16rem_1fr]">
@@ -61,8 +63,8 @@ export function Roles() {
                 if (nuevoNombre.trim().length >= 2) crear.mutate(nuevoNombre.trim())
               }}
             >
-              <Entrada placeholder="Nombre del nuevo rol" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
-              <Boton type="submit" className="px-3" aria-label="Crear rol" disabled={crear.isPending}>
+              <Entrada placeholder={t("Nombre del nuevo rol")} value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
+              <Boton type="submit" className="px-3" aria-label={t("Crear rol")} disabled={crear.isPending}>
                 <Plus size={16} />
               </Boton>
             </form>
@@ -90,6 +92,7 @@ function EditorPermisos({
   porModulo: [string, Permiso[]][]
   editable: boolean
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [marcados, setMarcados] = useState(() => new Set(rol.permisos))
   const guardar = useMutation({
@@ -114,12 +117,12 @@ function EditorPermisos({
         </div>
         {editable && (
           <Boton onClick={() => guardar.mutate()} disabled={!cambiado || guardar.isPending}>
-            Guardar cambios
+            {t("Guardar cambios")}
           </Boton>
         )}
       </div>
       {guardar.isError && <Aviso>{mensajeError(guardar.error)}</Aviso>}
-      {guardar.isSuccess && !cambiado && <Aviso tipo="exito">Permisos guardados.</Aviso>}
+      {guardar.isSuccess && !cambiado && <Aviso tipo="exito">{t("Permisos guardados.")}</Aviso>}
       <div className="mt-2 grid gap-6 sm:grid-cols-2">
         {porModulo.map(([modulo, lista]) => (
           <fieldset key={modulo}>

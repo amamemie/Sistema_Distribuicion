@@ -8,10 +8,12 @@ import { useUbicaciones } from '../../lib/consultas'
 import { formatearCantidad, formatearCosto, formatearDia, formatearFecha } from '../../lib/formato'
 import { usePuede } from '../../lib/sesion'
 import { NOMBRE_MOVIMIENTO, type LoteEnStock, type MovimientoKardex, type Pagina, type ProductoDetalle } from '../../lib/tipos'
+import { useTranslation } from 'react-i18next'
 
 const TAMANO = 100
 
 export function Kardex() {
+  const { t } = useTranslation()
   const { productoId = '' } = useParams()
   const verCostos = usePuede()('costos.ver')
   const ubicaciones = useUbicaciones(false)
@@ -39,15 +41,15 @@ export function Kardex() {
   return (
     <>
       <Link to="/inventario" className="mb-2 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
-        <ArrowLeft size={16} /> Stock
+        <ArrowLeft size={16} /> {t("Stock")}
       </Link>
       <Encabezado
-        titulo={producto.data ? `Kardex · ${producto.data.nombre}` : 'Kardex'}
-        descripcion={producto.data ? `${producto.data.sku} · cantidades en ${unidad}` : undefined}
+        titulo={producto.data ? t("Kardex · {{v0}}", { v0: producto.data.nombre }) : t("Kardex")}
+        descripcion={producto.data ? t("{{v0}} · cantidades en {{unidad}}", { v0: producto.data.sku, unidad: unidad }) : undefined}
       />
       {(producto.isError || kardex.isError) && <Aviso>{mensajeError(producto.error ?? kardex.error)}</Aviso>}
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <Campo etiqueta="Ubicación">
+        <Campo etiqueta={t("Ubicación")}>
           <Selector
             value={ubicacion}
             onChange={(e) => {
@@ -55,7 +57,7 @@ export function Kardex() {
               setPagina(1)
             }}
           >
-            <option value="">Todas</option>
+            <option value="">{t("Todas")}</option>
             {ubicaciones.data?.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.nombre}
@@ -63,38 +65,38 @@ export function Kardex() {
             ))}
           </Selector>
         </Campo>
-        <Campo etiqueta="Desde">
+        <Campo etiqueta={t("Desde")}>
           <Entrada type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
         </Campo>
-        <Campo etiqueta="Hasta">
+        <Campo etiqueta={t("Hasta")}>
           <Entrada type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
         </Campo>
       </div>
 
       {mostrarLotes && !!lotes.data?.length && (
         <section className="mb-6">
-          <h2 className="mb-2 font-semibold">Lotes en stock</h2>
+          <h2 className="mb-2 font-semibold">{t("Lotes en stock")}</h2>
           <Tabla>
             <thead className={CABECERA_TABLA}>
               <tr>
-                <th>Lote</th>
-                <th>Ubicación</th>
-                <th>Vence</th>
-                <th className="text-right">Cantidad</th>
-                {verCostos && <th className="text-right">Costo unit.</th>}
+                <th>{t("Lote")}</th>
+                <th>{t("Ubicación")}</th>
+                <th>{t("Vence")}</th>
+                <th className="text-right">{t("Cantidad")}</th>
+                {verCostos && <th className="text-right">{t("Costo unit.")}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {lotes.data.map((l) => (
                 <tr key={`${l.lote_id}-${l.ubicacion_id}`}>
-                  <td>{l.codigo ?? <span className="text-slate-400">sin código</span>}</td>
+                  <td>{l.codigo ?? <span className="text-slate-400">{t("sin código")}</span>}</td>
                   <td>{l.ubicacion_nombre}</td>
                   <td>
                     {formatearDia(l.vencimiento)}{' '}
                     {l.vencido ? (
-                      <Insignia tono="rojo">Vencido</Insignia>
+                      <Insignia tono="rojo">{t("Vencido")}</Insignia>
                     ) : l.dias_para_vencer !== null && l.dias_para_vencer <= 7 ? (
-                      <Insignia tono="ambar">{l.dias_para_vencer} días</Insignia>
+                      <Insignia tono="ambar">{l.dias_para_vencer} {t("días")}</Insignia>
                     ) : null}
                   </td>
                   <td className="text-right">{formatearCantidad(l.cantidad)}</td>
@@ -106,21 +108,21 @@ export function Kardex() {
         </section>
       )}
 
-      <h2 className="mb-2 font-semibold">Movimientos</h2>
-      {kardex.data?.items.length === 0 && <Vacio>Sin movimientos para estos filtros.</Vacio>}
+      <h2 className="mb-2 font-semibold">{t("Movimientos")}</h2>
+      {kardex.data?.items.length === 0 && <Vacio>{t("Sin movimientos para estos filtros.")}</Vacio>}
       {!!kardex.data?.items.length && (
         <Tabla>
           <thead className={CABECERA_TABLA}>
             <tr>
-              <th>Fecha</th>
-              <th>Movimiento</th>
-              <th className="hidden md:table-cell">Ubicación</th>
-              <th className="text-right">Entrada</th>
-              <th className="text-right">Salida</th>
-              <th className="text-right">Saldo</th>
-              {verCostos && <th className="hidden text-right lg:table-cell">Costo unit.</th>}
-              {verCostos && <th className="hidden text-right lg:table-cell">CPP</th>}
-              <th className="hidden lg:table-cell">Usuario</th>
+              <th>{t("Fecha")}</th>
+              <th>{t("Movimiento")}</th>
+              <th className="hidden md:table-cell">{t("Ubicación")}</th>
+              <th className="text-right">{t("Entrada")}</th>
+              <th className="text-right">{t("Salida")}</th>
+              <th className="text-right">{t("Saldo")}</th>
+              {verCostos && <th className="hidden text-right lg:table-cell">{t("Costo unit.")}</th>}
+              {verCostos && <th className="hidden text-right lg:table-cell">{t("CPP")}</th>}
+              <th className="hidden lg:table-cell">{t("Usuario")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -128,10 +130,10 @@ export function Kardex() {
               <tr key={m.id}>
                 <td className="whitespace-nowrap text-slate-600">{formatearFecha(m.fecha)}</td>
                 <td>
-                  <div>{NOMBRE_MOVIMIENTO[m.tipo]}</div>
+                  <div>{t(NOMBRE_MOVIMIENTO[m.tipo])}</div>
                   <div className="text-xs text-slate-500">
                     {m.documento}
-                    {m.lote_codigo && ` · lote ${m.lote_codigo}`}
+                    {m.lote_codigo && t(" · lote {{v0}}", { v0: m.lote_codigo })}
                   </div>
                   {m.motivo && <div className="text-xs text-slate-500 italic">{m.motivo}</div>}
                 </td>
@@ -147,7 +149,7 @@ export function Kardex() {
           </tbody>
         </Tabla>
       )}
-      <p className="mt-2 text-xs text-slate-500">El saldo de cada fila es el de su ubicación después del movimiento.</p>
+      <p className="mt-2 text-xs text-slate-500">{t("El saldo de cada fila es el de su ubicación después del movimiento.")}</p>
       <Paginador pagina={pagina} total={kardex.data?.total ?? 0} tamano={TAMANO} onCambio={setPagina} />
     </>
   )

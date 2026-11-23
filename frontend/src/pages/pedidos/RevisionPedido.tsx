@@ -13,6 +13,7 @@ import { nuevaClave } from '../../lib/lineas'
 import { usePuede } from '../../lib/sesion'
 import type { LecturaOC, PedidoDetalle, PedidoLinea, Producto, Sugerencia, Validacion } from '../../lib/tipos'
 import { descuentoInicial, diferenciaLinea, numeroONulo, totalCalculado, totales } from './calculos'
+import { useTranslation } from 'react-i18next'
 
 interface LineaForm {
   clave: string
@@ -117,6 +118,7 @@ function aCuerpo(f: Formulario) {
 
 /** Revisión del pedido en BORRADOR: documento al lado (si lo hay), todo editable, validaciones y confirmación. */
 export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: PedidoDetalle; puedeAnular: boolean; onAnular: () => void }) {
+  const { t } = useTranslation()
   const puede = usePuede()
   const queryClient = useQueryClient()
   const cadenas = useCadenas()
@@ -184,13 +186,13 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
         ) : (
           <Tarjeta className="p-4 text-sm text-slate-600">
             <p className="inline-flex items-center gap-1.5 font-medium text-slate-800">
-              <PencilLine size={16} /> Pedido cargado a mano
+              <PencilLine size={16} /> {t("Pedido cargado a mano")}
             </p>
-            <p className="mt-1">Si tiene la nota de recepción, puede adjuntarla (opcional) y el sistema la leerá.</p>
+            <p className="mt-1">{t("Si tiene la nota de recepción, puede adjuntarla (opcional) y el sistema la leerá.")}</p>
           </Tarjeta>
         )}
         <Boton variante="secundario" className="w-full" onClick={() => setAgregando(true)}>
-          <FilePlus2 size={16} /> {conDocumento ? 'Agregar páginas' : 'Adjuntar nota de recepción'}
+          <FilePlus2 size={16} /> {conDocumento ? t("Agregar páginas") : t("Adjuntar nota de recepción")}
         </Boton>
         {quitarDocumento.isError && <Aviso>{mensajeError(quitarDocumento.error)}</Aviso>}
       </div>
@@ -208,15 +210,15 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
             avisos={pedido.confianza?.avisos ?? []}
             ocupado={leer.isPending}
             onLeer={() => {
-              if (!pedido.detalle_lineas.length || confirm('Se volverá a leer el documento y se reemplazarán los datos cargados. ¿Continuar?')) leer.mutate()
+              if (!pedido.detalle_lineas.length || confirm(t('Se volverá a leer el documento y se reemplazarán los datos cargados. ¿Continuar?'))) leer.mutate()
             }}
           />
         )}
         {leer.isError && <Aviso>{mensajeError(leer.error)}</Aviso>}
         <Tarjeta className={`grid gap-4 p-4 sm:grid-cols-2 ${leyendo ? 'pointer-events-none opacity-50' : ''}`}>
-          <Campo etiqueta="Cadena">
+          <Campo etiqueta={t("Cadena")}>
             <Selector value={form.cadena_id} onChange={(e) => cambiar({ cadena_id: e.target.value, sucursal_cliente_id: '' })}>
-              <option value="">Elegir…</option>
+              <option value="">{t("Elegir…")}</option>
               {cadenas.data
                 ?.filter((c) => c.activo || c.id === form.cadena_id)
                 .map((c) => (
@@ -227,11 +229,11 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
             </Selector>
           </Campo>
           <Campo
-            etiqueta="Sucursal de supermercado"
-            ayuda={!form.sucursal_cliente_id && pedido.confianza?.destino_texto ? `El documento dice: «${pedido.confianza.destino_texto}»` : undefined}
+            etiqueta={t("Sucursal de supermercado")}
+            ayuda={!form.sucursal_cliente_id && pedido.confianza?.destino_texto ? t("El documento dice: «{{v0}}»", { v0: pedido.confianza.destino_texto }) : undefined}
           >
             <Selector value={form.sucursal_cliente_id} disabled={!cadena} onChange={(e) => cambiar({ sucursal_cliente_id: e.target.value })}>
-              <option value="">{cadena ? 'Elegir…' : 'Primero la cadena'}</option>
+              <option value="">{cadena ? t("Elegir…") : t("Primero la cadena")}</option>
               {cadena?.sucursales
                 .filter((s) => s.activo || s.id === form.sucursal_cliente_id)
                 .map((s) => (
@@ -241,13 +243,13 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
                 ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="N.º de OC (opcional)">
+          <Campo etiqueta={t("N.º de OC (opcional)")}>
             <Entrada className={claseDudosa(pedido.confianza?.numero_oc)} value={form.numero_oc} onChange={(e) => cambiar({ numero_oc: e.target.value })} />
           </Campo>
-          <Campo etiqueta="Fecha">
+          <Campo etiqueta={t("Fecha")}>
             <Entrada type="date" className={claseDudosa(pedido.confianza?.fecha_oc)} max={hoyLaPaz()} value={form.fecha_oc} onChange={(e) => cambiar({ fecha_oc: e.target.value })} />
           </Campo>
-          <Campo etiqueta="Sucursal que despacha">
+          <Campo etiqueta={t("Sucursal que despacha")}>
             <Selector value={form.ubicacion_id} onChange={(e) => cambiar({ ubicacion_id: e.target.value })}>
               {sucursales.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -256,16 +258,16 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
               ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="Emitida por (opcional)">
+          <Campo etiqueta={t("Emitida por (opcional)")}>
             <Entrada value={form.emisor} onChange={(e) => cambiar({ emisor: e.target.value })} />
           </Campo>
-          <Campo etiqueta="Fecha de entrega (opcional)">
+          <Campo etiqueta={t("Fecha de entrega (opcional)")}>
             <Entrada type="date" value={form.fecha_entrega} onChange={(e) => cambiar({ fecha_entrega: e.target.value })} />
           </Campo>
         </Tarjeta>
 
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-slate-700 uppercase">Productos</h2>
+          <h2 className="text-sm font-semibold text-slate-700 uppercase">{t("Productos")}</h2>
           {form.lineas.map((l, i) => (
             <LineaRevision
               key={l.clave}
@@ -282,18 +284,18 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
             />
           ))}
           <Boton variante="secundario" onClick={() => cambiar({ lineas: [...form.lineas, lineaVacia()] })}>
-            <Plus size={16} /> Agregar línea
+            <Plus size={16} /> {t("Agregar línea")}
           </Boton>
         </div>
 
         <Tarjeta className={`space-y-2 p-4 text-sm ${leyendo ? 'pointer-events-none opacity-50' : ''}`}>
           <div className="flex items-center justify-between">
-            <span className="text-slate-600">Subtotal</span>
+            <span className="text-slate-600">{t("Subtotal")}</span>
             <span className="tabular-nums">{formatearBs(suma.subtotal)}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <label htmlFor="descuento" className="text-slate-600">
-              Descuento (Bs)
+              {t("Descuento (Bs)")}
             </label>
             <Entrada
               id="descuento"
@@ -305,20 +307,20 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
             />
           </div>
           <div className="flex items-center justify-between border-t border-slate-200 pt-2 text-base font-semibold">
-            <span>Total</span>
+            <span>{t("Total")}</span>
             <span className={`tabular-nums ${claseDudosa(pedido.confianza?.total) ? 'rounded bg-amber-50 px-1 ring-1 ring-amber-300' : ''}`}>
               {formatearBs(suma.total)}
             </span>
           </div>
-          {suma.total < 0 && <p className="text-xs text-red-700">El descuento no puede ser mayor que el subtotal.</p>}
+          {suma.total < 0 && <p className="text-xs text-red-700">{t("El descuento no puede ser mayor que el subtotal.")}</p>}
         </Tarjeta>
 
-        <Campo etiqueta="Observaciones">
+        <Campo etiqueta={t("Observaciones")}>
           <Entrada value={form.observaciones} maxLength={500} onChange={(e) => cambiar({ observaciones: e.target.value })} />
         </Campo>
 
         {sucio ? (
-          <Aviso>Hay cambios sin guardar. Guarde para ver las validaciones actualizadas.</Aviso>
+          <Aviso>{t("Hay cambios sin guardar. Guarde para ver las validaciones actualizadas.")}</Aviso>
         ) : (
           <PanelValidaciones generales={generales} errores={errores.length} total={pedido.validaciones.length} />
         )}
@@ -328,20 +330,20 @@ export function RevisionPedido({ pedido, puedeAnular, onAnular }: { pedido: Pedi
         <div className="sticky bottom-0 -mx-4 flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
           {puedeAnular && (
             <Boton variante="fantasma" className="mr-auto text-red-600" onClick={onAnular}>
-              Anular
+              {t("Anular")}
             </Boton>
           )}
           <Boton type="submit" variante="secundario" disabled={guardar.isPending || !sucio || suma.total < 0}>
-            {guardar.isPending ? 'Guardando…' : 'Guardar borrador'}
+            {guardar.isPending ? t("Guardando…") : t("Guardar borrador")}
           </Boton>
           {puede('pedidos.confirmar') && (
             <Boton
               disabled={confirmar.isPending || (!sucio && errores.length > 0) || suma.total < 0}
               onClick={() => {
-                if (confirm('Al confirmar se reserva el stock de la sucursal. ¿Continuar?')) confirmar.mutate()
+                if (confirm(t('Al confirmar se reserva el stock de la sucursal. ¿Continuar?'))) confirmar.mutate()
               }}
             >
-              <CheckCircle2 size={16} /> {confirmar.isPending ? 'Confirmando…' : sucio ? 'Guardar y confirmar' : 'Confirmar pedido'}
+              <CheckCircle2 size={16} /> {confirmar.isPending ? t("Confirmando…") : sucio ? t("Guardar y confirmar") : t("Confirmar pedido")}
             </Boton>
           )}
         </div>
@@ -376,23 +378,24 @@ function EstadoLectura({
   ocupado: boolean
   onLeer: () => void
 }) {
+  const { t } = useTranslation()
   const boton = (
     <Boton variante="secundario" className="min-h-8 text-xs" disabled={ocupado} onClick={onLeer}>
-      <RefreshCw size={14} /> {lectura ? 'Volver a leer' : 'Leer el documento automáticamente'}
+      <RefreshCw size={14} /> {lectura ? t("Volver a leer") : t("Leer el documento automáticamente")}
     </Boton>
   )
   if (!lectura) return <div className="flex justify-end">{boton}</div>
   if (lectura.estado === 'PENDIENTE' || lectura.estado === 'PROCESANDO') {
     return (
       <div role="status" className="flex items-center gap-2 rounded-md border border-marca-200 bg-marca-50 px-3 py-2 text-sm text-marca-900">
-        <Loader2 size={16} className="animate-spin" /> Leyendo el documento automáticamente… suele tardar entre 10 y 30 segundos por página.
+        <Loader2 size={16} className="animate-spin" /> {t("Leyendo el documento automáticamente… suele tardar entre 10 y 30 segundos por página.")}
       </div>
     )
   }
   if (lectura.estado === 'FALLIDA') {
     return (
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-        <span>{lectura.error ?? 'No se pudo leer el documento.'}</span>
+        <span>{lectura.error ?? t("No se pudo leer el documento.")}</span>
         {boton}
       </div>
     )
@@ -402,13 +405,13 @@ function EstadoLectura({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 text-slate-700">
           <ScanText size={16} className="text-marca-700" />
-          {lectura.aplicada ? 'Datos leídos automáticamente' : 'Se leyó el documento, pero el borrador ya tenía datos: no se reemplazaron'} ·{' '}
-          {NOMBRE_PLANTILLA[lectura.plantilla ?? ''] ?? lectura.plantilla} · confianza {Math.round(Number(lectura.confianza ?? 0))} %
-          {lectura.aritmetica_ok ? ' · las cuentas cuadran' : ' · revise: las cuentas no cuadran'}
+          {lectura.aplicada ? t("Datos leídos automáticamente") : t("Se leyó el documento, pero el borrador ya tenía datos: no se reemplazaron")} ·{' '}
+          {NOMBRE_PLANTILLA[lectura.plantilla ?? ''] ?? lectura.plantilla} {t("· confianza")} {Math.round(Number(lectura.confianza ?? 0))} %
+          {lectura.aritmetica_ok ? t(" · las cuentas cuadran") : t(" · revise: las cuentas no cuadran")}
         </span>
         {boton}
       </div>
-      {lectura.aplicada && <p className="text-xs text-slate-500">Compare con el documento; los campos en ámbar se leyeron con poca seguridad.</p>}
+      {lectura.aplicada && <p className="text-xs text-slate-500">{t("Compare con el documento; los campos en ámbar se leyeron con poca seguridad.")}</p>}
       {avisos.map((a, i) => (
         <p key={i} className="text-xs text-amber-800">
           {a}
@@ -419,11 +422,12 @@ function EstadoLectura({
 }
 
 function PanelValidaciones({ generales, errores, total }: { generales: Validacion[]; errores: number; total: number }) {
+  const { t } = useTranslation()
   if (total === 0) {
     return (
       <Aviso tipo="exito">
         <span className="inline-flex items-center gap-1">
-          <CheckCircle2 size={16} /> Todo cuadra: el pedido está listo para confirmar.
+          <CheckCircle2 size={16} /> {t("Todo cuadra: el pedido está listo para confirmar.")}
         </span>
       </Aviso>
     )
@@ -434,8 +438,8 @@ function PanelValidaciones({ generales, errores, total }: { generales: Validacio
         <MensajeValidacion key={i} v={v} />
       ))}
       <p className="text-xs text-slate-500">
-        {errores > 0 ? `${errores} problema(s) impiden confirmar. ` : 'Sin problemas que impidan confirmar. '}
-        Los avisos en amarillo conviene revisarlos contra el documento.
+        {errores > 0 ? t("{{errores}} problema(s) impiden confirmar. ", { errores: errores }) : t("Sin problemas que impidan confirmar. ")}
+        {t("Los avisos en amarillo conviene revisarlos contra el documento.")}
       </p>
     </div>
   )
@@ -476,6 +480,7 @@ function LineaRevision({
   onCambio: (cambios: Partial<LineaForm>) => void
   onQuitar: () => void
 }) {
+  const { t } = useTranslation()
   const diferencia = diferenciaLinea(linea)
   const confirmada = linea.confirmada === '' ? Number(linea.cantidad_oc) || 0 : Number(linea.confirmada)
   const disponible = servidor?.disponible != null ? Number(servidor.disponible) : null
@@ -487,20 +492,20 @@ function LineaRevision({
   return (
     <div className={`rounded-lg border p-3 ${conError && !sucio ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-white'}`}>
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-500 uppercase">Línea {numero}</span>
-        <Boton variante="fantasma" className="min-h-8 px-2 text-red-600" onClick={onQuitar} aria-label={`Quitar línea ${numero}`}>
+        <span className="text-xs font-semibold text-slate-500 uppercase">{t("Línea")} {numero}</span>
+        <Boton variante="fantasma" className="min-h-8 px-2 text-red-600" onClick={onQuitar} aria-label={t("Quitar línea {{numero}}", { numero: numero })}>
           <Trash2 size={16} />
         </Boton>
       </div>
       <div className="grid gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
-        <Entrada aria-label="Código del cliente" placeholder="Código" className={claseDudosa(conf?.codigo)} value={linea.codigo} onChange={(e) => onCambio({ codigo: e.target.value })} />
-        <Entrada aria-label="Descripción del cliente" placeholder="Descripción como figura en la nota (opcional)" className={claseDudosa(conf?.descripcion)} value={linea.descripcion} onChange={(e) => onCambio({ descripcion: e.target.value })} />
+        <Entrada aria-label={t("Código del cliente")} placeholder={t("Código")} className={claseDudosa(conf?.codigo)} value={linea.codigo} onChange={(e) => onCambio({ codigo: e.target.value })} />
+        <Entrada aria-label={t("Descripción del cliente")} placeholder={t("Descripción como figura en la nota (opcional)")} className={claseDudosa(conf?.descripcion)} value={linea.descripcion} onChange={(e) => onCambio({ descripcion: e.target.value })} />
       </div>
       <div className="mt-3">
         <SelectorProducto valor={linea.producto} onCambio={(producto) => onCambio({ producto, sugerido: false })} />
         {linea.sugerido && linea.producto && (
           <p className="mt-1 inline-flex items-center gap-1 text-xs text-marca-800">
-            <Sparkles size={12} /> Emparejado por una equivalencia aprendida. Verifique que sea correcto.
+            <Sparkles size={12} /> {t("Emparejado por una equivalencia aprendida. Verifique que sea correcto.")}
           </p>
         )}
         {!linea.producto && (
@@ -513,21 +518,21 @@ function LineaRevision({
         )}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Campo etiqueta={`Cantidad (${unidad})`}>
+        <Campo etiqueta={t("Cantidad ({{unidad}})", { unidad: unidad })}>
           <Entrada inputMode="decimal" className={claseDudosa(conf?.cantidad)} value={linea.cantidad_oc} onChange={(e) => onCambio({ cantidad_oc: e.target.value.replace(',', '.') })} />
         </Campo>
-        <Campo etiqueta="Precio unitario">
+        <Campo etiqueta={t("Precio unitario")}>
           <Entrada inputMode="decimal" className={claseDudosa(conf?.precio)} value={linea.precio_oc} onChange={(e) => onCambio({ precio_oc: e.target.value.replace(',', '.') })} />
         </Campo>
-        <Campo etiqueta="Total línea">
+        <Campo etiqueta={t("Total línea")}>
           <output
-            aria-label={`Total de la línea ${numero}`}
+            aria-label={t("Total de la línea {{numero}}", { numero: numero })}
             className={`flex min-h-10 items-center justify-end rounded-md border border-slate-200 bg-slate-50 px-3 text-sm tabular-nums ${claseDudosa(conf?.total)}`}
           >
             {formatearBs(totalCalculado(linea))}
           </output>
         </Campo>
-        <Campo etiqueta="A confirmar">
+        <Campo etiqueta={t("A confirmar")}>
           <Entrada inputMode="decimal" placeholder={linea.cantidad_oc || '0'} value={linea.confirmada} onChange={(e) => onCambio({ confirmada: e.target.value.replace(',', '.') })} />
         </Campo>
       </div>
@@ -535,13 +540,13 @@ function LineaRevision({
         {diferencia && <p className="font-medium text-red-700">{diferencia}</p>}
         {servidor && servidor.producto && disponible !== null && servidor.producto.id === linea.producto?.id && (
           <p>
-            Disponible en la sucursal: <strong className={faltante > 0 ? 'text-red-700' : 'text-emerald-700'}>{formatearCantidad(disponible)}</strong>
-            {servidor.disponible_depositos !== null && <> · en depósitos: {formatearCantidad(servidor.disponible_depositos)}</>}
+            {t("Disponible en la sucursal:")} <strong className={faltante > 0 ? 'text-red-700' : 'text-emerald-700'}>{formatearCantidad(disponible)}</strong>
+            {servidor.disponible_depositos !== null && <> {t("· en depósitos:")} {formatearCantidad(servidor.disponible_depositos)}</>}
           </p>
         )}
         {servidor?.precio_anterior && servidor.producto?.id === linea.producto?.id && (
           <p>
-            Último precio para esta cadena: {formatearCosto(servidor.precio_anterior)} (pedido #{servidor.precio_anterior_pedido}, {formatearDia(servidor.precio_anterior_fecha)})
+            {t("Último precio para esta cadena:")} {formatearCosto(servidor.precio_anterior)} {t("(pedido #")}{servidor.precio_anterior_pedido}, {formatearDia(servidor.precio_anterior_fecha)})
           </p>
         )}
       </div>
@@ -555,7 +560,7 @@ function LineaRevision({
       {!sucio && faltante > 0 && linea.producto && (
         <div className="mt-2 flex flex-wrap gap-2">
           <Boton variante="secundario" className="min-h-8 text-xs" onClick={() => onCambio({ confirmada: String(Math.max(0, disponible ?? 0)) })}>
-            Confirmar solo lo disponible ({formatearCantidad(disponible)})
+            {t("Confirmar solo lo disponible (")}{formatearCantidad(disponible)})
           </Boton>
           {puedeTransferir && Number(servidor?.disponible_depositos ?? 0) > 0 && (
             <Link
@@ -563,7 +568,7 @@ function LineaRevision({
               state={{ destino: ubicacionId, lineas: [{ producto: linea.producto, cantidad: String(faltante) }] }}
               className="inline-flex min-h-8 items-center gap-1 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium hover:bg-slate-50"
             >
-              <ArrowLeftRight size={14} /> Transferir {formatearCantidad(faltante)} desde el depósito
+              <ArrowLeftRight size={14} /> {t("Transferir")} {formatearCantidad(faltante)} {t("desde el depósito")}
             </Link>
           )}
         </div>
@@ -584,6 +589,7 @@ function Sugerencias({
   descripcion: string
   onElegir: (producto: Producto, automatico: boolean) => void
 }) {
+  const { t } = useTranslation()
   const [consulta, setConsulta] = useState({ codigo: '', descripcion: '' })
   useEffect(() => {
     const t = setTimeout(() => setConsulta({ codigo: codigo.trim(), descripcion: descripcion.trim() }), 400)
@@ -607,14 +613,14 @@ function Sugerencias({
   if (!sugerencias.data?.length) return null
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-      <span className="text-xs text-slate-500">¿Es…?</span>
+      <span className="text-xs text-slate-500">{t("¿Es…?")}</span>
       {sugerencias.data.map((s) => (
         <button
           key={s.producto.id}
           type="button"
           onClick={() => onElegir(s.producto, false)}
           className="rounded-full border border-marca-200 bg-marca-50 px-2.5 py-1 text-xs text-marca-900 hover:bg-marca-100"
-          title={s.fuente === 'codigo' ? 'Coincide el código' : s.fuente === 'equivalencia' ? 'Usado antes con esta cadena' : 'Nombre parecido'}
+          title={s.fuente === 'codigo' ? t("Coincide el código") : s.fuente === 'equivalencia' ? t("Usado antes con esta cadena") : t("Nombre parecido")}
         >
           {s.producto.nombre}
         </button>
@@ -624,6 +630,7 @@ function Sugerencias({
 }
 
 function AgregarPaginas({ pedidoId, abierto, onCerrar }: { pedidoId: string; abierto: boolean; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [archivos, setArchivos] = useState<File[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -645,14 +652,14 @@ function AgregarPaginas({ pedidoId, abierto, onCerrar }: { pedidoId: string; abi
     },
   })
   return (
-    <Modal abierto={abierto} titulo="Adjuntar nota de recepción" onCerrar={onCerrar}>
+    <Modal abierto={abierto} titulo={t("Adjuntar nota de recepción")} onCerrar={onCerrar}>
       <div className="space-y-4">
         <SelectorArchivos archivos={archivos} onCambio={setArchivos} onError={setError} ocupado={setPreparando} />
         {error && <Aviso>{error}</Aviso>}
         {subir.isError && <Aviso>{mensajeError(subir.error)}</Aviso>}
         <div className="flex justify-end">
           <Boton disabled={!archivos.length || preparando || subir.isPending} onClick={() => subir.mutate()}>
-            {subir.isPending ? 'Subiendo…' : 'Subir'}
+            {subir.isPending ? t("Subiendo…") : t("Subir")}
           </Boton>
         </div>
       </div>

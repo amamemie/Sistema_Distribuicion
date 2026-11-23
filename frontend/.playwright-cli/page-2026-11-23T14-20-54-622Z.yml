@@ -1,0 +1,230 @@
+- generic [ref=f14e2]:
+  - link "Skip to content" [ref=f14e4] [cursor=pointer]:
+    - /url: "#contenido"
+  - generic [ref=f14e5]:
+    - complementary "Main menu" [ref=f14e6]:
+      - generic [ref=f14e13]:
+        - generic [ref=f14e14]: Inventory
+        - generic [ref=f14e15]: Distributor
+      - navigation [ref=f14e16]:
+        - link "Home" [ref=f14e18] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f14e22]:
+          - generic [ref=f14e23]: Operations
+          - link "Orders" [ref=f14e24] [cursor=pointer]:
+            - /url: /pedidos
+          - link "Stock" [ref=f14e28] [cursor=pointer]:
+            - /url: /inventario
+          - link "Restocking" [ref=f14e39] [cursor=pointer]:
+            - /url: /reposicion
+          - link "Purchases" [ref=f14e45] [cursor=pointer]:
+            - /url: /compras
+          - link "Transfers" [ref=f14e51] [cursor=pointer]:
+            - /url: /transferencias
+          - link "Adjustments" [ref=f14e55] [cursor=pointer]:
+            - /url: /ajustes
+          - link "Stock counts" [ref=f14e57] [cursor=pointer]:
+            - /url: /conteos
+        - generic [ref=f14e62]:
+          - generic [ref=f14e63]: Catalog
+          - link "Products" [ref=f14e64] [cursor=pointer]:
+            - /url: /productos
+          - link "Suppliers" [ref=f14e69] [cursor=pointer]:
+            - /url: /proveedores
+          - link "Customers" [ref=f14e75] [cursor=pointer]:
+            - /url: /clientes
+        - generic [ref=f14e80]:
+          - generic [ref=f14e81]: Analytics
+          - link "Reports" [ref=f14e82] [cursor=pointer]:
+            - /url: /reportes
+          - link "Finance" [ref=f14e86] [cursor=pointer]:
+            - /url: /finanzas
+        - generic [ref=f14e90]:
+          - generic [ref=f14e91]: Administration
+          - link "Users" [ref=f14e92] [cursor=pointer]:
+            - /url: /usuarios
+          - link "Roles and permissions" [ref=f14e98] [cursor=pointer]:
+            - /url: /roles
+          - link "Locations" [ref=f14e102] [cursor=pointer]:
+            - /url: /ubicaciones
+          - link "Audit log" [ref=f14e106] [cursor=pointer]:
+            - /url: /auditoria
+    - generic [ref=f14e111]:
+      - banner [ref=f14e112]:
+        - generic [ref=f14e113]:
+          - group "Language" [ref=f14e114]:
+            - button "es" [ref=f14e115]
+            - button "en" [pressed] [ref=f14e116]
+          - button "Light theme. Switch to dark theme" [ref=f14e117]
+          - 'link "Alertas: 7 sin leer, hay críticas" [ref=f14e124] [cursor=pointer]':
+            - /url: /alertas
+            - generic [ref=f14e128]: "7"
+          - button "Dueno's menu" [ref=f14e130]:
+            - generic [ref=f14e131]: D
+            - generic [ref=f14e132]:
+              - generic [ref=f14e133]: Dueno
+              - generic [ref=f14e134]: Dueño
+      - main [ref=f14e135]:
+        - generic [ref=f14e137]:
+          - generic [ref=f14e142]:
+            - paragraph [ref=f14e143]: Monday, November 23, 2026
+            - heading "Good morning, Dueno" [level=1] [ref=f14e144]
+            - paragraph [ref=f14e145]: "Today: 1 order(s) to deliver and Bs 4,211.20 to collect."
+            - generic [ref=f14e146]:
+              - link "New order" [ref=f14e147] [cursor=pointer]:
+                - /url: /pedidos/nuevo
+              - link "Record payment" [ref=f14e149] [cursor=pointer]:
+                - /url: /finanzas/cobros/nuevo
+            - link "3 critical alert(s) to review" [ref=f14e150] [cursor=pointer]:
+              - /url: /alertas
+          - generic [ref=f14e155]:
+            - generic [ref=f14e156]:
+              - generic [ref=f14e157]:
+                - heading "Getting started" [level=2] [ref=f14e158]
+                - paragraph [ref=f14e159]: To start working with your company's data.
+              - paragraph [ref=f14e160]: 5 of 6 done
+            - progressbar "Getting started" [ref=f14e161]
+            - list [ref=f14e163]:
+              - listitem [ref=f14e164]:
+                - link "Done Create warehouses and branches Where goods are stored and shipped from." [ref=f14e165] [cursor=pointer]:
+                  - /url: /ubicaciones
+                  - img "Done" [ref=f14e166]
+                  - generic [ref=f14e169]:
+                    - generic [ref=f14e170]: Create warehouses and branches
+                    - generic [ref=f14e171]: Where goods are stored and shipped from.
+              - listitem [ref=f14e172]:
+                - link "Done Add suppliers Who you buy from, with their delivery days." [ref=f14e173] [cursor=pointer]:
+                  - /url: /proveedores
+                  - img "Done" [ref=f14e174]
+                  - generic [ref=f14e177]:
+                    - generic [ref=f14e178]: Add suppliers
+                    - generic [ref=f14e179]: Who you buy from, with their delivery days.
+              - listitem [ref=f14e180]:
+                - link "Done Add products With their factory code and pack sizes (bundle, box)." [ref=f14e181] [cursor=pointer]:
+                  - /url: /productos
+                  - img "Done" [ref=f14e182]
+                  - generic [ref=f14e185]:
+                    - generic [ref=f14e186]: Add products
+                    - generic [ref=f14e187]: With their factory code and pack sizes (bundle, box).
+              - listitem [ref=f14e188]:
+                - link "Done Add customers The chains (Hipermaxi…) and their delivery stores." [ref=f14e189] [cursor=pointer]:
+                  - /url: /clientes
+                  - img "Done" [ref=f14e190]
+                  - generic [ref=f14e193]:
+                    - generic [ref=f14e194]: Add customers
+                    - generic [ref=f14e195]: The chains (Hipermaxi…) and their delivery stores.
+              - listitem [ref=f14e196]:
+                - link "Done Load opening stock Record a purchase with what each warehouse holds today." [ref=f14e197] [cursor=pointer]:
+                  - /url: /compras/nueva
+                  - img "Done" [ref=f14e198]
+                  - generic [ref=f14e201]:
+                    - generic [ref=f14e202]: Load opening stock
+                    - generic [ref=f14e203]: Record a purchase with what each warehouse holds today.
+              - listitem [ref=f14e204]:
+                - link "Pending Create your team's users Administrators and staff, each with their role." [ref=f14e205] [cursor=pointer]:
+                  - /url: /usuarios
+                  - img "Pending" [ref=f14e206]
+                  - generic [ref=f14e208]:
+                    - generic [ref=f14e209]: Create your team's users
+                    - generic [ref=f14e210]: Administrators and staff, each with their role.
+          - region "Summary" [ref=f14e211]:
+            - link [ref=f14e212] [cursor=pointer]:
+              - /url: /pedidos?estado=BORRADOR
+              - generic [ref=f14e213]:
+                - paragraph [ref=f14e215]: To review and confirm
+                - paragraph [ref=f14e220]: "1"
+            - link [ref=f14e221] [cursor=pointer]:
+              - /url: /pedidos?estado=CONFIRMADO
+              - generic [ref=f14e222]:
+                - paragraph [ref=f14e224]: To pick
+                - paragraph [ref=f14e231]: "1"
+            - link [ref=f14e232] [cursor=pointer]:
+              - /url: /pedidos?estado=ALISTADO
+              - generic [ref=f14e233]:
+                - paragraph [ref=f14e235]: To deliver
+                - paragraph [ref=f14e242]: "1"
+            - link [ref=f14e243] [cursor=pointer]:
+              - /url: /alertas
+              - generic [ref=f14e244]:
+                - paragraph [ref=f14e246]: Unread alerts
+                - paragraph [ref=f14e251]: "7"
+            - link [ref=f14e252] [cursor=pointer]:
+              - /url: /finanzas
+              - generic [ref=f14e253]:
+                - paragraph [ref=f14e255]: Owed by supermarkets
+                - paragraph [ref=f14e260]: Bs 4,211.20
+                - paragraph [ref=f14e261]: Nothing overdue
+            - link [ref=f14e262] [cursor=pointer]:
+              - /url: /reportes?r=ganancias
+              - generic [ref=f14e263]:
+                - paragraph [ref=f14e265]: Sales this month
+                - paragraph [ref=f14e270]: Bs 3,556.00
+                - paragraph [ref=f14e271]: "Profit: Bs 1,326.00"
+          - generic [ref=f14e272]:
+            - generic [ref=f14e273]:
+              - generic [ref=f14e274]:
+                - heading "Latest orders" [level=2] [ref=f14e275]
+                - link "View all" [ref=f14e276] [cursor=pointer]:
+                  - /url: /pedidos
+              - generic [ref=f14e279]:
+                - link "#12 · Centro O/C OC-203 · Nov 22, 2026 Bs 84.00 Draft" [ref=f14e280] [cursor=pointer]:
+                  - /url: /pedidos/69124278-03e4-4707-a80a-e1b63b4c4e7e
+                  - generic [ref=f14e281]:
+                    - paragraph [ref=f14e282]: "#12 · Centro"
+                    - paragraph [ref=f14e283]: O/C OC-203 · Nov 22, 2026
+                  - generic [ref=f14e284]: Bs 84.00
+                  - generic [ref=f14e285]: Draft
+                - link "#11 · Sacaba O/C OC-202 · Nov 22, 2026 Bs 135.00 Confirmed" [ref=f14e286] [cursor=pointer]:
+                  - /url: /pedidos/cd389a2e-3f6b-4249-9bd1-ac22ca6d19d0
+                  - generic [ref=f14e287]:
+                    - paragraph [ref=f14e288]: "#11 · Sacaba"
+                    - paragraph [ref=f14e289]: O/C OC-202 · Nov 22, 2026
+                  - generic [ref=f14e290]: Bs 135.00
+                  - generic [ref=f14e291]: Confirmed
+                - link "#10 · El Prado O/C OC-201 · Nov 21, 2026 Bs 180.00 Picked" [ref=f14e292] [cursor=pointer]:
+                  - /url: /pedidos/38c7b2bd-163e-4c64-b7e3-a4bf9e74d639
+                  - generic [ref=f14e293]:
+                    - paragraph [ref=f14e294]: "#10 · El Prado"
+                    - paragraph [ref=f14e295]: O/C OC-201 · Nov 21, 2026
+                  - generic [ref=f14e296]: Bs 180.00
+                  - generic [ref=f14e297]: Picked
+                - link "#9 · Centro O/C OC-108 · Nov 20, 2026 Bs 793.60 Delivered" [ref=f14e298] [cursor=pointer]:
+                  - /url: /pedidos/d36384ea-8335-494d-9f79-acf59a9ac63f
+                  - generic [ref=f14e299]:
+                    - paragraph [ref=f14e300]: "#9 · Centro"
+                    - paragraph [ref=f14e301]: O/C OC-108 · Nov 20, 2026
+                  - generic [ref=f14e302]: Bs 793.60
+                  - generic [ref=f14e303]: Delivered
+                - link "#8 · Sacaba O/C OC-107 · Nov 17, 2026 Bs 734.40 Delivered" [ref=f14e304] [cursor=pointer]:
+                  - /url: /pedidos/58766eed-370a-491c-b40b-6797c77babd7
+                  - generic [ref=f14e305]:
+                    - paragraph [ref=f14e306]: "#8 · Sacaba"
+                    - paragraph [ref=f14e307]: O/C OC-107 · Nov 17, 2026
+                  - generic [ref=f14e308]: Bs 734.40
+                  - generic [ref=f14e309]: Delivered
+                - link "#7 · El Prado O/C OC-106 · Nov 13, 2026 Bs 675.20 Delivered" [ref=f14e310] [cursor=pointer]:
+                  - /url: /pedidos/46a8c00f-02d4-40f8-a355-ed2b1eea2f59
+                  - generic [ref=f14e311]:
+                    - paragraph [ref=f14e312]: "#7 · El Prado"
+                    - paragraph [ref=f14e313]: O/C OC-106 · Nov 13, 2026
+                  - generic [ref=f14e314]: Bs 675.20
+                  - generic [ref=f14e315]: Delivered
+            - generic [ref=f14e316]:
+              - heading "Quick actions" [level=2] [ref=f14e317]
+              - generic [ref=f14e318]:
+                - link "New order" [ref=f14e319] [cursor=pointer]:
+                  - /url: /pedidos/nuevo
+                - link "View stock" [ref=f14e324] [cursor=pointer]:
+                  - /url: /inventario
+                - link "Record purchase" [ref=f14e336] [cursor=pointer]:
+                  - /url: /compras/nueva
+                - link "Transfer" [ref=f14e343] [cursor=pointer]:
+                  - /url: /transferencias/nueva
+                - link "Stock count" [ref=f14e348] [cursor=pointer]:
+                  - /url: /conteos
+                - link "Record payment" [ref=f14e354] [cursor=pointer]:
+                  - /url: /finanzas/cobros/nuevo
+                - link "Record expense" [ref=f14e359] [cursor=pointer]:
+                  - /url: /finanzas?pestana=gastos
+                - link "Reports" [ref=f14e364] [cursor=pointer]:
+                  - /url: /reportes

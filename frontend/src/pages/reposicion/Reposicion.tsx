@@ -16,10 +16,13 @@ import type {
   SugerenciaCompra,
   SugerenciaTransferencia,
 } from '../../lib/tipos'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 
 type Pestana = 'transferencias' | 'compras' | 'plan' | 'parametros'
 
 export function Reposicion() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const pestanas: { clave: Pestana; texto: string; visible: boolean }[] = [
     { clave: 'transferencias', texto: 'Depósito → sucursal', visible: puede('inventario.transferir') },
@@ -35,10 +38,10 @@ export function Reposicion() {
   return (
     <>
       <Encabezado
-        titulo="Reposición"
-        descripcion="Qué transferir a cada sucursal y qué comprar al proveedor, según lo que se vende y el stock de hoy."
+        titulo={t("Reposición")}
+        descripcion={t("Qué transferir a cada sucursal y qué comprar al proveedor, según lo que se vende y el stock de hoy.")}
       />
-      <nav aria-label="Secciones" className="-mx-4 mb-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <nav aria-label={t("Secciones")} className="-mx-4 mb-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <ul className="flex min-w-max gap-1 border-b border-slate-200">
           {visibles.map((p) => (
             <li key={p.clave}>
@@ -50,7 +53,7 @@ export function Reposicion() {
                   p.clave === actual ? 'border-marca-600 text-marca-700' : 'border-transparent text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {p.texto}
+                {t(p.texto)}
               </button>
             </li>
           ))}
@@ -74,25 +77,28 @@ const CONFIANZA: Record<Confianza, { texto: string; tono: 'ambar' | 'azul' | 've
 }
 
 function InsigniaConfianza({ c }: { c: Confianza }) {
+  const { t } = useTranslation()
   return (
-    <span title={CONFIANZA[c].ayuda}>
-      <Insignia tono={CONFIANZA[c].tono}>{CONFIANZA[c].texto}</Insignia>
+    <span title={t(CONFIANZA[c].ayuda)}>
+      <Insignia tono={CONFIANZA[c].tono}>{t(CONFIANZA[c].texto)}</Insignia>
     </span>
   )
 }
 
 function NombreProducto({ f, onPronostico }: { f: FilaReposicion; onPronostico: AbrirPronostico }) {
+  const { t } = useTranslation()
   return (
-    <button type="button" onClick={() => onPronostico(f.producto)} className="text-left hover:underline" title="Ver el pronóstico">
+    <button type="button" onClick={() => onPronostico(f.producto)} className="text-left hover:underline" title={t("Ver el pronóstico")}>
       <span className="font-medium text-slate-900">{f.producto.nombre}</span>
       <span className="block text-xs text-slate-500">
-        {f.sku} · {formatearCantidad(f.demanda_semanal)} {f.unidad}/semana
+        {f.sku} · {formatearCantidad(f.demanda_semanal)} {f.unidad}{t("/semana")}
       </span>
     </button>
   )
 }
 
-const cobertura = (f: FilaReposicion) => (f.cobertura_dias === null ? 'sin ventas' : `${formatearCantidad(f.cobertura_dias)} días`)
+const cobertura = (f: FilaReposicion, t: TFunction) =>
+  f.cobertura_dias === null ? t('sin ventas') : t('{{n}} días', { n: formatearCantidad(f.cobertura_dias) })
 
 async function cargarProductos(ids: string[]): Promise<Map<string, Producto>> {
   const productos = await Promise.all([...new Set(ids)].map((id) => api<Producto>(`/productos/${id}`)))
@@ -113,6 +119,7 @@ function agrupar<T>(items: T[], clave: (x: T) => string): [string, T[]][] {
 // ---------------------------------------------------------------- depósito → sucursal
 
 function Transferencias({ onPronostico }: { onPronostico: AbrirPronostico }) {
+  const { t } = useTranslation()
   const navegar = useNavigate()
   const sugerencias = useQuery({
     queryKey: ['reposicion', 'transferencias'],
@@ -137,8 +144,8 @@ function Transferencias({ onPronostico }: { onPronostico: AbrirPronostico }) {
     },
   })
   if (sugerencias.isError) return <Aviso>{mensajeError(sugerencias.error)}</Aviso>
-  if (!sugerencias.data) return <p className="text-sm text-slate-500">Calculando…</p>
-  if (sugerencias.data.length === 0) return <Vacio>Ninguna sucursal necesita reposición por ahora.</Vacio>
+  if (!sugerencias.data) return <p className="text-sm text-slate-500">{t("Calculando…")}</p>
+  if (sugerencias.data.length === 0) return <Vacio>{t("Ninguna sucursal necesita reposición por ahora.")}</Vacio>
   return (
     <div className="space-y-6">
       {crear.isError && <Aviso>{mensajeError(crear.error)}</Aviso>}
@@ -149,19 +156,19 @@ function Transferencias({ onPronostico }: { onPronostico: AbrirPronostico }) {
               {grupo[0].origen.nombre} → {grupo[0].ubicacion.nombre}
             </h2>
             <Boton disabled={crear.isPending || grupo.every((s) => quitadas.has(clave(s)))} onClick={() => crear.mutate(grupo)}>
-              <ArrowLeftRight size={16} /> Crear transferencia
+              <ArrowLeftRight size={16} /> {t("Crear transferencia")}
             </Boton>
           </div>
           <Tabla>
             <thead className={CABECERA_TABLA}>
               <tr>
                 <th className="w-10" />
-                <th>Producto</th>
-                <th className="text-right">Disponible</th>
-                <th className="text-right">Alcanza para</th>
-                <th className="text-right">En el depósito</th>
-                <th className="text-right">Transferir</th>
-                <th>Pronóstico</th>
+                <th>{t("Producto")}</th>
+                <th className="text-right">{t("Disponible")}</th>
+                <th className="text-right">{t("Alcanza para")}</th>
+                <th className="text-right">{t("En el depósito")}</th>
+                <th className="text-right">{t("Transferir")}</th>
+                <th>{t("Pronóstico")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -171,7 +178,7 @@ function Transferencias({ onPronostico }: { onPronostico: AbrirPronostico }) {
                     <input
                       type="checkbox"
                       className="size-4 accent-marca-600"
-                      aria-label={`Incluir ${s.producto.nombre}`}
+                      aria-label={t("Incluir {{v0}}", { v0: s.producto.nombre })}
                       checked={!quitadas.has(clave(s))}
                       onChange={(e) =>
                         setQuitadas((q) => {
@@ -187,14 +194,14 @@ function Transferencias({ onPronostico }: { onPronostico: AbrirPronostico }) {
                     <NombreProducto f={s} onPronostico={onPronostico} />
                   </td>
                   <td className="text-right tabular-nums">{formatearCantidad(s.disponible)}</td>
-                  <td className="text-right whitespace-nowrap">{cobertura(s)}</td>
+                  <td className="text-right whitespace-nowrap">{cobertura(s, t)}</td>
                   <td className="text-right tabular-nums">{formatearCantidad(s.origen_disponible)}</td>
                   <td className="text-right whitespace-nowrap">
                     <strong className="tabular-nums">
                       {formatearCantidad(s.cantidad_presentacion)} {s.presentacion === 'unidad' ? s.unidad : s.presentacion.toLowerCase()}
                     </strong>
                     {s.presentacion !== 'unidad' && <span className="block text-xs text-slate-500">{formatearCantidad(s.cantidad)} {s.unidad}</span>}
-                    {s.insuficiente && <span className="block text-xs text-red-700">El depósito no alcanza: hay que comprar</span>}
+                    {s.insuficiente && <span className="block text-xs text-red-700">{t("El depósito no alcanza: hay que comprar")}</span>}
                   </td>
                   <td>
                     <InsigniaConfianza c={s.confianza} />
@@ -206,8 +213,7 @@ function Transferencias({ onPronostico }: { onPronostico: AbrirPronostico }) {
         </section>
       ))}
       <p className="text-xs text-slate-500">
-        Se sugiere reponer cuando lo disponible baja del punto de reorden, hasta cubrir los días configurados. El depósito de origen es el que
-        suele abastecer a esa sucursal (según las transferencias registradas). Puede cambiar todo en la transferencia antes de guardarla.
+        {t("Se sugiere reponer cuando lo disponible baja del punto de reorden, hasta cubrir los días configurados. El depósito de origen es el que suele abastecer a esa sucursal (según las transferencias registradas). Puede cambiar todo en la transferencia antes de guardarla.")}
       </p>
     </div>
   )
@@ -216,6 +222,7 @@ function Transferencias({ onPronostico }: { onPronostico: AbrirPronostico }) {
 // ---------------------------------------------------------------- proveedor → depósito
 
 function Compras({ onPronostico }: { onPronostico: AbrirPronostico }) {
+  const { t } = useTranslation()
   const navegar = useNavigate()
   const sugerencias = useQuery({ queryKey: ['reposicion', 'compras'], queryFn: () => api<SugerenciaCompra[]>('/reposicion/compras') })
   const hoy = hoyLaPaz()
@@ -237,8 +244,8 @@ function Compras({ onPronostico }: { onPronostico: AbrirPronostico }) {
     },
   })
   if (sugerencias.isError) return <Aviso>{mensajeError(sugerencias.error)}</Aviso>
-  if (!sugerencias.data) return <p className="text-sm text-slate-500">Calculando…</p>
-  if (sugerencias.data.length === 0) return <Vacio>No hace falta comprar nada en los próximos 14 días.</Vacio>
+  if (!sugerencias.data) return <p className="text-sm text-slate-500">{t("Calculando…")}</p>
+  if (sugerencias.data.length === 0) return <Vacio>{t("No hace falta comprar nada en los próximos 14 días.")}</Vacio>
   return (
     <div className="space-y-6">
       {crear.isError && <Aviso>{mensajeError(crear.error)}</Aviso>}
@@ -249,23 +256,23 @@ function Compras({ onPronostico }: { onPronostico: AbrirPronostico }) {
           <section key={k} className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-semibold">
-                {grupo[0].proveedor?.nombre ?? 'Sin proveedor asociado'} → {grupo[0].ubicacion.nombre}
+                {grupo[0].proveedor?.nombre ?? t("Sin proveedor asociado")} → {grupo[0].ubicacion.nombre}
                 {total > 0 && <span className="ml-2 text-sm font-normal text-slate-500">≈ {formatearBs(total)}</span>}
               </h2>
               <Boton disabled={crear.isPending} onClick={() => crear.mutate(ahora.length ? ahora : grupo)}>
-                <ShoppingCart size={16} /> {ahora.length ? `Crear compra (${ahora.length} para ya)` : 'Crear compra'}
+                <ShoppingCart size={16} /> {ahora.length ? t("Crear compra ({{v0}} para ya)", { v0: ahora.length }) : t("Crear compra")}
               </Boton>
             </div>
             <Tabla>
               <thead className={CABECERA_TABLA}>
                 <tr>
-                  <th>Producto</th>
-                  <th className="text-right">Disponible</th>
-                  <th className="text-right">Alcanza para</th>
-                  <th>Cuándo</th>
-                  <th className="text-right">Comprar</th>
-                  {grupo.some((s) => s.costo_estimado) && <th className="text-right">Costo estimado</th>}
-                  <th>Pronóstico</th>
+                  <th>{t("Producto")}</th>
+                  <th className="text-right">{t("Disponible")}</th>
+                  <th className="text-right">{t("Alcanza para")}</th>
+                  <th>{t("Cuándo")}</th>
+                  <th className="text-right">{t("Comprar")}</th>
+                  {grupo.some((s) => s.costo_estimado) && <th className="text-right">{t("Costo estimado")}</th>}
+                  <th>{t("Pronóstico")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -275,10 +282,10 @@ function Compras({ onPronostico }: { onPronostico: AbrirPronostico }) {
                       <NombreProducto f={s} onPronostico={onPronostico} />
                     </td>
                     <td className="text-right tabular-nums">{formatearCantidad(s.disponible)}</td>
-                    <td className="text-right whitespace-nowrap">{cobertura(s)}</td>
+                    <td className="text-right whitespace-nowrap">{cobertura(s, t)}</td>
                     <td className="whitespace-nowrap">
-                      {s.fecha <= hoy ? <strong className="text-red-700">Ya</strong> : formatearDia(s.fecha)}
-                      <span className="block text-xs text-slate-500">entrega en {s.dias_entrega} días</span>
+                      {s.fecha <= hoy ? <strong className="text-red-700">{t("Ya")}</strong> : formatearDia(s.fecha)}
+                      <span className="block text-xs text-slate-500">{t("entrega en")} {s.dias_entrega} {t("días")}</span>
                     </td>
                     <td className="text-right whitespace-nowrap">
                       <strong className="tabular-nums">
@@ -298,8 +305,7 @@ function Compras({ onPronostico }: { onPronostico: AbrirPronostico }) {
         )
       })}
       <p className="text-xs text-slate-500">
-        La demanda de cada depósito es la de las sucursales que abastece. «Ya» significa que el stock está por debajo del punto de reorden
-        (lo que se vende mientras llega la compra, más un margen de seguridad). El costo estimado usa el precio de la última compra.
+        {t("La demanda de cada depósito es la de las sucursales que abastece. «Ya» significa que el stock está por debajo del punto de reorden (lo que se vende mientras llega la compra, más un margen de seguridad). El costo estimado usa el precio de la última compra.")}
       </p>
     </div>
   )
@@ -308,10 +314,11 @@ function Compras({ onPronostico }: { onPronostico: AbrirPronostico }) {
 // ---------------------------------------------------------------- plan completo
 
 function Plan({ onPronostico }: { onPronostico: AbrirPronostico }) {
+  const { t } = useTranslation()
   const plan = useQuery({ queryKey: ['reposicion', 'plan'], queryFn: () => api<FilaReposicion[]>('/reposicion/plan') })
   const [filtro, setFiltro] = useState('')
   if (plan.isError) return <Aviso>{mensajeError(plan.error)}</Aviso>
-  if (!plan.data) return <p className="text-sm text-slate-500">Calculando…</p>
+  if (!plan.data) return <p className="text-sm text-slate-500">{t("Calculando…")}</p>
   const urgente = (f: FilaReposicion) => (Number(f.demanda_semanal) > 0 || f.con_limites) && Number(f.disponible) <= Number(f.punto_reorden)
   // Primero lo que hay que reponer, luego lo que más se vende.
   const filas = plan.data
@@ -319,18 +326,18 @@ function Plan({ onPronostico }: { onPronostico: AbrirPronostico }) {
     .sort((a, b) => Number(urgente(b)) - Number(urgente(a)) || Number(b.demanda_semanal) - Number(a.demanda_semanal))
   return (
     <div className="space-y-3">
-      <Entrada placeholder="Buscar producto o ubicación…" value={filtro} onChange={(e) => setFiltro(e.target.value)} className="max-w-sm" />
+      <Entrada placeholder={t("Buscar producto o ubicación…")} value={filtro} onChange={(e) => setFiltro(e.target.value)} className="max-w-sm" />
       <Tabla>
         <thead className={CABECERA_TABLA}>
           <tr>
-            <th>Ubicación</th>
-            <th>Producto</th>
-            <th className="text-right">Disponible</th>
-            <th className="text-right">Alcanza para</th>
-            <th className="text-right">Seguridad</th>
-            <th className="text-right">Punto de reorden</th>
-            <th className="text-right">Objetivo</th>
-            <th>Pronóstico</th>
+            <th>{t("Ubicación")}</th>
+            <th>{t("Producto")}</th>
+            <th className="text-right">{t("Disponible")}</th>
+            <th className="text-right">{t("Alcanza para")}</th>
+            <th className="text-right">{t("Seguridad")}</th>
+            <th className="text-right">{t("Punto de reorden")}</th>
+            <th className="text-right">{t("Objetivo")}</th>
+            <th>{t("Pronóstico")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -343,12 +350,12 @@ function Plan({ onPronostico }: { onPronostico: AbrirPronostico }) {
                   <NombreProducto f={f} onPronostico={onPronostico} />
                 </td>
                 <td className={`text-right tabular-nums ${bajo ? 'font-semibold text-red-700' : ''}`}>{formatearCantidad(f.disponible)}</td>
-                <td className="text-right whitespace-nowrap">{cobertura(f)}</td>
+                <td className="text-right whitespace-nowrap">{cobertura(f, t)}</td>
                 <td className="text-right tabular-nums">{formatearCantidad(f.stock_seguridad)}</td>
                 <td className="text-right tabular-nums">{formatearCantidad(f.punto_reorden)}</td>
                 <td className="text-right tabular-nums">
                   {formatearCantidad(f.objetivo)}
-                  {f.con_limites && <span className="block text-xs text-slate-500">mín./máx. cargados</span>}
+                  {f.con_limites && <span className="block text-xs text-slate-500">{t("mín./máx. cargados")}</span>}
                 </td>
                 <td className="whitespace-nowrap">
                   <InsigniaConfianza c={f.confianza} />
@@ -378,6 +385,7 @@ const CAMPOS: { clave: keyof ParametrosAlertas; etiqueta: string; ayuda: string 
 ]
 
 function Parametros() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const queryClient = useQueryClient()
   const editable = puede('configuracion.gestionar')
@@ -403,7 +411,7 @@ function Parametros() {
       void queryClient.invalidateQueries({ queryKey: ['alertas'] })
     },
   })
-  if (!actuales.data) return actuales.isError ? <Aviso>{mensajeError(actuales.error)}</Aviso> : <p className="text-sm text-slate-500">Cargando…</p>
+  if (!actuales.data) return actuales.isError ? <Aviso>{mensajeError(actuales.error)}</Aviso> : <p className="text-sm text-slate-500">{t("Cargando…")}</p>
   return (
     <form
       className="max-w-3xl space-y-4"
@@ -414,7 +422,7 @@ function Parametros() {
     >
       <div className="grid gap-4 sm:grid-cols-2">
         {CAMPOS.map((c) => (
-          <Campo key={c.clave} etiqueta={c.etiqueta} ayuda={c.ayuda}>
+          <Campo key={c.clave} etiqueta={t(c.etiqueta)} ayuda={t(c.ayuda)}>
             <Entrada
               type="number"
               min={0}
@@ -427,23 +435,22 @@ function Parametros() {
         ))}
       </div>
       {guardar.isError && <Aviso>{mensajeError(guardar.error)}</Aviso>}
-      {guardar.isSuccess && <Aviso tipo="exito">Parámetros guardados; las alertas ya usan los nuevos valores.</Aviso>}
-      {recalcular.isSuccess && <Aviso tipo="exito">Pronóstico recalculado para {recalcular.data.pronosticos} productos.</Aviso>}
+      {guardar.isSuccess && <Aviso tipo="exito">{t("Parámetros guardados; las alertas ya usan los nuevos valores.")}</Aviso>}
+      {recalcular.isSuccess && <Aviso tipo="exito">{t("Pronóstico recalculado para")} {recalcular.data.pronosticos} {t("productos.")}</Aviso>}
       {recalcular.isError && <Aviso>{mensajeError(recalcular.error)}</Aviso>}
       <div className="flex flex-wrap gap-2">
         {editable && (
           <Boton type="submit" disabled={!form || guardar.isPending}>
-            {guardar.isPending ? 'Guardando…' : 'Guardar parámetros'}
+            {guardar.isPending ? t("Guardando…") : t("Guardar parámetros")}
           </Boton>
         )}
         <Boton variante="secundario" disabled={recalcular.isPending} onClick={() => recalcular.mutate()}>
-          <RefreshCw size={16} className={recalcular.isPending ? 'animate-spin' : ''} /> Recalcular pronóstico ahora
+          <RefreshCw size={16} className={recalcular.isPending ? 'animate-spin' : ''} /> {t("Recalcular pronóstico ahora")}
         </Boton>
       </div>
       <p className="text-xs text-slate-500">
-        El pronóstico se recalcula solo cada lunes de madrugada con las ventas de hasta 52 semanas: prueba varios métodos (promedio,
-        promedio móvil y suavizado exponencial) y usa el que mejor acierta con las ventas pasadas.
-        {!editable && ' Solo quien tiene permiso de configuración puede cambiar estos valores.'}
+        {t("El pronóstico se recalcula solo cada lunes de madrugada con las ventas de hasta 52 semanas: prueba varios métodos (promedio, promedio móvil y suavizado exponencial) y usa el que mejor acierta con las ventas pasadas.")}
+        {!editable && t(" Solo quien tiene permiso de configuración puede cambiar estos valores.")}
       </p>
     </form>
   )
@@ -452,6 +459,7 @@ function Parametros() {
 // ---------------------------------------------------------------- pronóstico de un producto
 
 function ModalPronostico({ producto, onCerrar }: { producto: { id: string; nombre: string } | null; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const datos = useQuery({
     queryKey: ['reposicion', 'pronostico', producto?.id],
     queryFn: () => api<PronosticoProducto[]>(`/reposicion/pronostico/${producto!.id}`),
@@ -459,18 +467,18 @@ function ModalPronostico({ producto, onCerrar }: { producto: { id: string; nombr
   })
   const conVentas = (datos.data ?? []).filter((p) => p.historial.some((v) => v > 0))
   return (
-    <Modal abierto={!!producto} titulo={`Pronóstico: ${producto?.nombre ?? ''}`} onCerrar={onCerrar}>
+    <Modal abierto={!!producto} titulo={t("Pronóstico: {{v0}}", { v0: producto?.nombre ?? '' })} onCerrar={onCerrar}>
       <div className="space-y-4">
         {datos.isError && <Aviso>{mensajeError(datos.error)}</Aviso>}
-        {datos.data && conVentas.length === 0 && <p className="text-sm text-slate-500">Todavía no hay ventas de este producto: no hay pronóstico.</p>}
+        {datos.data && conVentas.length === 0 && <p className="text-sm text-slate-500">{t("Todavía no hay ventas de este producto: no hay pronóstico.")}</p>}
         {conVentas.map((p) => (
           <div key={p.ubicacion.id} className="space-y-2">
             <p className="flex flex-wrap items-center gap-2 text-sm">
               <strong>{p.ubicacion.nombre}</strong>
               <InsigniaConfianza c={p.confianza} />
               <span className="text-slate-600">
-                {formatearCantidad(p.demanda_semanal)} por semana · {p.metodo} · {p.semanas} semana(s) de historial
-                {p.error_medio !== null && ` · error medio ${formatearCantidad(p.error_medio)}`}
+                {formatearCantidad(p.demanda_semanal)} {t("por semana ·")} {p.metodo} · {p.semanas} {t("semana(s) de historial")}
+                {p.error_medio !== null && t(" · error medio {{v0}}", { v0: formatearCantidad(p.error_medio) })}
               </span>
             </p>
             <Grafico
@@ -490,14 +498,14 @@ function ModalPronostico({ producto, onCerrar }: { producto: { id: string; nombr
                     vendido: v,
                     pronostico: null,
                   })),
-                  { etiqueta: 'Próxima', vendido: null, pronostico: Number(p.demanda_semanal) },
+                  { etiqueta: t('Próxima'), vendido: null, pronostico: Number(p.demanda_semanal) },
                 ],
               }}
             />
           </div>
         ))}
         <p className="flex items-center gap-1 text-xs text-slate-500">
-          <LineChart size={14} aria-hidden /> Con más semanas de ventas el pronóstico gana confianza.
+          <LineChart size={14} aria-hidden /> {t("Con más semanas de ventas el pronóstico gana confianza.")}
         </p>
       </div>
     </Modal>

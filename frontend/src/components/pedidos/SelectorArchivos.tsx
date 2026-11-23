@@ -2,6 +2,7 @@ import { Camera, FileUp, ImagePlus, X } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { comprimirImagen, esImagen } from '../../lib/imagenes'
 import { formatearTamano } from '../../lib/formato'
+import { useTranslation } from 'react-i18next'
 
 const MAX_MB = 15
 
@@ -17,6 +18,7 @@ export function SelectorArchivos({
   onError: (mensaje: string | null) => void
   ocupado?: (preparando: boolean) => void
 }) {
+  const { t } = useTranslation()
   const camara = useRef<HTMLInputElement>(null)
   const galeria = useRef<HTMLInputElement>(null)
   const pdf = useRef<HTMLInputElement>(null)
@@ -52,10 +54,10 @@ export function SelectorArchivos({
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2">
         <button type="button" className={boton} onClick={() => camara.current?.click()}>
-          <Camera size={24} className="text-marca-700" /> Tomar foto
+          <Camera size={24} className="text-marca-700" /> {t("Tomar foto")}
         </button>
         <button type="button" className={boton} onClick={() => galeria.current?.click()}>
-          <ImagePlus size={24} className="text-marca-700" /> Galería
+          <ImagePlus size={24} className="text-marca-700" /> {t("Galería")}
         </button>
         <button type="button" className={boton} onClick={() => pdf.current?.click()}>
           <FileUp size={24} className="text-marca-700" /> PDF
@@ -76,7 +78,7 @@ export function SelectorArchivos({
               <span className="absolute top-1 left-1 rounded bg-black/60 px-1.5 text-xs text-white">{i + 1}</span>
               <button
                 type="button"
-                aria-label={`Quitar ${a.name}`}
+                aria-label={t("Quitar {{v0}}", { v0: a.name })}
                 className="absolute top-1 right-1 rounded-full bg-white/90 p-1 text-red-600 shadow"
                 onClick={() => onCambio(archivos.filter((_, j) => j !== i))}
               >

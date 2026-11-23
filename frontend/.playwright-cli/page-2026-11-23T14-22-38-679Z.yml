@@ -1,0 +1,282 @@
+- generic [ref=f21e2]:
+  - link "Saltar al contenido" [ref=f21e3] [cursor=pointer]:
+    - /url: "#contenido"
+  - generic [ref=f21e4]:
+    - complementary "Menú principal" [ref=f21e5]:
+      - generic [ref=f21e12]:
+        - generic [ref=f21e13]: Inventario
+        - generic [ref=f21e14]: Distribuidora
+      - navigation [ref=f21e15]:
+        - link "Inicio" [ref=f21e17] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f21e21]:
+          - generic [ref=f21e22]: Operación
+          - link "Pedidos" [ref=f21e23] [cursor=pointer]:
+            - /url: /pedidos
+          - link "Stock" [ref=f21e27] [cursor=pointer]:
+            - /url: /inventario
+          - link "Reposición" [ref=f21e38] [cursor=pointer]:
+            - /url: /reposicion
+          - link "Compras" [ref=f21e44] [cursor=pointer]:
+            - /url: /compras
+          - link "Transferencias" [ref=f21e50] [cursor=pointer]:
+            - /url: /transferencias
+          - link "Ajustes" [ref=f21e54] [cursor=pointer]:
+            - /url: /ajustes
+          - link "Conteos físicos" [ref=f21e56] [cursor=pointer]:
+            - /url: /conteos
+        - generic [ref=f21e61]:
+          - generic [ref=f21e62]: Catálogo
+          - link "Productos" [ref=f21e63] [cursor=pointer]:
+            - /url: /productos
+          - link "Proveedores" [ref=f21e68] [cursor=pointer]:
+            - /url: /proveedores
+          - link "Clientes" [ref=f21e74] [cursor=pointer]:
+            - /url: /clientes
+        - generic [ref=f21e79]:
+          - generic [ref=f21e80]: Análisis
+          - link "Reportes" [ref=f21e81] [cursor=pointer]:
+            - /url: /reportes
+          - link "Finanzas" [ref=f21e85] [cursor=pointer]:
+            - /url: /finanzas
+        - generic [ref=f21e89]:
+          - generic [ref=f21e90]: Administración
+          - link "Usuarios" [ref=f21e91] [cursor=pointer]:
+            - /url: /usuarios
+          - link "Roles y permisos" [ref=f21e97] [cursor=pointer]:
+            - /url: /roles
+          - link "Ubicaciones" [ref=f21e101] [cursor=pointer]:
+            - /url: /ubicaciones
+          - link "Auditoría" [ref=f21e105] [cursor=pointer]:
+            - /url: /auditoria
+    - generic [ref=f21e110]:
+      - banner [ref=f21e111]:
+        - generic [ref=f21e112]:
+          - group "Idioma" [ref=f21e113]:
+            - button "es" [pressed] [ref=f21e114]
+            - button "en" [ref=f21e115]
+          - button "Tema claro. Cambiar a tema oscuro" [ref=f21e116]
+          - 'link "Alertas: 7 sin leer, hay críticas" [ref=f21e123] [cursor=pointer]':
+            - /url: /alertas
+            - generic [ref=f21e127]: "7"
+          - button "Menú de Dueno" [ref=f21e129]:
+            - generic [ref=f21e130]: D
+            - generic [ref=f21e131]:
+              - generic [ref=f21e132]: Dueno
+              - generic [ref=f21e133]: Dueño
+      - main [ref=f21e134]:
+        - generic [ref=f21e135]:
+          - generic [ref=f21e136]:
+            - generic [ref=f21e137]:
+              - heading "Pedidos" [level=1] [ref=f21e138]
+              - paragraph [ref=f21e139]: "Órdenes de compra de los supermercados: revisión, reserva, alistado y entrega."
+            - link [ref=f21e140] [cursor=pointer]:
+              - /url: /pedidos/nuevo
+              - button "Nuevo pedido" [ref=f21e141]
+          - generic [ref=f21e143]:
+            - generic [ref=f21e144]:
+              - text: Buscar
+              - textbox "Buscar" [ref=f21e146]:
+                - /placeholder: N.º de OC o de pedido
+            - generic [ref=f21e147]:
+              - text: Estado
+              - combobox "Estado" [ref=f21e148]:
+                - option "Todos" [selected]
+                - option "Borrador"
+                - option "Confirmado"
+                - option "Alistado"
+                - option "Entregado"
+                - option "Anulado"
+            - generic [ref=f21e149]:
+              - text: Cadena
+              - combobox "Cadena" [ref=f21e150]:
+                - option "Todas" [selected]
+                - option "Fidalga"
+                - option "Hipermaxi"
+          - table [ref=f21e153]:
+            - rowgroup [ref=f21e154]:
+              - row [ref=f21e155]:
+                - columnheader "N.º" [ref=f21e156]
+                - columnheader "OC" [ref=f21e157]
+                - columnheader "Cliente" [ref=f21e158]
+                - columnheader "Despacha" [ref=f21e159]
+                - columnheader "Fecha" [ref=f21e160]
+                - columnheader "Total" [ref=f21e161]
+                - columnheader "Margen" [ref=f21e162]
+                - columnheader "Estado" [ref=f21e163]
+                - columnheader "Responsable" [ref=f21e164]
+            - rowgroup [ref=f21e165]:
+              - row [ref=f21e166]:
+                - cell [ref=f21e167]:
+                  - link "#12" [ref=f21e168] [cursor=pointer]:
+                    - /url: /pedidos/69124278-03e4-4707-a80a-e1b63b4c4e7e
+                - cell "OC-203" [ref=f21e169]
+                - cell "Fidalga Centro" [ref=f21e170]:
+                  - text: Fidalga
+                  - generic [ref=f21e171]: Centro
+                - cell "Sucursal Central" [ref=f21e172]
+                - cell "22 nov de 2026" [ref=f21e173]
+                - cell "Bs 84,00" [ref=f21e174]
+                - cell "—" [ref=f21e175]
+                - cell "Borrador" [ref=f21e176]
+                - cell "Dueno" [ref=f21e178]
+              - row [ref=f21e179]:
+                - cell [ref=f21e180]:
+                  - link "#11" [ref=f21e181] [cursor=pointer]:
+                    - /url: /pedidos/cd389a2e-3f6b-4249-9bd1-ac22ca6d19d0
+                - cell "OC-202" [ref=f21e182]
+                - cell "Hipermaxi Sacaba" [ref=f21e183]:
+                  - text: Hipermaxi
+                  - generic [ref=f21e184]: Sacaba
+                - cell "Sucursal Central" [ref=f21e185]
+                - cell "22 nov de 2026" [ref=f21e186]
+                - cell "Bs 135,00" [ref=f21e187]
+                - cell "—" [ref=f21e188]
+                - cell "Confirmado" [ref=f21e189]
+                - cell "Dueno" [ref=f21e191]
+              - row [ref=f21e192]:
+                - cell [ref=f21e193]:
+                  - link "#10" [ref=f21e194] [cursor=pointer]:
+                    - /url: /pedidos/38c7b2bd-163e-4c64-b7e3-a4bf9e74d639
+                - cell "OC-201" [ref=f21e195]
+                - cell "Hipermaxi El Prado" [ref=f21e196]:
+                  - text: Hipermaxi
+                  - generic [ref=f21e197]: El Prado
+                - cell "Sucursal Central" [ref=f21e198]
+                - cell "21 nov de 2026" [ref=f21e199]
+                - cell "Bs 180,00" [ref=f21e200]
+                - cell "33,33 %" [ref=f21e201]
+                - cell "Alistado" [ref=f21e202]
+                - cell "Dueno" [ref=f21e204]
+              - row [ref=f21e205]:
+                - cell [ref=f21e206]:
+                  - link "#9" [ref=f21e207] [cursor=pointer]:
+                    - /url: /pedidos/d36384ea-8335-494d-9f79-acf59a9ac63f
+                - cell "OC-108" [ref=f21e208]
+                - cell "Fidalga Centro" [ref=f21e209]:
+                  - text: Fidalga
+                  - generic [ref=f21e210]: Centro
+                - cell "Sucursal Central" [ref=f21e211]
+                - cell "20 nov de 2026" [ref=f21e212]
+                - cell "Bs 793,60" [ref=f21e213]
+                - cell "37,50 %" [ref=f21e214]
+                - cell "Entregado" [ref=f21e215]
+                - cell "Dueno" [ref=f21e217]
+              - row [ref=f21e218]:
+                - cell [ref=f21e219]:
+                  - link "#8" [ref=f21e220] [cursor=pointer]:
+                    - /url: /pedidos/58766eed-370a-491c-b40b-6797c77babd7
+                - cell "OC-107" [ref=f21e221]
+                - cell "Hipermaxi Sacaba" [ref=f21e222]:
+                  - text: Hipermaxi
+                  - generic [ref=f21e223]: Sacaba
+                - cell "Sucursal Central" [ref=f21e224]
+                - cell "17 nov de 2026" [ref=f21e225]
+                - cell "Bs 734,40" [ref=f21e226]
+                - cell "37,50 %" [ref=f21e227]
+                - cell "Entregado" [ref=f21e228]
+                - cell "Dueno" [ref=f21e230]
+              - row [ref=f21e231]:
+                - cell [ref=f21e232]:
+                  - link "#7" [ref=f21e233] [cursor=pointer]:
+                    - /url: /pedidos/46a8c00f-02d4-40f8-a355-ed2b1eea2f59
+                - cell "OC-106" [ref=f21e234]
+                - cell "Hipermaxi El Prado" [ref=f21e235]:
+                  - text: Hipermaxi
+                  - generic [ref=f21e236]: El Prado
+                - cell "Sucursal Central" [ref=f21e237]
+                - cell "13 nov de 2026" [ref=f21e238]
+                - cell "Bs 675,20" [ref=f21e239]
+                - cell "37,50 %" [ref=f21e240]
+                - cell "Entregado" [ref=f21e241]
+                - cell "Dueno" [ref=f21e243]
+              - row [ref=f21e244]:
+                - cell [ref=f21e245]:
+                  - link "#6" [ref=f21e246] [cursor=pointer]:
+                    - /url: /pedidos/d922c4d1-6a58-441e-a837-6c0bbebc3ba3
+                - cell "OC-105" [ref=f21e247]
+                - cell "Fidalga Centro" [ref=f21e248]:
+                  - text: Fidalga
+                  - generic [ref=f21e249]: Centro
+                - cell "Sucursal Central" [ref=f21e250]
+                - cell "8 nov de 2026" [ref=f21e251]
+                - cell "Bs 616,00" [ref=f21e252]
+                - cell "37,50 %" [ref=f21e253]
+                - cell "Entregado" [ref=f21e254]
+                - cell "Dueno" [ref=f21e256]
+              - row [ref=f21e257]:
+                - cell [ref=f21e258]:
+                  - link "#5" [ref=f21e259] [cursor=pointer]:
+                    - /url: /pedidos/0c92cf26-4373-427b-9edc-0940bfaa5035
+                - cell "OC-104" [ref=f21e260]
+                - cell "Hipermaxi Sacaba" [ref=f21e261]:
+                  - text: Hipermaxi
+                  - generic [ref=f21e262]: Sacaba
+                - cell "Sucursal Central" [ref=f21e263]
+                - cell "1 nov de 2026" [ref=f21e264]
+                - cell "Bs 556,80" [ref=f21e265]
+                - cell "37,50 %" [ref=f21e266]
+                - cell "Entregado" [ref=f21e267]
+                - cell "Dueno" [ref=f21e269]
+              - row [ref=f21e270]:
+                - cell [ref=f21e271]:
+                  - link "#4" [ref=f21e272] [cursor=pointer]:
+                    - /url: /pedidos/6bf71357-9aae-4e6f-a2be-0f219c31f8be
+                - cell "OC-103" [ref=f21e273]
+                - cell "Hipermaxi El Prado" [ref=f21e274]:
+                  - text: Hipermaxi
+                  - generic [ref=f21e275]: El Prado
+                - cell "Sucursal Central" [ref=f21e276]
+                - cell "25 oct de 2026" [ref=f21e277]
+                - cell "Bs 497,60" [ref=f21e278]
+                - cell "37,50 %" [ref=f21e279]
+                - cell "Entregado" [ref=f21e280]
+                - cell "Dueno" [ref=f21e282]
+              - row [ref=f21e283]:
+                - cell [ref=f21e284]:
+                  - link "#3" [ref=f21e285] [cursor=pointer]:
+                    - /url: /pedidos/75c5ed31-eef8-4b73-a8ae-4a764779859d
+                - cell "OC-102" [ref=f21e286]
+                - cell "Fidalga Centro" [ref=f21e287]:
+                  - text: Fidalga
+                  - generic [ref=f21e288]: Centro
+                - cell "Sucursal Central" [ref=f21e289]
+                - cell "18 oct de 2026" [ref=f21e290]
+                - cell "Bs 438,40" [ref=f21e291]
+                - cell "37,50 %" [ref=f21e292]
+                - cell "Entregado" [ref=f21e293]
+                - cell "Dueno" [ref=f21e295]
+              - row [ref=f21e296]:
+                - cell [ref=f21e297]:
+                  - link "#2" [ref=f21e298] [cursor=pointer]:
+                    - /url: /pedidos/cf755b2e-5dbb-4557-86db-30f72c226afc
+                - cell "OC-101" [ref=f21e299]
+                - cell "Hipermaxi Sacaba" [ref=f21e300]:
+                  - text: Hipermaxi
+                  - generic [ref=f21e301]: Sacaba
+                - cell "Sucursal Central" [ref=f21e302]
+                - cell "11 oct de 2026" [ref=f21e303]
+                - cell "Bs 379,20" [ref=f21e304]
+                - cell "37,50 %" [ref=f21e305]
+                - cell "Entregado" [ref=f21e306]
+                - cell "Dueno" [ref=f21e308]
+              - row [ref=f21e309]:
+                - cell [ref=f21e310]:
+                  - link "#1" [ref=f21e311] [cursor=pointer]:
+                    - /url: /pedidos/a1091d36-a470-460f-bbce-6d141dc56796
+                - cell "OC-100" [ref=f21e312]
+                - cell "Hipermaxi El Prado" [ref=f21e313]:
+                  - text: Hipermaxi
+                  - generic [ref=f21e314]: El Prado
+                - cell "Sucursal Central" [ref=f21e315]
+                - cell "3 oct de 2026" [ref=f21e316]
+                - cell "Bs 320,00" [ref=f21e317]
+                - cell "37,50 %" [ref=f21e318]
+                - cell "Entregado" [ref=f21e319]
+                - cell "Dueno" [ref=f21e321]
+          - generic [ref=f21e322]:
+            - generic [ref=f21e323]: 12 registros
+            - generic [ref=f21e324]:
+              - button "Anterior" [disabled] [ref=f21e325]
+              - generic [ref=f21e326]: 1 / 1
+              - button "Siguiente" [disabled] [ref=f21e327]

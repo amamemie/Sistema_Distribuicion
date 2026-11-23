@@ -4,6 +4,7 @@ import { urlArchivo } from '../../lib/api'
 import { formatearTamano } from '../../lib/formato'
 import type { DocumentoPedido } from '../../lib/tipos'
 import { Boton, Tarjeta } from '../ui'
+import { useTranslation } from 'react-i18next'
 
 /** Muestra las páginas del documento (fotos y PDF) para revisarlas junto a los datos. */
 export function VisorDocumentos({
@@ -15,12 +16,13 @@ export function VisorDocumentos({
   documentos: DocumentoPedido[]
   onQuitar?: (archivoId: string) => void
 }) {
+  const { t } = useTranslation()
   const [actual, setActual] = useState(0)
   const doc = documentos[Math.min(actual, documentos.length - 1)]
   if (!doc) {
     return (
       <Tarjeta className="flex h-40 items-center justify-center p-4 text-sm text-slate-500">
-        Sin documento adjunto (pedido cargado a mano).
+        {t("Sin documento adjunto (pedido cargado a mano).")}
       </Tarjeta>
     )
   }
@@ -39,7 +41,7 @@ export function VisorDocumentos({
                 i === actual ? 'bg-marca-700 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
-              {d.tipo_mime === 'application/pdf' ? 'PDF' : 'Pág.'} {i + 1}
+              {d.tipo_mime === 'application/pdf' ? 'PDF' : t("Pág.")} {i + 1}
             </button>
           ))}
         </div>
@@ -55,11 +57,11 @@ export function VisorDocumentos({
               rel="noreferrer"
               className="flex h-40 flex-col items-center justify-center gap-2 text-sm text-marca-800 lg:hidden"
             >
-              <FileText size={32} /> Abrir el PDF
+              <FileText size={32} /> {t("Abrir el PDF")}
             </a>
           </>
         ) : (
-          <a href={url} target="_blank" rel="noreferrer" title="Abrir en tamaño completo">
+          <a href={url} target="_blank" rel="noreferrer" title={t("Abrir en tamaño completo")}>
             <img src={url} alt={doc.nombre} className="mx-auto max-h-[75dvh] w-full object-contain" loading="lazy" />
           </a>
         )}
@@ -70,7 +72,7 @@ export function VisorDocumentos({
         </span>
         <span className="flex shrink-0 items-center gap-1">
           <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-slate-100">
-            <ExternalLink size={14} /> Abrir
+            <ExternalLink size={14} /> {t("Abrir")}
           </a>
           {onQuitar && (
             <Boton
@@ -79,7 +81,7 @@ export function VisorDocumentos({
               onClick={() => {
                 if (confirm(`¿Quitar «${doc.nombre}» del pedido?`)) onQuitar(doc.id)
               }}
-              aria-label="Quitar archivo"
+              aria-label={t("Quitar archivo")}
             >
               <Trash2 size={14} />
             </Boton>

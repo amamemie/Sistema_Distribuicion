@@ -38,6 +38,7 @@ import type {
   ResumenCadena,
 } from '../../lib/tipos'
 import { nombreMes, primerDiaMes, ultimoDiaMes, urlComprobante } from './utiles'
+import { useTranslation } from 'react-i18next'
 
 const PESTANAS = [
   { clave: 'por-cobrar', titulo: 'Por cobrar' },
@@ -51,6 +52,7 @@ type Pestana = (typeof PESTANAS)[number]['clave']
 
 /** Finanzas: lo que deben los supermercados, cobros, gastos, pagos e impuestos (Fase 5). */
 export function Finanzas() {
+  const { t } = useTranslation()
   const [params, setParams] = useSearchParams()
   const actual: Pestana = PESTANAS.find((p) => p.clave === params.get('pestana'))?.clave ?? 'por-cobrar'
   const puede = usePuede()
@@ -58,19 +60,19 @@ export function Finanzas() {
   return (
     <>
       <Encabezado
-        titulo="Finanzas"
-        descripcion="Lo que deben los supermercados, las transferencias recibidas, los gastos y los impuestos."
+        titulo={t("Finanzas")}
+        descripcion={t("Lo que deben los supermercados, las transferencias recibidas, los gastos y los impuestos.")}
         acciones={
           puede('finanzas.cobros') && (
             <Link to="/finanzas/cobros/nuevo">
               <Boton>
-                <Banknote size={16} /> Registrar cobro
+                <Banknote size={16} /> {t("Registrar cobro")}
               </Boton>
             </Link>
           )
         }
       />
-      <nav aria-label="Secciones de finanzas" className="-mx-4 mb-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <nav aria-label={t("Secciones de finanzas")} className="-mx-4 mb-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <ul className="flex min-w-max gap-1 border-b border-slate-200">
           {PESTANAS.map((p) => (
             <li key={p.clave}>
@@ -82,7 +84,7 @@ export function Finanzas() {
                   p.clave === actual ? 'border-marca-600 text-marca-700' : 'border-transparent text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {p.titulo}
+                {t(p.titulo)}
               </button>
             </li>
           ))}
@@ -115,15 +117,17 @@ const ESTADO_CUENTA: Record<EstadoCuenta, { texto: string; tono: 'gris' | 'verde
 }
 
 export function InsigniaCuenta({ cuenta }: { cuenta: CuentaPorCobrar }) {
-  if (cuenta.dias_vencida > 0) return <Insignia tono="rojo">Vencido hace {cuenta.dias_vencida} d</Insignia>
+  const { t } = useTranslation()
+  if (cuenta.dias_vencida > 0) return <Insignia tono="rojo">{t("Vencido hace")} {cuenta.dias_vencida} d</Insignia>
   const e = ESTADO_CUENTA[cuenta.estado]
-  return <Insignia tono={e.tono}>{e.texto}</Insignia>
+  return <Insignia tono={e.tono}>{t(e.texto)}</Insignia>
 }
 
 // ================================================================ por cobrar
 
 /** Lo que debe cada empresa (cadena), en total (T-31). El detalle por pedido es secundario. */
 function SeccionPorCobrar() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const [abierta, setAbierta] = useState<string | null>(null)
   const [rebajando, setRebajando] = useState<ResumenCadena | null>(null)
@@ -140,12 +144,12 @@ function SeccionPorCobrar() {
       {datos.isError && <Aviso>{mensajeError(datos.error)}</Aviso>}
       {d && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          <Cifra titulo="Total por cobrar" valor={formatearBs(d.total_pendiente)} />
-          <Cifra titulo="Vencido" valor={formatearBs(d.total_vencido)} tono={Number(d.total_vencido) > 0 ? 'rojo' : undefined} />
-          <Cifra titulo="Cobrado este mes" valor={formatearBs(d.cobrado_mes)} />
+          <Cifra titulo={t("Total por cobrar")} valor={formatearBs(d.total_pendiente)} />
+          <Cifra titulo={t("Vencido")} valor={formatearBs(d.total_vencido)} tono={Number(d.total_vencido) > 0 ? 'rojo' : undefined} />
+          <Cifra titulo={t("Cobrado este mes")} valor={formatearBs(d.cobrado_mes)} />
         </div>
       )}
-      {d && cadenas.length === 0 && <Vacio>Ninguna empresa le debe. Todo cobrado.</Vacio>}
+      {d && cadenas.length === 0 && <Vacio>{t("Ninguna empresa le debe. Todo cobrado.")}</Vacio>}
       <div className="grid gap-3 lg:grid-cols-2">
         {cadenas.map((c) => {
           const detalle = d?.cuentas.filter((x) => x.cadena.id === c.cadena.id) ?? []
@@ -155,13 +159,13 @@ function SeccionPorCobrar() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold">{c.cadena.nombre}</h2>
-                  <p className="text-sm text-slate-500">Le debe</p>
+                  <p className="text-sm text-slate-500">{t("Le debe")}</p>
                   <p className="text-3xl font-semibold tracking-tight tabular-nums">{formatearBs(c.pendiente)}</p>
                 </div>
                 {puede('finanzas.cobros') && Number(c.pendiente) > 0 && (
                   <Link to={`/finanzas/cobros/nuevo?cadena=${c.cadena.id}`}>
                     <Boton>
-                      <Banknote size={16} /> Registrar cobro
+                      <Banknote size={16} /> {t("Registrar cobro")}
                     </Boton>
                   </Link>
                 )}
@@ -169,25 +173,25 @@ function SeccionPorCobrar() {
               <div className="space-y-1 text-sm">
                 {Number(c.vencido) > 0 ? (
                   <p className="flex items-center gap-1 font-medium text-red-700">
-                    <AlertTriangle size={14} aria-hidden /> Vencido: {formatearBs(c.vencido)}
+                    <AlertTriangle size={14} aria-hidden /> {t("Vencido:")} {formatearBs(c.vencido)}
                   </p>
                 ) : (
-                  Number(c.pendiente) > 0 && <p className="text-emerald-700">Nada vencido</p>
+                  Number(c.pendiente) > 0 && <p className="text-emerald-700">{t("Nada vencido")}</p>
                 )}
                 {c.mas_antiguo && (
                   <p className="text-slate-500">
-                    {c.pedidos_pendientes} entrega(s) sin cobrar desde el {formatearDia(c.mas_antiguo)}
+                    {c.pedidos_pendientes} {t("entrega(s) sin cobrar desde el")} {formatearDia(c.mas_antiguo)}
                   </p>
                 )}
-                {Number(c.a_favor) > 0 && <p className="text-slate-600">Saldo a favor de {c.cadena.nombre}: {formatearBs(c.a_favor)}</p>}
+                {Number(c.a_favor) > 0 && <p className="text-slate-600">{t("Saldo a favor de")} {c.cadena.nombre}: {formatearBs(c.a_favor)}</p>}
               </div>
               <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
                 <Boton variante="fantasma" className="min-h-8 text-xs" onClick={() => setAbierta(verDetalle ? null : c.cadena.id)} aria-expanded={verDetalle}>
-                  {verDetalle ? 'Ocultar pedidos' : 'Ver de qué pedidos es'}
+                  {verDetalle ? t("Ocultar pedidos") : t("Ver de qué pedidos es")}
                 </Boton>
                 {puede('finanzas.cobros') && Number(c.pendiente) > 0 && (
                   <Boton variante="fantasma" className="min-h-8 text-xs" onClick={() => setRebajando(c)}>
-                    Rebajar saldo
+                    {t("Rebajar saldo")}
                   </Boton>
                 )}
               </div>
@@ -205,7 +209,7 @@ function SeccionPorCobrar() {
                           {x.numero_oc && ` · O/C ${x.numero_oc}`}
                         </span>
                         <div className="text-xs text-slate-500">
-                          Entregado {formatearDia(x.fecha)} · vence {formatearDia(x.vencimiento)}
+                          {t("Entregado")} {formatearDia(x.fecha)} {t("· vence")} {formatearDia(x.vencimiento)}
                         </div>
                       </div>
                       <span className="tabular-nums">{formatearBs(x.saldo)}</span>
@@ -224,6 +228,7 @@ function SeccionPorCobrar() {
 }
 
 function RebajarSaldo({ cadena, onCerrar }: { cadena: ResumenCadena; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [monto, setMonto] = useState('')
   const [motivo, setMotivo] = useState('')
@@ -236,7 +241,7 @@ function RebajarSaldo({ cadena, onCerrar }: { cadena: ResumenCadena; onCerrar: (
     },
   })
   return (
-    <Modal abierto titulo={`Rebajar lo que debe ${cadena.cadena.nombre}`} onCerrar={onCerrar}>
+    <Modal abierto titulo={t("Rebajar lo que debe {{v0}}", { v0: cadena.cadena.nombre })} onCerrar={onCerrar}>
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -245,22 +250,21 @@ function RebajarSaldo({ cadena, onCerrar }: { cadena: ResumenCadena; onCerrar: (
         }}
       >
         <p className="text-sm text-slate-600">
-          Para lo que la empresa no va a pagar (por ejemplo, un error reconocido en la factura). Hoy debe {formatearBs(cadena.pendiente)}. Queda registrado y se puede
-          deshacer anulándolo en «Cobros».
+          {t("Para lo que la empresa no va a pagar (por ejemplo, un error reconocido en la factura). Hoy debe")} {formatearBs(cadena.pendiente)}{t(". Queda registrado y se puede deshacer anulándolo en «Cobros».")}
         </p>
         {rebajar.isError && <Aviso>{mensajeError(rebajar.error)}</Aviso>}
-        <Campo etiqueta="Monto a rebajar (Bs)">
+        <Campo etiqueta={t("Monto a rebajar (Bs)")}>
           <Entrada required inputMode="decimal" value={monto} onChange={(e) => setMonto(e.target.value.replace(',', '.'))} />
         </Campo>
-        <Campo etiqueta="Motivo">
+        <Campo etiqueta={t("Motivo")}>
           <Entrada required minLength={3} maxLength={300} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
         </Campo>
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
+            {t("Cancelar")}
           </Boton>
           <Boton type="submit" disabled={rebajar.isPending}>
-            Rebajar saldo
+            {t("Rebajar saldo")}
           </Boton>
         </div>
       </form>
@@ -273,6 +277,7 @@ function RebajarSaldo({ cadena, onCerrar }: { cadena: ResumenCadena; onCerrar: (
 const TAMANO = 30
 
 function SeccionCobros() {
+  const { t } = useTranslation()
   const [cadena, setCadena] = useState('')
   const [pagina, setPagina] = useState(1)
   const [abierto, setAbierto] = useState<string | null>(null)
@@ -285,9 +290,9 @@ function SeccionCobros() {
   return (
     <div className="space-y-4">
       <div className="w-full sm:w-64">
-        <Campo etiqueta="Cadena">
+        <Campo etiqueta={t("Cadena")}>
           <Selector value={cadena} onChange={(e) => (setCadena(e.target.value), setPagina(1))}>
-            <option value="">Todas</option>
+            <option value="">{t("Todas")}</option>
             {cadenas.data?.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.nombre}
@@ -297,17 +302,17 @@ function SeccionCobros() {
         </Campo>
       </div>
       {cobros.isError && <Aviso>{mensajeError(cobros.error)}</Aviso>}
-      {cobros.data?.items.length === 0 && <Vacio>Todavía no se registró ningún cobro.</Vacio>}
+      {cobros.data?.items.length === 0 && <Vacio>{t("Todavía no se registró ningún cobro.")}</Vacio>}
       {!!cobros.data?.items.length && (
         <Tabla>
           <thead className={CABECERA_TABLA}>
             <tr>
-              <th>Fecha</th>
-              <th>Cadena</th>
-              <th className="hidden sm:table-cell">N.º de operación</th>
-              <th className="text-right">Monto</th>
-              <th className="hidden md:table-cell">Pedidos</th>
-              <th>Estado</th>
+              <th>{t("Fecha")}</th>
+              <th>{t("Cadena")}</th>
+              <th className="hidden sm:table-cell">{t("N.º de operación")}</th>
+              <th className="text-right">{t("Monto")}</th>
+              <th className="hidden md:table-cell">{t("Pedidos")}</th>
+              <th>{t("Estado")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -320,13 +325,13 @@ function SeccionCobros() {
                   <div className="text-xs text-slate-500">#{c.numero}</div>
                 </td>
                 <td>{c.cadena.nombre}</td>
-                <td className="hidden sm:table-cell">{c.es_cierre ? <span className="text-slate-500">Cierre de saldo</span> : (c.referencia ?? '—')}</td>
+                <td className="hidden sm:table-cell">{c.es_cierre ? <span className="text-slate-500">{t("Cierre de saldo")}</span> : (c.referencia ?? '—')}</td>
                 <td className="text-right whitespace-nowrap tabular-nums">
                   {formatearBs(c.monto)}
-                  {Number(c.diferencias) > 0 && <div className="text-xs text-slate-500">dif. {formatearBs(c.diferencias)}</div>}
+                  {Number(c.diferencias) > 0 && <div className="text-xs text-slate-500">{t("dif.")} {formatearBs(c.diferencias)}</div>}
                 </td>
                 <td className="hidden md:table-cell">{c.pedidos}</td>
-                <td>{c.estado === 'ANULADO' ? <Insignia tono="rojo">Anulado</Insignia> : <Insignia tono="verde">Registrado</Insignia>}</td>
+                <td>{c.estado === 'ANULADO' ? <Insignia tono="rojo">{t("Anulado")}</Insignia> : <Insignia tono="verde">{t("Registrado")}</Insignia>}</td>
               </tr>
             ))}
           </tbody>
@@ -339,6 +344,7 @@ function SeccionCobros() {
 }
 
 function DetalleCobro({ id, onCerrar }: { id: string; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const puede = usePuede()
   const queryClient = useQueryClient()
   const [anulando, setAnulando] = useState(false)
@@ -363,31 +369,31 @@ function DetalleCobro({ id, onCerrar }: { id: string; onCerrar: () => void }) {
   })
   const c = cobro.data
   return (
-    <Modal abierto titulo={c ? `${c.es_cierre ? 'Cierre de saldo' : 'Cobro'} #${c.numero}` : 'Cobro'} onCerrar={onCerrar}>
+    <Modal abierto titulo={c ? `${c.es_cierre ? 'Cierre de saldo' : 'Cobro'} #${c.numero}` : t("Cobro")} onCerrar={onCerrar}>
       {cobro.isError && <Aviso>{mensajeError(cobro.error)}</Aviso>}
       {c && (
         <div className="space-y-4 text-sm">
-          {c.estado === 'ANULADO' && <Aviso>Anulado: {c.anulacion_motivo}</Aviso>}
+          {c.estado === 'ANULADO' && <Aviso>{t("Anulado:")} {c.anulacion_motivo}</Aviso>}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-            <dt className="text-slate-500">Cadena</dt>
+            <dt className="text-slate-500">{t("Cadena")}</dt>
             <dd>{c.cadena.nombre}</dd>
-            <dt className="text-slate-500">Fecha</dt>
+            <dt className="text-slate-500">{t("Fecha")}</dt>
             <dd>{formatearDia(c.fecha)}</dd>
-            <dt className="text-slate-500">Monto</dt>
+            <dt className="text-slate-500">{t("Monto")}</dt>
             <dd className="font-semibold">{formatearBs(c.monto)}</dd>
             {c.banco && (
               <>
-                <dt className="text-slate-500">Banco</dt>
+                <dt className="text-slate-500">{t("Banco")}</dt>
                 <dd>{c.banco}</dd>
               </>
             )}
             {c.referencia && (
               <>
-                <dt className="text-slate-500">N.º de operación</dt>
+                <dt className="text-slate-500">{t("N.º de operación")}</dt>
                 <dd>{c.referencia}</dd>
               </>
             )}
-            <dt className="text-slate-500">Registrado por</dt>
+            <dt className="text-slate-500">{t("Registrado por")}</dt>
             <dd>{c.usuario_nombre}</dd>
           </dl>
           {c.observaciones && <p className="text-slate-600">{c.observaciones}</p>}
@@ -395,9 +401,9 @@ function DetalleCobro({ id, onCerrar }: { id: string; onCerrar: () => void }) {
             <table className="w-full text-left [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
               <thead className={CABECERA_TABLA}>
                 <tr>
-                  <th>Pedido</th>
-                  <th className="text-right">Aplicado</th>
-                  <th className="text-right">Diferencia</th>
+                  <th>{t("Pedido")}</th>
+                  <th className="text-right">{t("Aplicado")}</th>
+                  <th className="text-right">{t("Diferencia")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -420,14 +426,14 @@ function DetalleCobro({ id, onCerrar }: { id: string; onCerrar: () => void }) {
           <div className="flex flex-wrap items-center gap-2">
             {c.comprobante_id ? (
               <a href={urlComprobante(c.comprobante_id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-marca-700 hover:underline">
-                <FileText size={16} /> {c.comprobante_nombre ?? 'Comprobante'}
+                <FileText size={16} /> {c.comprobante_nombre ?? t("Comprobante")}
               </a>
             ) : (
-              <span className="text-slate-500">Sin comprobante adjunto.</span>
+              <span className="text-slate-500">{t("Sin comprobante adjunto.")}</span>
             )}
             {c.estado === 'REGISTRADO' && !c.es_cierre && puede('finanzas.cobros') && (
               <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50">
-                <Paperclip size={14} /> {adjuntar.isPending ? 'Subiendo…' : c.comprobante_id ? 'Reemplazar' : 'Adjuntar comprobante'}
+                <Paperclip size={14} /> {adjuntar.isPending ? t("Subiendo…") : c.comprobante_id ? t("Reemplazar") : t("Adjuntar comprobante")}
                 <input
                   type="file"
                   accept="image/*,application/pdf"
@@ -444,7 +450,7 @@ function DetalleCobro({ id, onCerrar }: { id: string; onCerrar: () => void }) {
           {adjuntar.isError && <Aviso>{mensajeError(adjuntar.error)}</Aviso>}
           {c.estado === 'REGISTRADO' && puede('finanzas.cobros') && !anulando && (
             <Boton variante="secundario" onClick={() => setAnulando(true)}>
-              Anular {c.es_cierre ? 'cierre' : 'cobro'}
+              {t("Anular")} {c.es_cierre ? t("cierre") : t("cobro")}
             </Boton>
           )}
           {anulando && (
@@ -455,17 +461,17 @@ function DetalleCobro({ id, onCerrar }: { id: string; onCerrar: () => void }) {
                 anular.mutate()
               }}
             >
-              <p className="text-slate-700">Los pedidos vuelven a quedar con saldo por cobrar.</p>
+              <p className="text-slate-700">{t("Los pedidos vuelven a quedar con saldo por cobrar.")}</p>
               {anular.isError && <Aviso>{mensajeError(anular.error)}</Aviso>}
-              <Campo etiqueta="Motivo">
+              <Campo etiqueta={t("Motivo")}>
                 <Entrada required minLength={5} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
               </Campo>
               <div className="flex justify-end gap-2">
                 <Boton variante="secundario" onClick={() => setAnulando(false)}>
-                  Cancelar
+                  {t("Cancelar")}
                 </Boton>
                 <Boton type="submit" variante="peligro" disabled={anular.isPending}>
-                  Anular
+                  {t("Anular")}
                 </Boton>
               </div>
             </form>
@@ -483,6 +489,7 @@ function useCategoriasGasto() {
 }
 
 function SeccionGastos() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const queryClient = useQueryClient()
   const hoy = hoyLaPaz()
@@ -530,21 +537,21 @@ function SeccionGastos() {
         {puede('finanzas.gastos') && (
           <>
             <Boton variante="secundario" onClick={() => setGestionando(true)}>
-              <Settings2 size={16} /> Categorías
+              <Settings2 size={16} /> {t("Categorías")}
             </Boton>
             <Boton onClick={() => setNuevo(true)}>
-              <Plus size={16} /> Registrar gasto
+              <Plus size={16} /> {t("Registrar gasto")}
             </Boton>
           </>
         )}
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Campo etiqueta="Mes">
+        <Campo etiqueta={t("Mes")}>
           <Entrada type="month" value={mes} max={hoy.slice(0, 7)} onChange={(e) => filtrar(() => setMes(e.target.value))} />
         </Campo>
-        <Campo etiqueta="Categoría">
+        <Campo etiqueta={t("Categoría")}>
           <Selector value={categoria} onChange={(e) => filtrar(() => setCategoria(e.target.value))}>
-            <option value="">Todas</option>
+            <option value="">{t("Todas")}</option>
             {categorias.data?.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.nombre}
@@ -552,9 +559,9 @@ function SeccionGastos() {
             ))}
           </Selector>
         </Campo>
-        <Campo etiqueta="Ubicación">
+        <Campo etiqueta={t("Ubicación")}>
           <Selector value={ubicacion} onChange={(e) => filtrar(() => setUbicacion(e.target.value))}>
-            <option value="">Todas</option>
+            <option value="">{t("Todas")}</option>
             {ubicaciones.data?.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.nombre}
@@ -562,7 +569,7 @@ function SeccionGastos() {
             ))}
           </Selector>
         </Campo>
-        <Campo etiqueta="Buscar (a quién, detalle)">
+        <Campo etiqueta={t("Buscar (a quién, detalle)")}>
           <Entrada type="search" value={buscar} onChange={(e) => filtrar(() => setBuscar(e.target.value))} />
         </Campo>
       </div>
@@ -570,7 +577,7 @@ function SeccionGastos() {
       {g && (
         <Tarjeta className="p-4">
           <p className="text-sm text-slate-600">
-            Total {mes ? `de ${nombreMes(primerDiaMes(mes))}` : ''}: <strong className="text-lg text-slate-900 tabular-nums">{formatearBs(g.suma)}</strong>
+            {t("Total")} {mes ? t("de {{v0}}", { v0: nombreMes(primerDiaMes(mes)) }) : ''}: <strong className="text-lg text-slate-900 tabular-nums">{formatearBs(g.suma)}</strong>
           </p>
           {g.por_categoria.length > 0 && (
             <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -583,15 +590,15 @@ function SeccionGastos() {
           )}
         </Tarjeta>
       )}
-      {g?.items.length === 0 && <Vacio>No hay gastos registrados con estos filtros.</Vacio>}
+      {g?.items.length === 0 && <Vacio>{t("No hay gastos registrados con estos filtros.")}</Vacio>}
       {!!g?.items.length && (
         <Tabla>
           <thead className={CABECERA_TABLA}>
             <tr>
-              <th>Fecha</th>
-              <th>Gasto</th>
-              <th className="hidden md:table-cell">Ubicación</th>
-              <th className="text-right">Monto</th>
+              <th>{t("Fecha")}</th>
+              <th>{t("Gasto")}</th>
+              <th className="hidden md:table-cell">{t("Ubicación")}</th>
+              <th className="text-right">{t("Monto")}</th>
               <th />
             </tr>
           </thead>
@@ -606,20 +613,20 @@ function SeccionGastos() {
                   </div>
                   <div className="text-xs text-slate-500">
                     {[x.descripcion, x.con_factura && `Factura ${x.numero_factura ?? ''}`.trim()].filter(Boolean).join(' · ')}
-                    {x.estado === 'ANULADO' && <span className="text-red-700"> Anulado: {x.anulacion_motivo}</span>}
+                    {x.estado === 'ANULADO' && <span className="text-red-700"> {t("Anulado:")} {x.anulacion_motivo}</span>}
                   </div>
                   {x.comprobante_id && (
                     <a href={urlComprobante(x.comprobante_id)} target="_blank" rel="noreferrer" className="text-xs text-marca-700 hover:underline">
-                      Ver comprobante
+                      {t("Ver comprobante")}
                     </a>
                   )}
                 </td>
-                <td className="hidden md:table-cell">{x.ubicacion?.nombre ?? 'General'}</td>
+                <td className="hidden md:table-cell">{x.ubicacion?.nombre ?? t("General")}</td>
                 <td className={`text-right whitespace-nowrap tabular-nums ${x.estado === 'ANULADO' ? 'line-through' : ''}`}>{formatearBs(x.monto)}</td>
                 <td className="text-right">
                   {x.estado === 'REGISTRADO' && puede('finanzas.gastos') && (
                     <button type="button" className="text-xs text-slate-500 hover:text-red-700" onClick={() => setAnulando(x)}>
-                      Anular
+                      {t("Anular")}
                     </button>
                   )}
                 </td>
@@ -632,7 +639,7 @@ function SeccionGastos() {
 
       {nuevo && <NuevoGasto categorias={categorias.data ?? []} onCerrar={() => setNuevo(false)} />}
       {gestionando && <GestionCategorias categorias={categorias.data ?? []} onCerrar={() => setGestionando(false)} />}
-      <Modal abierto={!!anulando} titulo="Anular gasto" onCerrar={() => setAnulando(null)}>
+      <Modal abierto={!!anulando} titulo={t("Anular gasto")} onCerrar={() => setAnulando(null)}>
         <form
           className="space-y-4"
           onSubmit={(e) => {
@@ -641,18 +648,18 @@ function SeccionGastos() {
           }}
         >
           <p className="text-sm text-slate-600">
-            {anulando?.categoria.nombre} de {formatearBs(anulando?.monto)} del {formatearDia(anulando?.fecha)}. Queda en el historial, pero deja de sumar.
+            {anulando?.categoria.nombre} {t("de")} {formatearBs(anulando?.monto)} {t("del")} {formatearDia(anulando?.fecha)}{t(". Queda en el historial, pero deja de sumar.")}
           </p>
           {anular.isError && <Aviso>{mensajeError(anular.error)}</Aviso>}
-          <Campo etiqueta="Motivo">
+          <Campo etiqueta={t("Motivo")}>
             <Entrada required minLength={5} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
           </Campo>
           <div className="flex justify-end gap-2">
             <Boton variante="secundario" onClick={() => setAnulando(null)}>
-              Cancelar
+              {t("Cancelar")}
             </Boton>
             <Boton type="submit" variante="peligro" disabled={anular.isPending}>
-              Anular
+              {t("Anular")}
             </Boton>
           </div>
         </form>
@@ -662,6 +669,7 @@ function SeccionGastos() {
 }
 
 function NuevoGasto({ categorias, onCerrar }: { categorias: CategoriaGasto[]; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const ubicaciones = useUbicaciones()
   const activas = categorias.filter((c) => c.activo)
@@ -701,7 +709,7 @@ function NuevoGasto({ categorias, onCerrar }: { categorias: CategoriaGasto[]; on
     },
   })
   return (
-    <Modal abierto titulo="Registrar gasto" onCerrar={onCerrar}>
+    <Modal abierto titulo={t("Registrar gasto")} onCerrar={onCerrar}>
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -710,7 +718,7 @@ function NuevoGasto({ categorias, onCerrar }: { categorias: CategoriaGasto[]; on
         }}
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo etiqueta="Categoría">
+          <Campo etiqueta={t("Categoría")}>
             <Selector
               required
               value={f.categoria_id}
@@ -719,7 +727,7 @@ function NuevoGasto({ categorias, onCerrar }: { categorias: CategoriaGasto[]; on
                 setF((x) => ({ ...x, categoria_id: e.target.value, con_factura: elegida?.factura_habitual ?? x.con_factura }))
               }}
             >
-              <option value="">Elegir…</option>
+              <option value="">{t("Elegir…")}</option>
               {activas.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre}
@@ -727,15 +735,15 @@ function NuevoGasto({ categorias, onCerrar }: { categorias: CategoriaGasto[]; on
               ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="Monto (Bs)">
+          <Campo etiqueta={t("Monto (Bs)")}>
             <Entrada required inputMode="decimal" value={f.monto} onChange={(e) => setF((x) => ({ ...x, monto: e.target.value.replace(',', '.') }))} />
           </Campo>
-          <Campo etiqueta="Fecha">
+          <Campo etiqueta={t("Fecha")}>
             <Entrada type="date" required max={hoyLaPaz()} value={f.fecha} onChange={(e) => setF((x) => ({ ...x, fecha: e.target.value }))} />
           </Campo>
-          <Campo etiqueta="Ubicación">
+          <Campo etiqueta={t("Ubicación")}>
             <Selector value={f.ubicacion_id} onChange={(e) => setF((x) => ({ ...x, ubicacion_id: e.target.value }))}>
-              <option value="">General (de toda la empresa)</option>
+              <option value="">{t("General (de toda la empresa)")}</option>
               {ubicaciones.data?.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.nombre}
@@ -744,39 +752,39 @@ function NuevoGasto({ categorias, onCerrar }: { categorias: CategoriaGasto[]; on
             </Selector>
           </Campo>
         </div>
-        <Campo etiqueta={categoria?.nombre === 'Sueldos' ? 'A quién se pagó' : 'A quién se pagó (opcional)'}>
+        <Campo etiqueta={categoria?.nombre === 'Sueldos' ? t("A quién se pagó") : t("A quién se pagó (opcional)")}>
           <Entrada
             required={categoria?.nombre === 'Sueldos'}
             maxLength={120}
-            placeholder={categoria?.nombre === 'Sueldos' ? 'Nombre del empleado' : 'Persona o empresa'}
+            placeholder={categoria?.nombre === 'Sueldos' ? t("Nombre del empleado") : t("Persona o empresa")}
             value={f.beneficiario}
             onChange={(e) => setF((x) => ({ ...x, beneficiario: e.target.value }))}
           />
         </Campo>
-        <Campo etiqueta="Detalle (opcional)">
+        <Campo etiqueta={t("Detalle (opcional)")}>
           <Entrada maxLength={300} value={f.descripcion} onChange={(e) => setF((x) => ({ ...x, descripcion: e.target.value }))} />
         </Campo>
         <Casilla
-          etiqueta="Tiene factura"
-          descripcion="Las facturas a nombre de la empresa dan crédito fiscal (descuentan IVA)."
+          etiqueta={t("Tiene factura")}
+          descripcion={t("Las facturas a nombre de la empresa dan crédito fiscal (descuentan IVA).")}
           checked={f.con_factura}
           onChange={(e) => setF((x) => ({ ...x, con_factura: e.target.checked }))}
         />
         {f.con_factura && (
-          <Campo etiqueta="N.º de factura (opcional)">
+          <Campo etiqueta={t("N.º de factura (opcional)")}>
             <Entrada maxLength={40} value={f.numero_factura} onChange={(e) => setF((x) => ({ ...x, numero_factura: e.target.value }))} />
           </Campo>
         )}
-        <Campo etiqueta="Comprobante (foto o PDF, opcional)">
+        <Campo etiqueta={t("Comprobante (foto o PDF, opcional)")}>
           <input type="file" accept="image/*,application/pdf" className="block w-full text-sm" onChange={(e) => setArchivo(e.target.files?.[0] ?? null)} />
         </Campo>
         {registrar.isError && <Aviso>{mensajeError(registrar.error)}</Aviso>}
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
+            {t("Cancelar")}
           </Boton>
           <Boton type="submit" disabled={registrar.isPending}>
-            {registrar.isPending ? 'Guardando…' : 'Registrar gasto'}
+            {registrar.isPending ? t("Guardando…") : t("Registrar gasto")}
           </Boton>
         </div>
       </form>
@@ -785,6 +793,7 @@ function NuevoGasto({ categorias, onCerrar }: { categorias: CategoriaGasto[]; on
 }
 
 function GestionCategorias({ categorias, onCerrar }: { categorias: CategoriaGasto[]; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [nombre, setNombre] = useState('')
   const [factura, setFactura] = useState(false)
@@ -798,17 +807,17 @@ function GestionCategorias({ categorias, onCerrar }: { categorias: CategoriaGast
     onSuccess: refrescar,
   })
   return (
-    <Modal abierto titulo="Categorías de gasto" onCerrar={onCerrar}>
+    <Modal abierto titulo={t("Categorías de gasto")} onCerrar={onCerrar}>
       <div className="space-y-4 text-sm">
         <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
           {categorias.map((c) => (
             <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
               <span className={c.activo ? '' : 'text-slate-400 line-through'}>
                 {c.nombre}
-                {c.factura_habitual && <span className="ml-2 text-xs text-slate-500">(suele tener factura)</span>}
+                {c.factura_habitual && <span className="ml-2 text-xs text-slate-500">{t("(suele tener factura)")}</span>}
               </span>
               <Boton variante="fantasma" className="min-h-8 text-xs" disabled={editar.isPending} onClick={() => editar.mutate({ ...c, activo: !c.activo })}>
-                {c.activo ? 'Desactivar' : 'Activar'}
+                {c.activo ? t("Desactivar") : t("Activar")}
               </Boton>
             </li>
           ))}
@@ -820,13 +829,13 @@ function GestionCategorias({ categorias, onCerrar }: { categorias: CategoriaGast
             crear.mutate()
           }}
         >
-          <Campo etiqueta="Nueva categoría">
+          <Campo etiqueta={t("Nueva categoría")}>
             <Entrada required minLength={2} maxLength={60} value={nombre} onChange={(e) => setNombre(e.target.value)} />
           </Campo>
-          <Casilla etiqueta="Suele tener factura" checked={factura} onChange={(e) => setFactura(e.target.checked)} />
+          <Casilla etiqueta={t("Suele tener factura")} checked={factura} onChange={(e) => setFactura(e.target.checked)} />
           {(crear.isError || editar.isError) && <Aviso>{mensajeError(crear.error ?? editar.error)}</Aviso>}
           <Boton type="submit" disabled={crear.isPending}>
-            <Plus size={16} /> Agregar
+            <Plus size={16} /> {t("Agregar")}
           </Boton>
         </form>
       </div>
@@ -837,6 +846,7 @@ function GestionCategorias({ categorias, onCerrar }: { categorias: CategoriaGast
 // ================================================================ por pagar
 
 function SeccionPorPagar() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const queryClient = useQueryClient()
   const [pagando, setPagando] = useState<CompraPorPagar | null>(null)
@@ -853,10 +863,10 @@ function SeccionPorPagar() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600">
-        Compras hechas a crédito que todavía no se pagaron. Las compras al contado se consideran pagadas el mismo día.
+        {t("Compras hechas a crédito que todavía no se pagaron. Las compras al contado se consideran pagadas el mismo día.")}
       </p>
       {deudas.isError && <Aviso>{mensajeError(deudas.error)}</Aviso>}
-      {deudas.data?.length === 0 && <Vacio>No hay compras a crédito pendientes de pago.</Vacio>}
+      {deudas.data?.length === 0 && <Vacio>{t("No hay compras a crédito pendientes de pago.")}</Vacio>}
       {!!deudas.data?.length && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Object.values(
@@ -867,8 +877,8 @@ function SeccionPorPagar() {
               return acc
             }, {}),
           ).map((x) => (
-            <Cifra key={x.nombre} titulo={`Se le debe a ${x.nombre}`} valor={formatearBs(x.total)}>
-              <p className="mt-1 text-xs text-slate-500">{x.compras} compra(s) a crédito</p>
+            <Cifra key={x.nombre} titulo={t("Se le debe a {{v0}}", { v0: x.nombre })} valor={formatearBs(x.total)}>
+              <p className="mt-1 text-xs text-slate-500">{x.compras} {t("compra(s) a crédito")}</p>
             </Cifra>
           ))}
         </div>
@@ -877,10 +887,10 @@ function SeccionPorPagar() {
         <Tabla>
           <thead className={CABECERA_TABLA}>
             <tr>
-              <th>Compra</th>
-              <th>Proveedor</th>
-              <th>Vence</th>
-              <th className="text-right">Total</th>
+              <th>{t("Compra")}</th>
+              <th>{t("Proveedor")}</th>
+              <th>{t("Vence")}</th>
+              <th className="text-right">{t("Total")}</th>
               <th />
             </tr>
           </thead>
@@ -898,7 +908,7 @@ function SeccionPorPagar() {
                   {formatearDia(d.fecha_vencimiento)}
                   {d.dias_para_vencer !== null && (
                     <div className={`text-xs ${d.dias_para_vencer < 0 ? 'text-red-700' : d.dias_para_vencer <= 3 ? 'text-amber-700' : 'text-slate-500'}`}>
-                      {d.dias_para_vencer < 0 ? `vencida hace ${-d.dias_para_vencer} d` : d.dias_para_vencer === 0 ? 'vence hoy' : `en ${d.dias_para_vencer} d`}
+                      {d.dias_para_vencer < 0 ? t("vencida hace {{v0}} d", { v0: -d.dias_para_vencer }) : d.dias_para_vencer === 0 ? t("vence hoy") : t("en {{v0}} d", { v0: d.dias_para_vencer })}
                     </div>
                   )}
                 </td>
@@ -906,7 +916,7 @@ function SeccionPorPagar() {
                 <td className="text-right">
                   {puede('finanzas.gastos') && (
                     <Boton variante="secundario" className="min-h-9" onClick={() => (setPagando(d), setFecha(hoyLaPaz()))}>
-                      Registrar pago
+                      {t("Registrar pago")}
                     </Boton>
                   )}
                 </td>
@@ -915,7 +925,7 @@ function SeccionPorPagar() {
           </tbody>
         </Tabla>
       )}
-      <Modal abierto={!!pagando} titulo={`Pago de la compra #${pagando?.numero ?? ''}`} onCerrar={() => setPagando(null)}>
+      <Modal abierto={!!pagando} titulo={t("Pago de la compra #{{v0}}", { v0: pagando?.numero ?? '' })} onCerrar={() => setPagando(null)}>
         <form
           className="space-y-4"
           onSubmit={(e) => {
@@ -927,15 +937,15 @@ function SeccionPorPagar() {
             {pagando?.proveedor.nombre}: {formatearBs(pagando?.total)}
           </p>
           {pagar.isError && <Aviso>{mensajeError(pagar.error)}</Aviso>}
-          <Campo etiqueta="Fecha del pago">
+          <Campo etiqueta={t("Fecha del pago")}>
             <Entrada type="date" required max={hoyLaPaz()} min={pagando?.fecha} value={fecha} onChange={(e) => setFecha(e.target.value)} />
           </Campo>
           <div className="flex justify-end gap-2">
             <Boton variante="secundario" onClick={() => setPagando(null)}>
-              Cancelar
+              {t("Cancelar")}
             </Boton>
             <Boton type="submit" disabled={pagar.isPending}>
-              Registrar pago
+              {t("Registrar pago")}
             </Boton>
           </div>
         </form>
@@ -947,6 +957,7 @@ function SeccionPorPagar() {
 // ================================================================ impuestos
 
 function SeccionImpuestos() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const anioActual = Number(hoyLaPaz().slice(0, 4))
   const [anio, setAnio] = useState(anioActual)
@@ -964,11 +975,10 @@ function SeccionImpuestos() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600">
-        IVA {p ? `${Number(p.iva_pct)} %` : ''} sobre lo facturado (pedidos entregados en el mes), menos el crédito fiscal de las compras y gastos con factura. Si
-        el crédito es mayor, el sobrante pasa al mes siguiente. IT {p ? `${Number(p.it_pct)} %` : ''} sobre lo facturado. Es una referencia para el contador.
+        IVA {p ? `${Number(p.iva_pct)} %` : ''} {t("sobre lo facturado (pedidos entregados en el mes), menos el crédito fiscal de las compras y gastos con factura. Si el crédito es mayor, el sobrante pasa al mes siguiente. IT")} {p ? `${Number(p.it_pct)} %` : ''} {t("sobre lo facturado. Es una referencia para el contador.")}
       </p>
       <div className="w-32">
-        <Campo etiqueta="Año">
+        <Campo etiqueta={t("Año")}>
           <Selector value={anio} onChange={(e) => setAnio(Number(e.target.value))}>
             {[0, 1, 2].map((i) => (
               <option key={i} value={anioActual - i}>
@@ -983,14 +993,14 @@ function SeccionImpuestos() {
         <Tabla>
           <thead className={CABECERA_TABLA}>
             <tr>
-              <th>Mes</th>
-              <th className="text-right">Facturado</th>
-              <th className="hidden text-right md:table-cell">IVA débito</th>
-              <th className="hidden text-right md:table-cell">IVA crédito</th>
-              <th className="hidden text-right lg:table-cell">Saldo a favor anterior</th>
-              <th className="text-right">IVA a pagar</th>
+              <th>{t("Mes")}</th>
+              <th className="text-right">{t("Facturado")}</th>
+              <th className="hidden text-right md:table-cell">{t("IVA débito")}</th>
+              <th className="hidden text-right md:table-cell">{t("IVA crédito")}</th>
+              <th className="hidden text-right lg:table-cell">{t("Saldo a favor anterior")}</th>
+              <th className="text-right">{t("IVA a pagar")}</th>
               <th className="text-right">IT</th>
-              <th className="text-right">Total</th>
+              <th className="text-right">{t("Total")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 tabular-nums">
@@ -1007,7 +1017,7 @@ function SeccionImpuestos() {
               </tr>
             ))}
             <tr className="bg-slate-50 font-semibold">
-              <td>Total {anio}</td>
+              <td>{t("Total")} {anio}</td>
               <td className="text-right whitespace-nowrap">{formatearBs(total('ventas'))}</td>
               <td className="hidden text-right whitespace-nowrap md:table-cell">{formatearBs(total('iva_debito'))}</td>
               <td className="hidden text-right whitespace-nowrap md:table-cell">{formatearBs(total('iva_credito'))}</td>
@@ -1020,9 +1030,9 @@ function SeccionImpuestos() {
         </Tabla>
       )}
       <p className="text-xs text-slate-500">
-        Más detalle (compras y gastos con factura, crédito que pasa al mes siguiente) y exportación a Excel en{' '}
+        {t("Más detalle (compras y gastos con factura, crédito que pasa al mes siguiente) y exportación a Excel en")}{' '}
         <Link to="/reportes?r=impuestos" className="text-marca-700 underline">
-          Reportes → Impuestos
+          {t("Reportes → Impuestos")}
         </Link>
         .
       </p>
@@ -1032,6 +1042,7 @@ function SeccionImpuestos() {
 }
 
 function FormParametros({ parametros }: { parametros: ParametrosFinanzas }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [f, setF] = useState({ dias_credito: String(parametros.dias_credito), iva_pct: parametros.iva_pct, it_pct: parametros.it_pct })
   const guardar = useMutation({
@@ -1048,7 +1059,7 @@ function FormParametros({ parametros }: { parametros: ParametrosFinanzas }) {
   })
   return (
     <Tarjeta className="p-4">
-      <h2 className="mb-3 text-sm font-semibold text-slate-800">Parámetros</h2>
+      <h2 className="mb-3 text-sm font-semibold text-slate-800">{t("Parámetros")}</h2>
       <form
         className="grid items-end gap-3 sm:grid-cols-4"
         onSubmit={(e) => {
@@ -1056,21 +1067,21 @@ function FormParametros({ parametros }: { parametros: ParametrosFinanzas }) {
           guardar.mutate()
         }}
       >
-        <Campo etiqueta="Plazo de cobro (días)" ayuda="Pasado este plazo desde la entrega, el cobro está vencido.">
+        <Campo etiqueta={t("Plazo de cobro (días)")} ayuda={t("Pasado este plazo desde la entrega, el cobro está vencido.")}>
           <Entrada type="number" min={1} max={365} required value={f.dias_credito} onChange={(e) => setF((x) => ({ ...x, dias_credito: e.target.value }))} />
         </Campo>
-        <Campo etiqueta="IVA (%)">
+        <Campo etiqueta={t("IVA (%)")}>
           <Entrada inputMode="decimal" required value={f.iva_pct} onChange={(e) => setF((x) => ({ ...x, iva_pct: e.target.value.replace(',', '.') }))} />
         </Campo>
-        <Campo etiqueta="IT (%)">
+        <Campo etiqueta={t("IT (%)")}>
           <Entrada inputMode="decimal" required value={f.it_pct} onChange={(e) => setF((x) => ({ ...x, it_pct: e.target.value.replace(',', '.') }))} />
         </Campo>
         <Boton type="submit" disabled={guardar.isPending}>
-          Guardar
+          {t("Guardar")}
         </Boton>
       </form>
       {guardar.isError && <div className="mt-3"><Aviso>{mensajeError(guardar.error)}</Aviso></div>}
-      {guardar.isSuccess && <div className="mt-3"><Aviso tipo="exito">Parámetros guardados.</Aviso></div>}
+      {guardar.isSuccess && <div className="mt-3"><Aviso tipo="exito">{t("Parámetros guardados.")}</Aviso></div>}
     </Tarjeta>
   )
 }

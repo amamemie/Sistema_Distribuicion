@@ -1,0 +1,67 @@
+- generic [ref=f4e2]:
+  - link "Saltar al contenido" [ref=f4e3] [cursor=pointer]:
+    - /url: "#contenido"
+  - generic [ref=f4e4]:
+    - complementary "Menú principal" [ref=f4e5]:
+      - generic [ref=f4e12]:
+        - generic [ref=f4e13]: Inventario
+        - generic [ref=f4e14]: Distribuidora
+      - navigation [ref=f4e15]:
+        - link "Inicio" [ref=f4e17] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f4e21]:
+          - generic [ref=f4e22]: Operación
+          - link "Pedidos" [ref=f4e23] [cursor=pointer]:
+            - /url: /pedidos
+          - link "Stock" [ref=f4e27] [cursor=pointer]:
+            - /url: /inventario
+          - link "Reposición" [ref=f4e38] [cursor=pointer]:
+            - /url: /reposicion
+          - link "Compras" [ref=f4e44] [cursor=pointer]:
+            - /url: /compras
+          - link "Transferencias" [ref=f4e50] [cursor=pointer]:
+            - /url: /transferencias
+          - link "Ajustes" [ref=f4e54] [cursor=pointer]:
+            - /url: /ajustes
+          - link "Conteos físicos" [ref=f4e56] [cursor=pointer]:
+            - /url: /conteos
+        - generic [ref=f4e61]:
+          - generic [ref=f4e62]: Catálogo
+          - link "Productos" [ref=f4e63] [cursor=pointer]:
+            - /url: /productos
+          - link "Proveedores" [ref=f4e68] [cursor=pointer]:
+            - /url: /proveedores
+          - link "Clientes" [ref=f4e74] [cursor=pointer]:
+            - /url: /clientes
+        - generic [ref=f4e79]:
+          - generic [ref=f4e80]: Análisis
+          - link "Reportes" [ref=f4e81] [cursor=pointer]:
+            - /url: /reportes
+          - link "Finanzas" [ref=f4e85] [cursor=pointer]:
+            - /url: /finanzas
+        - generic [ref=f4e89]:
+          - generic [ref=f4e90]: Administración
+          - link "Usuarios" [ref=f4e91] [cursor=pointer]:
+            - /url: /usuarios
+          - link "Roles y permisos" [ref=f4e97] [cursor=pointer]:
+            - /url: /roles
+          - link "Ubicaciones" [ref=f4e101] [cursor=pointer]:
+            - /url: /ubicaciones
+          - link "Auditoría" [ref=f4e105] [cursor=pointer]:
+            - /url: /auditoria
+    - generic [ref=f4e110]:
+      - banner [ref=f4e111]:
+        - generic [ref=f4e112]:
+          - group "Idioma" [ref=f4e113]:
+            - button "es" [pressed] [ref=f4e114]
+            - button "en" [ref=f4e115]
+          - button "Tema claro. Cambiar a tema oscuro" [ref=f4e116]
+          - 'link "Alertas: no hay nuevas" [ref=f4e123] [cursor=pointer]':
+            - /url: /alertas
+          - button "Menú de Dueno" [ref=f4e128]:
+            - generic [ref=f4e129]: D
+            - generic [ref=f4e130]:
+              - generic [ref=f4e131]: Dueno
+              - generic [ref=f4e132]: Dueño
+      - main [ref=f4e133]:
+        - paragraph [ref=f4e135]: Cargando…

@@ -171,7 +171,7 @@ function Cifra({
 }) {
   return (
     <Link to={a} className="group block rounded-xl">
-      <Tarjeta className="h-full p-4 transition-[transform,box-shadow,border-color] duration-150 ease-salida group-hover:-translate-y-0.5 group-hover:border-linea-fuerte/40 group-hover:shadow-[var(--sombra-2)]">
+      <Tarjeta className="h-full p-4 transition-[transform,box-shadow,border-color] duration-150 ease-salida group-hover:-translate-y-0.5 group-hover:border-linea-fuerte/40 group-hover:shadow-(--sombra-2)">
         <div className="flex items-start justify-between gap-2">
           <p className="text-xs font-medium text-tinta-3">{titulo}</p>
           <span className={`inline-grid size-7 shrink-0 place-items-center rounded-lg ${tono === 'rojo' ? 'bg-peligro-suave text-peligro' : 'bg-acento-suave text-acento'}`}>
@@ -390,7 +390,7 @@ function AccesosRapidos() {
           <Link
             key={a.a}
             to={a.a}
-            className="group flex min-h-12 items-center gap-3 rounded-xl border border-linea bg-superficie p-2.5 text-sm font-medium text-tinta transition-[transform,box-shadow,border-color] duration-150 ease-salida hover:-translate-y-0.5 hover:border-linea-fuerte/40 hover:shadow-[var(--sombra-2)]"
+            className="group flex min-h-12 items-center gap-3 rounded-xl border border-linea bg-superficie p-2.5 text-sm font-medium text-tinta transition-[transform,box-shadow,border-color] duration-150 ease-salida hover:-translate-y-0.5 hover:border-linea-fuerte/40 hover:shadow-(--sombra-2)"
           >
             <span className="inline-grid size-8 shrink-0 place-items-center rounded-lg bg-acento-suave text-acento">
               <a.icono size={17} aria-hidden />

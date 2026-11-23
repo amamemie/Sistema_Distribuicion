@@ -6,12 +6,14 @@ import { api, mensajeError } from '../../lib/api'
 import { useCadenas } from '../../lib/consultas'
 import { usePuede } from '../../lib/sesion'
 import type { Cadena, SucursalCliente } from '../../lib/tipos'
+import { useTranslation } from 'react-i18next'
 
 type Edicion =
   | { tipo: 'cadena'; cadena: Cadena | null }
   | { tipo: 'sucursal'; cadena: Cadena; sucursal: SucursalCliente | null }
 
 export function Clientes() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const editable = puede('clientes.gestionar')
   const cadenas = useCadenas()
@@ -20,18 +22,18 @@ export function Clientes() {
   return (
     <>
       <Encabezado
-        titulo="Clientes"
-        descripcion="Cadenas de supermercados y sus sucursales. El precio de venta es por cadena."
+        titulo={t("Clientes")}
+        descripcion={t("Cadenas de supermercados y sus sucursales. El precio de venta es por cadena.")}
         acciones={
           editable && (
             <Boton onClick={() => setEdicion({ tipo: 'cadena', cadena: null })}>
-              <Plus size={16} /> Nueva cadena
+              <Plus size={16} /> {t("Nueva cadena")}
             </Boton>
           )
         }
       />
       {cadenas.isError && <Aviso>{mensajeError(cadenas.error)}</Aviso>}
-      {cadenas.data?.length === 0 && <Vacio>Todavía no hay cadenas registradas.</Vacio>}
+      {cadenas.data?.length === 0 && <Vacio>{t("Todavía no hay cadenas registradas.")}</Vacio>}
       <div className="grid gap-4 md:grid-cols-2">
         {cadenas.data?.map((c) => (
           <Tarjeta key={c.id} className="p-4">
@@ -39,15 +41,15 @@ export function Clientes() {
               <div>
                 <h2 className="font-semibold">{c.nombre}</h2>
                 <p className="text-xs text-slate-500">
-                  {c.nit ? `NIT ${c.nit}` : 'Sin NIT'}
+                  {c.nit ? t("NIT {{v0}}", { v0: c.nit }) : t("Sin NIT")}
                   {c.contacto && ` · ${c.contacto}`}
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                {!c.activo && <Insignia tono="rojo">Inactiva</Insignia>}
+                {!c.activo && <Insignia tono="rojo">{t("Inactiva")}</Insignia>}
                 {editable && (
                   <Boton variante="fantasma" className="min-h-8 px-2" onClick={() => setEdicion({ tipo: 'cadena', cadena: c })}>
-                    Editar
+                    {t("Editar")}
                   </Boton>
                 )}
               </div>
@@ -61,16 +63,16 @@ export function Clientes() {
                   </span>
                   {editable && (
                     <Boton variante="fantasma" className="min-h-8 px-2" onClick={() => setEdicion({ tipo: 'sucursal', cadena: c, sucursal: s })}>
-                      Editar
+                      {t("Editar")}
                     </Boton>
                   )}
                 </li>
               ))}
-              {c.sucursales.length === 0 && <li className="py-2 text-sm text-slate-500">Sin sucursales</li>}
+              {c.sucursales.length === 0 && <li className="py-2 text-sm text-slate-500">{t("Sin sucursales")}</li>}
             </ul>
             {editable && (
               <Boton variante="secundario" className="mt-2" onClick={() => setEdicion({ tipo: 'sucursal', cadena: c, sucursal: null })}>
-                <Plus size={16} /> Agregar sucursal
+                <Plus size={16} /> {t("Agregar sucursal")}
               </Boton>
             )}
           </Tarjeta>
@@ -82,6 +84,7 @@ export function Clientes() {
 }
 
 function FormularioCliente({ edicion, onCerrar }: { edicion: Edicion; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const esCadena = edicion.tipo === 'cadena'
   const actual = esCadena ? edicion.cadena : edicion.sucursal
@@ -130,13 +133,13 @@ function FormularioCliente({ edicion, onCerrar }: { edicion: Edicion; onCerrar: 
             <Entrada required={campo === 'nombre'} value={datos[campo]} onChange={(e) => setDatos((d) => ({ ...d, [campo]: e.target.value }))} />
           </Campo>
         ))}
-        {actual && <Casilla etiqueta="Activo" checked={activo} onChange={(e) => setActivo(e.target.checked)} />}
+        {actual && <Casilla etiqueta={t("Activo")} checked={activo} onChange={(e) => setActivo(e.target.checked)} />}
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
+            {t("Cancelar")}
           </Boton>
           <Boton type="submit" disabled={guardar.isPending}>
-            Guardar
+            {t("Guardar")}
           </Boton>
         </div>
       </form>

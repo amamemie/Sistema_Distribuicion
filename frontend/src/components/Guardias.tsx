@@ -1,23 +1,26 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import { usePuedeAlguno, useYo } from '../lib/sesion'
+import { useTranslation } from 'react-i18next'
 
 export function RequiereSesion({ children }: { children: ReactNode }) {
+  const { t } = useTranslation()
   const { data, isPending, isError } = useYo()
   const ubicacion = useLocation()
   if (isPending) {
-    return <div className="flex min-h-dvh items-center justify-center text-slate-500">Cargando…</div>
+    return <div className="flex min-h-dvh items-center justify-center text-slate-500">{t("Cargando…")}</div>
   }
   if (isError || !data) return <Navigate to="/login" replace state={{ desde: ubicacion.pathname }} />
   return children
 }
 
 export function RequierePermiso({ permiso, children }: { permiso: string | string[]; children: ReactNode }) {
+  const { t } = useTranslation()
   const puede = usePuedeAlguno()
   if (!puede(permiso)) {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-amber-900">
-        No tiene permiso para ver esta sección.
+        {t("No tiene permiso para ver esta sección.")}
       </div>
     )
   }

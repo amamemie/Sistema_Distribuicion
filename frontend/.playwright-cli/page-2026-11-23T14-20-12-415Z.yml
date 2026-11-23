@@ -1,0 +1,131 @@
+- generic [ref=f8e2]:
+  - link "Saltar al contenido" [ref=f8e3] [cursor=pointer]:
+    - /url: "#contenido"
+  - generic [ref=f8e4]:
+    - complementary "Menú principal" [ref=f8e5]:
+      - generic [ref=f8e12]:
+        - generic [ref=f8e13]: Inventario
+        - generic [ref=f8e14]: Distribuidora
+      - navigation [ref=f8e15]:
+        - link "Inicio" [ref=f8e17] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f8e21]:
+          - generic [ref=f8e22]: Operación
+          - link "Pedidos" [ref=f8e23] [cursor=pointer]:
+            - /url: /pedidos
+          - link "Stock" [ref=f8e27] [cursor=pointer]:
+            - /url: /inventario
+          - link "Reposición" [ref=f8e38] [cursor=pointer]:
+            - /url: /reposicion
+          - link "Compras" [ref=f8e44] [cursor=pointer]:
+            - /url: /compras
+          - link "Transferencias" [ref=f8e50] [cursor=pointer]:
+            - /url: /transferencias
+          - link "Ajustes" [ref=f8e54] [cursor=pointer]:
+            - /url: /ajustes
+          - link "Conteos físicos" [ref=f8e56] [cursor=pointer]:
+            - /url: /conteos
+        - generic [ref=f8e61]:
+          - generic [ref=f8e62]: Catálogo
+          - link "Productos" [ref=f8e63] [cursor=pointer]:
+            - /url: /productos
+          - link "Proveedores" [ref=f8e68] [cursor=pointer]:
+            - /url: /proveedores
+          - link "Clientes" [ref=f8e74] [cursor=pointer]:
+            - /url: /clientes
+        - generic [ref=f8e79]:
+          - generic [ref=f8e80]: Análisis
+          - link "Reportes" [ref=f8e81] [cursor=pointer]:
+            - /url: /reportes
+          - link "Finanzas" [ref=f8e85] [cursor=pointer]:
+            - /url: /finanzas
+        - generic [ref=f8e89]:
+          - generic [ref=f8e90]: Administración
+          - link "Usuarios" [ref=f8e91] [cursor=pointer]:
+            - /url: /usuarios
+          - link "Roles y permisos" [ref=f8e97] [cursor=pointer]:
+            - /url: /roles
+          - link "Ubicaciones" [ref=f8e101] [cursor=pointer]:
+            - /url: /ubicaciones
+          - link "Auditoría" [ref=f8e105] [cursor=pointer]:
+            - /url: /auditoria
+    - generic [ref=f8e110]:
+      - banner [ref=f8e111]:
+        - generic [ref=f8e112]:
+          - group "Idioma" [ref=f8e113]:
+            - button "es" [pressed] [ref=f8e114]
+            - button "en" [ref=f8e115]
+          - button "Tema claro. Cambiar a tema oscuro" [ref=f8e116]
+          - 'link "Alertas: no hay nuevas" [ref=f8e123] [cursor=pointer]':
+            - /url: /alertas
+          - button "Menú de Dueno" [ref=f8e128]:
+            - generic [ref=f8e129]: D
+            - generic [ref=f8e130]:
+              - generic [ref=f8e131]: Dueno
+              - generic [ref=f8e132]: Dueño
+      - main [ref=f8e133]:
+        - generic [ref=f8e135]:
+          - generic [ref=f8e137]:
+            - paragraph [ref=f8e138]: lunes, 23 de noviembre de 2026
+            - heading "Buenos días, Dueno" [level=1] [ref=f8e139]
+            - paragraph [ref=f8e140]: "Este es el resumen de hoy: pedidos por atender, avisos y lo que falta cobrar."
+            - generic [ref=f8e141]:
+              - link "Nuevo pedido" [ref=f8e142] [cursor=pointer]:
+                - /url: /pedidos/nuevo
+              - link "Registrar cobro" [ref=f8e144] [cursor=pointer]:
+                - /url: /finanzas/cobros/nuevo
+          - region "Resumen" [ref=f8e145]:
+            - link [ref=f8e146] [cursor=pointer]:
+              - /url: /pedidos?estado=BORRADOR
+              - generic [ref=f8e147]:
+                - paragraph [ref=f8e149]: Por revisar y confirmar
+                - paragraph [ref=f8e154]
+            - link [ref=f8e156] [cursor=pointer]:
+              - /url: /pedidos?estado=CONFIRMADO
+              - generic [ref=f8e157]:
+                - paragraph [ref=f8e159]: Por alistar
+                - paragraph [ref=f8e166]
+            - link [ref=f8e168] [cursor=pointer]:
+              - /url: /pedidos?estado=ALISTADO
+              - generic [ref=f8e169]:
+                - paragraph [ref=f8e171]: Por entregar
+                - paragraph [ref=f8e178]
+            - link [ref=f8e180] [cursor=pointer]:
+              - /url: /alertas
+              - generic [ref=f8e181]:
+                - paragraph [ref=f8e183]: Alertas sin leer
+                - paragraph [ref=f8e188]
+            - link [ref=f8e190] [cursor=pointer]:
+              - /url: /finanzas
+              - generic [ref=f8e191]:
+                - paragraph [ref=f8e193]: Por cobrar a supermercados
+                - paragraph [ref=f8e198]
+            - link [ref=f8e200] [cursor=pointer]:
+              - /url: /reportes?r=ganancias
+              - generic [ref=f8e201]:
+                - paragraph [ref=f8e203]: Ventas de este mes
+                - paragraph [ref=f8e208]
+          - generic [ref=f8e210]:
+            - generic [ref=f8e212]:
+              - heading "Últimos pedidos" [level=2] [ref=f8e213]
+              - link "Ver todos" [ref=f8e214] [cursor=pointer]:
+                - /url: /pedidos
+            - generic [ref=f8e230]:
+              - heading "Accesos rápidos" [level=2] [ref=f8e231]
+              - generic [ref=f8e232]:
+                - link "Nuevo pedido" [ref=f8e233] [cursor=pointer]:
+                  - /url: /pedidos/nuevo
+                - link "Ver stock" [ref=f8e238] [cursor=pointer]:
+                  - /url: /inventario
+                - link "Registrar compra" [ref=f8e250] [cursor=pointer]:
+                  - /url: /compras/nueva
+                - link "Transferir" [ref=f8e257] [cursor=pointer]:
+                  - /url: /transferencias/nueva
+                - link "Conteo físico" [ref=f8e262] [cursor=pointer]:
+                  - /url: /conteos
+                - link "Registrar cobro" [ref=f8e268] [cursor=pointer]:
+                  - /url: /finanzas/cobros/nuevo
+                - link "Registrar gasto" [ref=f8e273] [cursor=pointer]:
+                  - /url: /finanzas?pestana=gastos
+                - link "Reportes" [ref=f8e278] [cursor=pointer]:
+                  - /url: /reportes

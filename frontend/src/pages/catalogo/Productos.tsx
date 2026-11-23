@@ -22,10 +22,12 @@ import { formatearCantidad } from '../../lib/formato'
 import { usePuede } from '../../lib/sesion'
 import type { Pagina, Producto, ProductoDetalle } from '../../lib/tipos'
 import { Clasificacion } from './Clasificacion'
+import { useTranslation } from 'react-i18next'
 
 const TAMANO = 50
 
 export function Productos() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const [pestana, setPestana] = useState<'productos' | 'clasificacion'>('productos')
   const [buscar, setBuscar] = useState('')
@@ -47,13 +49,13 @@ export function Productos() {
   return (
     <>
       <Encabezado
-        titulo="Catálogo"
-        descripcion="Productos, sus presentaciones de compra y su clasificación."
+        titulo={t("Catálogo")}
+        descripcion={t("Productos, sus presentaciones de compra y su clasificación.")}
         acciones={
           puede('catalogo.gestionar') &&
           pestana === 'productos' && (
             <Boton onClick={() => setEditando('nuevo')}>
-              <Plus size={16} /> Nuevo producto
+              <Plus size={16} /> {t("Nuevo producto")}
             </Boton>
           )
         }
@@ -67,7 +69,7 @@ export function Productos() {
               pestana === p ? 'border-marca-700 text-marca-800' : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            {p === 'productos' ? 'Productos' : 'Categorías y marcas'}
+            {p === 'productos' ? t("Productos") : t("Categorías y marcas")}
           </button>
         ))}
       </div>
@@ -77,17 +79,17 @@ export function Productos() {
       ) : (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_14rem_auto] sm:items-end">
-            <Campo etiqueta="Buscar">
+            <Campo etiqueta={t("Buscar")}>
               <Entrada
                 value={buscar}
-                placeholder="Nombre, SKU o código de barras"
+                placeholder={t("Nombre, SKU o código de barras")}
                 onChange={(e) => {
                   setBuscar(e.target.value)
                   setPagina(1)
                 }}
               />
             </Campo>
-            <Campo etiqueta="Categoría">
+            <Campo etiqueta={t("Categoría")}>
               <Selector
                 value={categoria}
                 onChange={(e) => {
@@ -95,7 +97,7 @@ export function Productos() {
                   setPagina(1)
                 }}
               >
-                <option value="">Todas</option>
+                <option value="">{t("Todas")}</option>
                 {categorias.data?.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nombre}
@@ -103,16 +105,16 @@ export function Productos() {
                 ))}
               </Selector>
             </Campo>
-            <Casilla etiqueta="Ver inactivos" checked={verInactivos} onChange={(e) => setVerInactivos(e.target.checked)} />
+            <Casilla etiqueta={t("Ver inactivos")} checked={verInactivos} onChange={(e) => setVerInactivos(e.target.checked)} />
           </div>
           {productos.isError && <Aviso>{mensajeError(productos.error)}</Aviso>}
           <Tabla>
             <thead className={CABECERA_TABLA}>
               <tr>
-                <th>Producto</th>
-                <th className="hidden md:table-cell">Categoría</th>
-                <th className="hidden sm:table-cell">Presentaciones</th>
-                <th>Estado</th>
+                <th>{t("Producto")}</th>
+                <th className="hidden md:table-cell">{t("Categoría")}</th>
+                <th className="hidden sm:table-cell">{t("Presentaciones")}</th>
+                <th>{t("Estado")}</th>
                 <th />
               </tr>
             </thead>
@@ -123,7 +125,7 @@ export function Productos() {
                     <div className="font-medium">{p.nombre}</div>
                     <div className="text-xs text-slate-500">
                       {p.sku} · {p.unidad_base}
-                      {p.controla_vencimiento && <span className="ml-2 text-amber-700">· vence</span>}
+                      {p.controla_vencimiento && <span className="ml-2 text-amber-700">{t("· vence")}</span>}
                     </div>
                   </td>
                   <td className="hidden text-slate-600 md:table-cell">{p.categoria.nombre}</td>
@@ -133,14 +135,14 @@ export function Productos() {
                       .map((x) => `${x.nombre} ${formatearCantidad(x.factor)}`)
                       .join(' · ') || '—'}
                   </td>
-                  <td>{p.activo ? <Insignia tono="verde">Activo</Insignia> : <Insignia tono="rojo">Inactivo</Insignia>}</td>
+                  <td>{p.activo ? <Insignia tono="verde">{t("Activo")}</Insignia> : <Insignia tono="rojo">{t("Inactivo")}</Insignia>}</td>
                   <td className="text-right whitespace-nowrap">
                     <Link to={`/inventario/kardex/${p.id}`} className="mr-2 text-sm text-marca-700 hover:underline">
-                      Kardex
+                      {t("Kardex")}
                     </Link>
                     {puede('catalogo.gestionar') && (
                       <Boton variante="fantasma" onClick={() => setEditando(p.id)}>
-                        Editar
+                        {t("Editar")}
                       </Boton>
                     )}
                   </td>
@@ -164,6 +166,7 @@ interface FilaPresentacion {
 }
 
 function FormularioProducto({ productoId, onCerrar }: { productoId: string | null; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const detalle = useQuery({
     queryKey: ['producto', productoId],
     queryFn: () => api<ProductoDetalle>(`/productos/${productoId}`),
@@ -171,8 +174,8 @@ function FormularioProducto({ productoId, onCerrar }: { productoId: string | nul
   })
   if (productoId && !detalle.data) {
     return (
-      <Modal abierto titulo="Editar producto" onCerrar={onCerrar}>
-        {detalle.isError ? <Aviso>{mensajeError(detalle.error)}</Aviso> : <p className="text-sm text-slate-500">Cargando…</p>}
+      <Modal abierto titulo={t("Editar producto")} onCerrar={onCerrar}>
+        {detalle.isError ? <Aviso>{mensajeError(detalle.error)}</Aviso> : <p className="text-sm text-slate-500">{t("Cargando…")}</p>}
       </Modal>
     )
   }
@@ -180,6 +183,7 @@ function FormularioProducto({ productoId, onCerrar }: { productoId: string | nul
 }
 
 function EditorProducto({ producto, onCerrar }: { producto: ProductoDetalle | null; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const categorias = useCategorias()
   const marcas = useMarcas()
@@ -247,7 +251,7 @@ function EditorProducto({ producto, onCerrar }: { producto: ProductoDetalle | nu
   })
 
   return (
-    <Modal abierto titulo={producto ? `Editar ${producto.nombre}` : 'Nuevo producto'} onCerrar={onCerrar}>
+    <Modal abierto titulo={producto ? t("Editar {{v0}}", { v0: producto.nombre }) : t("Nuevo producto")} onCerrar={onCerrar}>
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -260,14 +264,14 @@ function EditorProducto({ producto, onCerrar }: { producto: ProductoDetalle | nu
           <Campo etiqueta="SKU">
             <Entrada required value={datos.sku} onChange={(e) => cambiar('sku', e.target.value)} />
           </Campo>
-          <Campo etiqueta="Nombre">
+          <Campo etiqueta={t("Nombre")}>
             <Entrada required value={datos.nombre} onChange={(e) => cambiar('nombre', e.target.value)} />
           </Campo>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Campo etiqueta="Categoría">
+          <Campo etiqueta={t("Categoría")}>
             <Selector required value={datos.categoria_id} onChange={(e) => cambiar('categoria_id', e.target.value)}>
-              <option value="">Elegir…</option>
+              <option value="">{t("Elegir…")}</option>
               {categorias.data?.filter((c) => c.activo || c.id === datos.categoria_id).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre}
@@ -275,9 +279,9 @@ function EditorProducto({ producto, onCerrar }: { producto: ProductoDetalle | nu
               ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="Marca">
+          <Campo etiqueta={t("Marca")}>
             <Selector value={datos.marca_id} onChange={(e) => cambiar('marca_id', e.target.value)}>
-              <option value="">Sin marca</option>
+              <option value="">{t("Sin marca")}</option>
               {marcas.data?.filter((m) => m.activo || m.id === datos.marca_id).map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.nombre}
@@ -285,35 +289,35 @@ function EditorProducto({ producto, onCerrar }: { producto: ProductoDetalle | nu
               ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="Unidad base (de venta)" ayuda="Ej.: unidad, paño, par, kg">
+          <Campo etiqueta={t("Unidad base (de venta)")} ayuda={t("Ej.: unidad, paño, par, kg")}>
             <Entrada required value={datos.unidad_base} onChange={(e) => cambiar('unidad_base', e.target.value)} />
           </Campo>
-          <Campo etiqueta="Código de barras">
+          <Campo etiqueta={t("Código de barras")}>
             <Entrada value={datos.codigo_barras} onChange={(e) => cambiar('codigo_barras', e.target.value)} />
           </Campo>
         </div>
         <Casilla
-          etiqueta="Controla fecha de vencimiento"
-          descripcion="Exige lote y vencimiento al comprar; sugiere despachar primero lo que vence antes."
+          etiqueta={t("Controla fecha de vencimiento")}
+          descripcion={t("Exige lote y vencimiento al comprar; sugiere despachar primero lo que vence antes.")}
           checked={datos.controla_vencimiento}
           onChange={(e) => cambiar('controla_vencimiento', e.target.checked)}
         />
-        {producto && <Casilla etiqueta="Producto activo" checked={datos.activo} onChange={(e) => cambiar('activo', e.target.checked)} />}
+        {producto && <Casilla etiqueta={t("Producto activo")} checked={datos.activo} onChange={(e) => cambiar('activo', e.target.checked)} />}
 
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-slate-700">Presentaciones de compra</legend>
-          <p className="text-xs text-slate-500">Cuántas unidades base trae cada presentación (ej.: Fardo = 100 {datos.unidad_base}).</p>
+          <legend className="text-sm font-medium text-slate-700">{t("Presentaciones de compra")}</legend>
+          <p className="text-xs text-slate-500">{t("Cuántas unidades base trae cada presentación (ej.: Fardo = 100")} {datos.unidad_base}).</p>
           {presentaciones.map((p, i) => (
             <div key={p.id ?? i} className="flex items-center gap-2">
               <Entrada
-                placeholder="Nombre (Fardo, Caja…)"
+                placeholder={t("Nombre (Fardo, Caja…)")}
                 value={p.nombre}
                 onChange={(e) => setPresentaciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))}
               />
               <Entrada
                 className="w-28"
                 inputMode="decimal"
-                placeholder="Factor"
+                placeholder={t("Factor")}
                 value={p.factor}
                 onChange={(e) => setPresentaciones((l) => l.map((x, j) => (j === i ? { ...x, factor: e.target.value.replace(',', '.') } : x)))}
               />
@@ -324,30 +328,30 @@ function EditorProducto({ producto, onCerrar }: { producto: ProductoDetalle | nu
                     checked={p.activo}
                     onChange={(e) => setPresentaciones((l) => l.map((x, j) => (j === i ? { ...x, activo: e.target.checked } : x)))}
                   />
-                  activa
+                  {t("activa")}
                 </label>
               ) : (
                 <Boton variante="fantasma" className="px-2" onClick={() => setPresentaciones((l) => l.filter((_, j) => j !== i))}>
-                  Quitar
+                  {t("Quitar")}
                 </Boton>
               )}
             </div>
           ))}
           <Boton variante="secundario" onClick={() => setPresentaciones((l) => [...l, { nombre: '', factor: '', activo: true }])}>
-            <Plus size={16} /> Agregar presentación
+            <Plus size={16} /> {t("Agregar presentación")}
           </Boton>
         </fieldset>
 
         {producto && (
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-slate-700">Stock mínimo y máximo ({datos.unidad_base})</legend>
+            <legend className="text-sm font-medium text-slate-700">{t("Stock mínimo y máximo (")}{datos.unidad_base})</legend>
             {ubicaciones.data?.map((u) => (
               <div key={u.id} className="grid grid-cols-[1fr_6rem_6rem] items-center gap-2 text-sm">
                 <span>{u.nombre}</span>
                 {(['minimo', 'maximo'] as const).map((campo) => (
                   <Entrada
                     key={campo}
-                    placeholder={campo === 'minimo' ? 'Mín.' : 'Máx.'}
+                    placeholder={campo === 'minimo' ? t("Mín.") : t("Máx.")}
                     inputMode="decimal"
                     value={limites[u.id]?.[campo] ?? ''}
                     onChange={(e) =>
@@ -364,10 +368,10 @@ function EditorProducto({ producto, onCerrar }: { producto: ProductoDetalle | nu
         )}
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
+            {t("Cancelar")}
           </Boton>
           <Boton type="submit" disabled={guardar.isPending}>
-            Guardar
+            {t("Guardar")}
           </Boton>
         </div>
       </form>

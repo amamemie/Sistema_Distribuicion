@@ -11,6 +11,7 @@ import { hoyLaPaz } from '../../lib/formato'
 import { PERMISOS_REPORTES_OPERATIVOS, usePuede } from '../../lib/sesion'
 import type { Kpi, Producto, Reporte, TablaReporte } from '../../lib/tipos'
 import { agrupacionSugerida, esNumerico, fechasDeRango, formatear, type Rango } from './utiles'
+import { useTranslation } from 'react-i18next'
 
 interface DefReporte {
   clave: string
@@ -61,6 +62,7 @@ const AGRUPACIONES = [
 ]
 
 export function Reportes() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const disponibles = REPORTES.filter((r) => disponible(r, puede))
   const [params, setParams] = useSearchParams()
@@ -112,8 +114,8 @@ export function Reportes() {
   return (
     <>
       <Encabezado
-        titulo="Reportes"
-        descripcion="Ventas, rentabilidad, inventario y finanzas. Todo se puede exportar a Excel o PDF."
+        titulo={t("Reportes")}
+        descripcion={t("Ventas, rentabilidad, inventario y finanzas. Todo se puede exportar a Excel o PDF.")}
         acciones={
           <div className="flex gap-2">
             <a href={exportar('xlsx')} download className={CLASE_BOTON_EXPORTAR} aria-disabled={!fechasValidas}>
@@ -126,7 +128,7 @@ export function Reportes() {
         }
       />
 
-      <nav aria-label="Reportes" className="-mx-4 mb-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <nav aria-label={t("Reportes")} className="-mx-4 mb-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <ul className="flex min-w-max gap-1 border-b border-slate-200">
           {disponibles.map((r) => (
             <li key={r.clave}>
@@ -138,7 +140,7 @@ export function Reportes() {
                   r.clave === actual.clave ? 'border-marca-600 text-marca-700' : 'border-transparent text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {r.titulo}
+                {t(r.titulo)}
               </button>
             </li>
           ))}
@@ -147,7 +149,7 @@ export function Reportes() {
 
       <Tarjeta className="mb-5 space-y-3 p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Campo etiqueta={actual.clave === 'inventario' ? 'Ventas del período (rotación)' : 'Período'}>
+          <Campo etiqueta={actual.clave === 'inventario' ? t("Ventas del período (rotación)") : t("Período")}>
             <Selector
               value={rango}
               onChange={(e) => {
@@ -158,42 +160,42 @@ export function Reportes() {
             >
               {RANGOS.map((r) => (
                 <option key={r.valor} value={r.valor}>
-                  {r.texto}
+                  {t(r.texto)}
                 </option>
               ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="Desde">
+          <Campo etiqueta={t("Desde")}>
             <Entrada type="date" value={fechas.desde} max={fechas.hasta || hoy} onChange={(e) => (setRango('personalizado'), setFechas((f) => ({ ...f, desde: e.target.value })))} />
           </Campo>
-          <Campo etiqueta="Hasta">
+          <Campo etiqueta={t("Hasta")}>
             <Entrada type="date" value={fechas.hasta} min={fechas.desde} onChange={(e) => (setRango('personalizado'), setFechas((f) => ({ ...f, hasta: e.target.value })))} />
           </Campo>
           {actual.agrupacion ? (
-            <Campo etiqueta="Agrupar">
+            <Campo etiqueta={t("Agrupar")}>
               <Selector value={filtros.agrupacion} onChange={(e) => setAgrupacion(e.target.value)}>
                 {AGRUPACIONES.map((a) => (
                   <option key={a.valor} value={a.valor}>
-                    {a.texto}
+                    {t(a.texto)}
                   </option>
                 ))}
               </Selector>
             </Campo>
           ) : actual.sinMovimiento ? (
-            <Campo etiqueta="Sin movimiento desde hace (días)">
+            <Campo etiqueta={t("Sin movimiento desde hace (días)")}>
               <Entrada type="number" min={1} max={3650} value={diasQuieto} onChange={(e) => setDiasQuieto(e.target.value)} />
             </Campo>
           ) : null}
         </div>
         <Boton variante="fantasma" className="min-h-8 px-2 text-xs" onClick={() => setMasFiltros((v) => !v)} aria-expanded={masFiltros}>
-          <SlidersHorizontal size={14} /> {masFiltros ? 'Menos filtros' : 'Más filtros'}
-          {filtrosActivos > 0 && ` (${filtrosActivos} activos)`}
+          <SlidersHorizontal size={14} /> {masFiltros ? t("Menos filtros") : t("Más filtros")}
+          {filtrosActivos > 0 && t(" ({{filtrosActivos}} activos)", { filtrosActivos: filtrosActivos })}
         </Boton>
         {masFiltros && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Campo etiqueta="Ubicación">
+            <Campo etiqueta={t("Ubicación")}>
               <Selector value={ubicacion} onChange={(e) => setUbicacion(e.target.value)}>
-                <option value="">Todas</option>
+                <option value="">{t("Todas")}</option>
                 {ubicaciones.data?.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.nombre}
@@ -203,9 +205,9 @@ export function Reportes() {
             </Campo>
             {(actual.clientes || actual.soloCadena) && (
               <>
-                <Campo etiqueta="Cadena">
+                <Campo etiqueta={t("Cadena")}>
                   <Selector value={cadena} onChange={(e) => (setCadena(e.target.value), setSucursal(''))}>
-                    <option value="">Todas</option>
+                    <option value="">{t("Todas")}</option>
                     {cadenas.data?.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.nombre}
@@ -214,9 +216,9 @@ export function Reportes() {
                   </Selector>
                 </Campo>
                 {actual.clientes && (
-                  <Campo etiqueta="Sucursal de cliente">
+                  <Campo etiqueta={t("Sucursal de cliente")}>
                     <Selector value={sucursal} disabled={!cadena} onChange={(e) => setSucursal(e.target.value)}>
-                      <option value="">{cadena ? 'Todas' : 'Primero la cadena'}</option>
+                      <option value="">{cadena ? t("Todas") : t("Primero la cadena")}</option>
                       {sucursalesCadena.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.nombre}
@@ -229,9 +231,9 @@ export function Reportes() {
             )}
 {!actual.finanzas && (
               <>
-                <Campo etiqueta="Categoría">
+                <Campo etiqueta={t("Categoría")}>
                   <Selector value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-                    <option value="">Todas</option>
+                    <option value="">{t("Todas")}</option>
                     {categorias.data?.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.nombre}
@@ -240,18 +242,18 @@ export function Reportes() {
                   </Selector>
                 </Campo>
                 <div className="sm:col-span-2">
-                  <span className="mb-1 block text-sm font-medium text-slate-700">Producto</span>
+                  <span className="mb-1 block text-sm font-medium text-slate-700">{t("Producto")}</span>
                   <SelectorProducto valor={producto} onCambio={setProducto} />
                 </div>
               </>
             )}
           </div>
         )}
-        {!fechasValidas && <p className="text-xs text-red-600">Revise las fechas: «desde» debe ser anterior a «hasta».</p>}
+        {!fechasValidas && <p className="text-xs text-red-600">{t("Revise las fechas: «desde» debe ser anterior a «hasta».")}</p>}
       </Tarjeta>
 
       {reporte.isError && <Aviso>{mensajeError(reporte.error)}</Aviso>}
-      {reporte.isPending && fechasValidas && <p className="text-sm text-slate-500">Cargando…</p>}
+      {reporte.isPending && fechasValidas && <p className="text-sm text-slate-500">{t("Cargando…")}</p>}
       {reporte.data && (
         <div className={`space-y-5 transition-opacity ${reporte.isFetching ? 'opacity-60' : ''}`}>
           <p className="text-sm text-slate-600">{reporte.data.descripcion}</p>
@@ -265,8 +267,8 @@ export function Reportes() {
           {reporte.data.series.map((s) => (
             <Grafico key={s.clave} serie={s} />
           ))}
-          {reporte.data.tablas.map((t) => (
-            <TablaDeReporte key={t.clave} tabla={t} />
+          {reporte.data.tablas.map((tabla) => (
+            <TablaDeReporte key={tabla.clave} tabla={tabla} />
           ))}
         </div>
       )}
@@ -278,6 +280,7 @@ const CLASE_BOTON_EXPORTAR =
   'inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium hover:bg-slate-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
 
 function TarjetaKpi({ kpi }: { kpi: Kpi }) {
+  const { t } = useTranslation()
   const variacion = kpi.variacion === null ? null : Number(kpi.variacion)
   // El costo que sube no es una buena noticia: la flecha se colorea según convenga.
   const buena = variacion === null || variacion === 0 ? null : kpi.clave === 'costo' ? variacion < 0 : variacion > 0
@@ -295,7 +298,7 @@ function TarjetaKpi({ kpi }: { kpi: Kpi }) {
               {formatear(variacion, 'porcentaje')}
             </span>
           )}
-          <span>antes: {formatear(kpi.anterior, kpi.tipo)}</span>
+          <span>{t("antes:")} {formatear(kpi.anterior, kpi.tipo)}</span>
         </p>
       )}
     </Tarjeta>
@@ -305,6 +308,7 @@ function TarjetaKpi({ kpi }: { kpi: Kpi }) {
 const FILAS_VISIBLES = 25
 
 function TablaDeReporte({ tabla }: { tabla: TablaReporte }) {
+  const { t } = useTranslation()
   const [todas, setTodas] = useState(false)
   const filas = todas ? tabla.filas : tabla.filas.slice(0, FILAS_VISIBLES)
   return (
@@ -314,7 +318,7 @@ function TablaDeReporte({ tabla }: { tabla: TablaReporte }) {
         {tabla.descripcion && <p className="text-xs text-slate-500">{tabla.descripcion}</p>}
       </div>
       {tabla.filas.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500">Sin datos en el período.</p>
+        <p className="rounded-lg border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500">{t("Sin datos en el período.")}</p>
       ) : (
         <Tabla>
           <thead className={CABECERA_TABLA}>
@@ -347,7 +351,7 @@ function TablaDeReporte({ tabla }: { tabla: TablaReporte }) {
       )}
       {tabla.filas.length > FILAS_VISIBLES && (
         <Boton variante="fantasma" className="min-h-8 text-xs" onClick={() => setTodas((v) => !v)}>
-          {todas ? 'Ver menos' : `Ver las ${tabla.filas.length} filas`}
+          {todas ? t("Ver menos") : t("Ver las {{v0}} filas", { v0: tabla.filas.length })}
         </Boton>
       )}
     </section>

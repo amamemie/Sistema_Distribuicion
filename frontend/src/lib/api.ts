@@ -1,4 +1,5 @@
 /** Cliente HTTP de la API. Envía la cookie de sesión y la cabecera CSRF automáticamente. */
+import { idiomaActual } from '../i18n'
 
 export interface ErrorCampo {
   campo: string
@@ -49,7 +50,8 @@ interface Opciones {
 }
 
 export async function api<T>(ruta: string, { metodo = 'GET', cuerpo, params }: Opciones = {}) {
-  const headers: Record<string, string> = { Accept: 'application/json' }
+  // Accept-Language: el servidor podrá responder sus mensajes en el idioma del usuario.
+  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': idiomaActual() }
   const esFormulario = cuerpo instanceof FormData
   // Con FormData el navegador pone el Content-Type (multipart con su separador).
   if (cuerpo !== undefined && !esFormulario) headers['Content-Type'] = 'application/json'

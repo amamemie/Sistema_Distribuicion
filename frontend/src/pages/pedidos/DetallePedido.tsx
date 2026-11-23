@@ -12,6 +12,7 @@ import { usePuede, useYo } from '../../lib/sesion'
 import { NOMBRE_ESTADO_PEDIDO, type EstadoPedido, type LoteEnStock, type PedidoDetalle, type PedidoLinea } from '../../lib/tipos'
 import { InsigniaEstado } from './Pedidos'
 import { RevisionPedido } from './RevisionPedido'
+import { useTranslation } from 'react-i18next'
 
 const NOMBRE_EVENTO: Record<string, string> = {
   CREADO: 'Creó el pedido',
@@ -27,6 +28,7 @@ const NOMBRE_EVENTO: Record<string, string> = {
 }
 
 export function DetallePedido() {
+  const { t } = useTranslation()
   const { pedidoId = '' } = useParams()
   const puede = usePuede()
   const { data: yo } = useYo()
@@ -39,7 +41,7 @@ export function DetallePedido() {
   })
 
   if (pedido.isError) return <Aviso>{mensajeError(pedido.error)}</Aviso>
-  if (!pedido.data) return <p className="text-sm text-slate-500">Cargando…</p>
+  if (!pedido.data) return <p className="text-sm text-slate-500">{t("Cargando…")}</p>
   const p = pedido.data
   const puedeAnular =
     ['BORRADOR', 'CONFIRMADO', 'ALISTADO'].includes(p.estado) &&
@@ -49,39 +51,39 @@ export function DetallePedido() {
   return (
     <>
       <Link to="/pedidos" className="mb-2 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
-        <ArrowLeft size={16} /> Pedidos
+        <ArrowLeft size={16} /> {t("Pedidos")}
       </Link>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight">
-            Pedido #{p.numero} <InsigniaEstado estado={p.estado} />
+            {t("Pedido #")}{p.numero} <InsigniaEstado estado={p.estado} />
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            {p.numero_oc ? `OC ${p.numero_oc}` : 'OC sin número'}
+            {p.numero_oc ? t("OC {{v0}}", { v0: p.numero_oc }) : t("OC sin número")}
             {p.cadena && ` · ${p.cadena.nombre}`}
-            {p.sucursal_cliente && ` · ${p.sucursal_cliente.nombre}`} · despacha {p.ubicacion.nombre}
+            {p.sucursal_cliente && ` · ${p.sucursal_cliente.nombre}`} {t("· despacha")} {p.ubicacion.nombre}
           </p>
         </div>
         {p.estado !== 'BORRADOR' && (
           <div className="flex flex-wrap gap-2">
             {p.estado === 'CONFIRMADO' && puede('pedidos.alistar') && (
               <Boton onClick={() => setAccion('alistar')}>
-                <PackageCheck size={16} /> Alistar
+                <PackageCheck size={16} /> {t("Alistar")}
               </Boton>
             )}
             {p.estado === 'ALISTADO' && puede('pedidos.entregar') && (
               <Boton onClick={() => setAccion('entregar')}>
-                <Truck size={16} /> Marcar entregado
+                <Truck size={16} /> {t("Marcar entregado")}
               </Boton>
             )}
             {p.estado === 'ENTREGADO' && puede('pedidos.anular') && (
               <Boton variante="secundario" onClick={() => setAccion('devolver')}>
-                <RotateCcw size={16} /> Registrar devolución
+                <RotateCcw size={16} /> {t("Registrar devolución")}
               </Boton>
             )}
             {puedeAnular && (
               <Boton variante="secundario" className="text-red-600" onClick={() => setAccion('anular')}>
-                <X size={16} /> Anular
+                <X size={16} /> {t("Anular")}
               </Boton>
             )}
           </div>
@@ -103,6 +105,7 @@ export function DetallePedido() {
 }
 
 function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
+  const { t } = useTranslation()
   const conCostos = p.costo !== null
   const alistado = p.detalle_lineas.some((l) => l.cantidad_alistada !== null)
   return (
@@ -110,19 +113,19 @@ function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
       <div className="space-y-5">
         {p.estado === 'ANULADO' && (
           <Aviso>
-            Anulado desde {p.anulado_desde ? NOMBRE_ESTADO_PEDIDO[p.anulado_desde].toLowerCase() : '—'}: {p.anulacion_motivo}
+            {t("Anulado desde")} {p.anulado_desde ? t(NOMBRE_ESTADO_PEDIDO[p.anulado_desde]).toLowerCase() : '—'}: {p.anulacion_motivo}
           </Aviso>
         )}
         <Tarjeta className="grid grid-cols-2 gap-4 p-4 text-sm sm:grid-cols-4">
-          <Dato titulo="Fecha" valor={formatearDia(p.fecha_oc)} />
-          <Dato titulo="Entrega" valor={formatearDia(p.fecha_entrega)} />
-          <Dato titulo="Total" valor={formatearBs(p.total_oc ?? p.total_calculado)} />
-          <Dato titulo="Responsable" valor={p.responsable_nombre} />
-          {p.ingreso !== null && <Dato titulo="Ingreso" valor={formatearBs(p.ingreso)} />}
-          {conCostos && <Dato titulo="Costo" valor={formatearBs(p.costo)} />}
+          <Dato titulo={t("Fecha")} valor={formatearDia(p.fecha_oc)} />
+          <Dato titulo={t("Entrega")} valor={formatearDia(p.fecha_entrega)} />
+          <Dato titulo={t("Total")} valor={formatearBs(p.total_oc ?? p.total_calculado)} />
+          <Dato titulo={t("Responsable")} valor={p.responsable_nombre} />
+          {p.ingreso !== null && <Dato titulo={t("Ingreso")} valor={formatearBs(p.ingreso)} />}
+          {conCostos && <Dato titulo={t("Costo")} valor={formatearBs(p.costo)} />}
           {p.ganancia !== null && (
             <Dato
-              titulo="Ganancia"
+              titulo={t("Ganancia")}
               valor={`${formatearBs(p.ganancia)} (${formatearPorcentaje(p.margen)})`}
               tono={Number(p.ganancia) < 0 ? 'text-red-700' : 'text-emerald-700'}
             />
@@ -132,14 +135,14 @@ function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
         <Tabla>
           <thead className={CABECERA_TABLA}>
             <tr>
-              <th>Producto</th>
-              <th className="text-right">Pedido</th>
-              <th className="text-right">Confirmado</th>
-              {alistado && <th className="text-right">Alistado</th>}
-              <th className="text-right">Precio</th>
-              {alistado && <th className="text-right">Ingreso</th>}
-              {conCostos && alistado && <th className="text-right">Costo unit.</th>}
-              {conCostos && alistado && <th className="text-right">Ganancia</th>}
+              <th>{t("Producto")}</th>
+              <th className="text-right">{t("Pedido")}</th>
+              <th className="text-right">{t("Confirmado")}</th>
+              {alistado && <th className="text-right">{t("Alistado")}</th>}
+              <th className="text-right">{t("Precio")}</th>
+              {alistado && <th className="text-right">{t("Ingreso")}</th>}
+              {conCostos && alistado && <th className="text-right">{t("Costo unit.")}</th>}
+              {conCostos && alistado && <th className="text-right">{t("Ganancia")}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -153,11 +156,11 @@ function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
                   </span>
                   {l.lotes.some((t) => t.vencimiento) && (
                     <span className="block text-xs text-slate-500">
-                      Lotes: {l.lotes.map((t) => `${t.codigo ?? 's/c'} (${formatearCantidad(t.cantidad)}, vence ${formatearDia(t.vencimiento)})`).join(', ')}
+                      {t("Lotes:")} {l.lotes.map((t) => `${t.codigo ?? 's/c'} (${formatearCantidad(t.cantidad)}, vence ${formatearDia(t.vencimiento)})`).join(', ')}
                     </span>
                   )}
-                  {Number(l.cantidad_merma) > 0 && <span className="block text-xs text-amber-700">Merma: {formatearCantidad(l.cantidad_merma)}</span>}
-                  {Number(l.cantidad_devuelta) > 0 && <span className="block text-xs text-amber-700">Devuelto: {formatearCantidad(l.cantidad_devuelta)}</span>}
+                  {Number(l.cantidad_merma) > 0 && <span className="block text-xs text-amber-700">{t("Merma:")} {formatearCantidad(l.cantidad_merma)}</span>}
+                  {Number(l.cantidad_devuelta) > 0 && <span className="block text-xs text-amber-700">{t("Devuelto:")} {formatearCantidad(l.cantidad_devuelta)}</span>}
                 </td>
                 <td className="text-right">{formatearCantidad(l.cantidad_oc)}</td>
                 <td className="text-right">{formatearCantidad(l.cantidad_confirmada)}</td>
@@ -178,17 +181,17 @@ function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
 
         {p.mermas.length > 0 && (
           <p className="text-sm text-slate-600">
-            Merma registrada al alistar:{' '}
+            {t("Merma registrada al alistar:")}{' '}
             {p.mermas.map((m) => (
               <Link key={m.id} to="/ajustes" className="text-marca-800 underline">
-                ajuste #{m.numero} ({m.estado.toLowerCase()})
+                {t("ajuste #")}{m.numero} ({m.estado.toLowerCase()})
               </Link>
             ))}
           </p>
         )}
         {p.devoluciones.length > 0 && (
           <Tarjeta className="p-4 text-sm">
-            <h2 className="mb-2 font-semibold">Devoluciones</h2>
+            <h2 className="mb-2 font-semibold">{t("Devoluciones")}</h2>
             <ul className="space-y-2">
               {p.devoluciones.map((d) => (
                 <li key={d.id}>
@@ -203,20 +206,20 @@ function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
         )}
         {p.estado === 'ENTREGADO' && (
           <Tarjeta className="space-y-2 p-4 text-sm">
-            <h2 className="font-semibold">Constancia de entrega</h2>
+            <h2 className="font-semibold">{t("Constancia de entrega")}</h2>
             <p>
               {formatearFecha(p.entregado_at)}
-              {p.receptor_nombre && ` · Recibió: ${p.receptor_nombre}`}
+              {p.receptor_nombre && t(" · Recibió: {{v0}}", { v0: p.receptor_nombre })}
             </p>
             {p.entrega_observacion && <p className="text-slate-600">{p.entrega_observacion}</p>}
             <div className="flex flex-wrap gap-3">
               {p.constancia_foto_id && (
                 <a href={urlArchivo(p.id, p.constancia_foto_id)} target="_blank" rel="noreferrer">
-                  <img src={urlArchivo(p.id, p.constancia_foto_id)} alt="Foto de la entrega" className="h-32 rounded border border-slate-200 object-cover" />
+                  <img src={urlArchivo(p.id, p.constancia_foto_id)} alt={t("Foto de la entrega")} className="h-32 rounded border border-slate-200 object-cover" />
                 </a>
               )}
               {p.constancia_firma_id && (
-                <img src={urlArchivo(p.id, p.constancia_firma_id)} alt="Firma de recepción" className="h-32 rounded border border-slate-200 bg-white" />
+                <img src={urlArchivo(p.id, p.constancia_firma_id)} alt={t("Firma de recepción")} className="h-32 rounded border border-slate-200 bg-white" />
               )}
             </div>
           </Tarjeta>
@@ -226,11 +229,11 @@ function ResumenPedido({ pedido: p }: { pedido: PedidoDetalle }) {
       <div className="space-y-5">
         <VisorDocumentos pedidoId={p.id} documentos={p.detalle_documentos} />
         <Tarjeta className="p-4 text-sm">
-          <h2 className="mb-2 font-semibold">Historia</h2>
+          <h2 className="mb-2 font-semibold">{t("Historia")}</h2>
           <ol className="space-y-2">
             {p.eventos.map((e, i) => (
               <li key={i} className="border-l-2 border-slate-200 pl-3">
-                <span className="font-medium">{NOMBRE_EVENTO[e.tipo] ?? e.tipo}</span>
+                <span className="font-medium">{t(NOMBRE_EVENTO[e.tipo] ?? e.tipo)}</span>
                 <span className="block text-xs text-slate-500">
                   {e.usuario_nombre} · {formatearFecha(e.fecha)}
                 </span>
@@ -285,6 +288,7 @@ function repartoFefo(lotes: LoteEnStock[], cantidad: number): Record<string, str
 }
 
 function Alistar({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const lineas = p.detalle_lineas.filter((l) => Number(l.cantidad_confirmada) > 0)
   const [filas, setFilas] = useState<Record<string, FilaAlistado>>(() =>
     Object.fromEntries(lineas.map((l) => [l.id, { alistada: String(Number(l.cantidad_confirmada)), merma: '', elegirLotes: false, lotes: {} }])),
@@ -318,7 +322,7 @@ function Alistar({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: () 
   const hayMerma = Object.values(filas).some((f) => Number(f.merma) > 0)
 
   return (
-    <Modal abierto titulo={`Alistar pedido #${p.numero}`} onCerrar={onCerrar}>
+    <Modal abierto titulo={t("Alistar pedido #{{v0}}", { v0: p.numero })} onCerrar={onCerrar}>
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -327,23 +331,23 @@ function Alistar({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: () 
         }}
       >
         <p className="text-sm text-slate-600">
-          Al alistar se descuenta el stock de {p.ubicacion.nombre}. Puede salir menos de lo confirmado; lo que esté en mal estado regístrelo como merma.
+          {t("Al alistar se descuenta el stock de")} {p.ubicacion.nombre}{t(". Puede salir menos de lo confirmado; lo que esté en mal estado regístrelo como merma.")}
         </p>
         {lineas.map((l) => (
           <FilaAlistar key={l.id} linea={l} ubicacionId={p.ubicacion.id} fila={filas[l.id]} onCambio={(c) => cambiar(l.id, c)} />
         ))}
         {hayMerma && (
-          <Campo etiqueta="Detalle de la merma (opcional)">
-            <Entrada value={observacion} onChange={(e) => setObservacion(e.target.value)} placeholder="Ej.: cajas aplastadas" />
+          <Campo etiqueta={t("Detalle de la merma (opcional)")}>
+            <Entrada value={observacion} onChange={(e) => setObservacion(e.target.value)} placeholder={t("Ej.: cajas aplastadas")} />
           </Campo>
         )}
         {alistar.isError && <Aviso>{mensajeError(alistar.error)}</Aviso>}
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
+            {t("Cancelar")}
           </Boton>
           <Boton type="submit" disabled={alistar.isPending}>
-            {alistar.isPending ? 'Alistando…' : 'Confirmar alistado'}
+            {alistar.isPending ? t("Alistando…") : t("Confirmar alistado")}
           </Boton>
         </div>
       </form>
@@ -362,6 +366,7 @@ function FilaAlistar({
   fila: FilaAlistado
   onCambio: (c: Partial<FilaAlistado>) => void
 }) {
+  const { t } = useTranslation()
   const vence = !!l.producto?.controla_vencimiento
   const lotes = useQuery({
     queryKey: ['lotes', l.producto?.id, ubicacionId],
@@ -373,13 +378,13 @@ function FilaAlistar({
     <div className="rounded-lg border border-slate-200 p-3">
       <p className="text-sm font-medium">{l.producto?.nombre ?? l.descripcion_cliente}</p>
       <p className="text-xs text-slate-500">
-        Confirmado: {formatearCantidad(l.cantidad_confirmada)} {l.producto?.unidad_base}
+        {t("Confirmado:")} {formatearCantidad(l.cantidad_confirmada)} {l.producto?.unidad_base}
       </p>
       <div className="mt-2 grid grid-cols-2 gap-3">
-        <Campo etiqueta="Alistado">
+        <Campo etiqueta={t("Alistado")}>
           <Entrada inputMode="decimal" required value={fila.alistada} onChange={(e) => onCambio({ alistada: e.target.value.replace(',', '.') })} />
         </Campo>
-        <Campo etiqueta="En mal estado (merma)">
+        <Campo etiqueta={t("En mal estado (merma)")}>
           <Entrada inputMode="decimal" placeholder="0" value={fila.merma} onChange={(e) => onCambio({ merma: e.target.value.replace(',', '.') })} />
         </Campo>
       </div>
@@ -392,14 +397,14 @@ function FilaAlistar({
               checked={fila.elegirLotes}
               onChange={(e) => onCambio({ elegirLotes: e.target.checked, lotes: repartoFefo(lotes.data ?? [], Number(fila.alistada) || 0) })}
             />
-            Elegir lotes (si no, sale primero el que vence antes)
+            {t("Elegir lotes (si no, sale primero el que vence antes)")}
           </label>
           {fila.elegirLotes && (
             <ul className="mt-2 space-y-1">
               {(lotes.data ?? []).map((lote) => (
                 <li key={lote.lote_id} className="flex items-center gap-2">
                   <span className={`flex-1 text-xs ${lote.vencido ? 'text-red-600 line-through' : 'text-slate-600'}`}>
-                    {lote.codigo ?? 's/c'} · vence {formatearDia(lote.vencimiento)} · hay {formatearCantidad(lote.cantidad)}
+                    {lote.codigo ?? 's/c'} {t("· vence")} {formatearDia(lote.vencimiento)} {t("· hay")} {formatearCantidad(lote.cantidad)}
                   </span>
                   <Entrada
                     className="w-24"
@@ -412,7 +417,7 @@ function FilaAlistar({
               ))}
               {sumaLotes !== (Number(fila.alistada) || 0) && (
                 <li className="text-xs text-red-700">
-                  Los lotes suman {formatearCantidad(sumaLotes)}; deben sumar {formatearCantidad(fila.alistada)}.
+                  {t("Los lotes suman")} {formatearCantidad(sumaLotes)}{t("; deben sumar")} {formatearCantidad(fila.alistada)}.
                 </li>
               )}
             </ul>
@@ -426,6 +431,7 @@ function FilaAlistar({
 // ---------------------------------------------------------------- entregar
 
 function Entregar({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const [receptor, setReceptor] = useState('')
   const [observacion, setObservacion] = useState('')
   const [foto, setFoto] = useState<File | null>(null)
@@ -444,7 +450,7 @@ function Entregar({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: ()
     onSuccess: actualizar,
   })
   return (
-    <Modal abierto titulo={`Entregar pedido #${p.numero}`} onCerrar={onCerrar}>
+    <Modal abierto titulo={t("Entregar pedido #{{v0}}", { v0: p.numero })} onCerrar={onCerrar}>
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -452,12 +458,12 @@ function Entregar({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: ()
           entregar.mutate()
         }}
       >
-        <p className="text-sm text-slate-600">La constancia es opcional: nombre de quien recibe, una foto y/o su firma.</p>
-        <Campo etiqueta="Recibido por">
-          <Entrada value={receptor} onChange={(e) => setReceptor(e.target.value)} placeholder="Nombre de quien recibe" />
+        <p className="text-sm text-slate-600">{t("La constancia es opcional: nombre de quien recibe, una foto y/o su firma.")}</p>
+        <Campo etiqueta={t("Recibido por")}>
+          <Entrada value={receptor} onChange={(e) => setReceptor(e.target.value)} placeholder={t("Nombre de quien recibe")} />
         </Campo>
         <div className="space-y-1">
-          <span className="text-sm font-medium text-slate-700">Foto de la entrega</span>
+          <span className="text-sm font-medium text-slate-700">{t("Foto de la entrega")}</span>
           <input
             ref={camara}
             type="file"
@@ -472,25 +478,25 @@ function Entregar({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: ()
           />
           <div className="flex items-center gap-2">
             <Boton variante="secundario" onClick={() => camara.current?.click()}>
-              <Camera size={16} /> {foto ? 'Cambiar foto' : 'Tomar foto'}
+              <Camera size={16} /> {foto ? t("Cambiar foto") : t("Tomar foto")}
             </Boton>
             {foto && <span className="truncate text-xs text-slate-600">{foto.name}</span>}
           </div>
         </div>
         <div className="space-y-1">
-          <span className="text-sm font-medium text-slate-700">Firma de recepción</span>
+          <span className="text-sm font-medium text-slate-700">{t("Firma de recepción")}</span>
           <FirmaCanvas onCambio={setFirma} />
         </div>
-        <Campo etiqueta="Observación">
+        <Campo etiqueta={t("Observación")}>
           <Entrada value={observacion} onChange={(e) => setObservacion(e.target.value)} />
         </Campo>
         {entregar.isError && <Aviso>{mensajeError(entregar.error)}</Aviso>}
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
+            {t("Cancelar")}
           </Boton>
           <Boton type="submit" disabled={entregar.isPending}>
-            {entregar.isPending ? 'Guardando…' : 'Confirmar entrega'}
+            {entregar.isPending ? t("Guardando…") : t("Confirmar entrega")}
           </Boton>
         </div>
       </form>
@@ -507,6 +513,7 @@ const EFECTO_ANULAR: Partial<Record<EstadoPedido, string>> = {
 }
 
 function Anular({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const [motivo, setMotivo] = useState('')
   const actualizar = useActualizarPedido(p.id, onCerrar)
   const anular = useMutation({
@@ -514,7 +521,7 @@ function Anular({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: () =
     onSuccess: actualizar,
   })
   return (
-    <Modal abierto titulo={`Anular pedido #${p.numero}`} onCerrar={onCerrar}>
+    <Modal abierto titulo={t("Anular pedido #{{v0}}", { v0: p.numero })} onCerrar={onCerrar}>
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -523,16 +530,16 @@ function Anular({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: () =
         }}
       >
         <p className="text-sm text-slate-600">{EFECTO_ANULAR[p.estado]}</p>
-        <Campo etiqueta="Motivo">
+        <Campo etiqueta={t("Motivo")}>
           <Entrada required minLength={5} value={motivo} onChange={(e) => setMotivo(e.target.value)} autoFocus />
         </Campo>
         {anular.isError && <Aviso>{mensajeError(anular.error)}</Aviso>}
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Volver
+            {t("Volver")}
           </Boton>
           <Boton type="submit" variante="peligro" disabled={anular.isPending}>
-            Anular pedido
+            {t("Anular pedido")}
           </Boton>
         </div>
       </form>
@@ -541,6 +548,7 @@ function Anular({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: () =
 }
 
 function Devolver({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const lineas = p.detalle_lineas.filter((l) => Number(l.cantidad_alistada ?? 0) - Number(l.cantidad_devuelta) > 0)
   const [cantidades, setCantidades] = useState<Record<string, string>>({})
   const [motivo, setMotivo] = useState('')
@@ -559,7 +567,7 @@ function Devolver({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: ()
     onSuccess: actualizar,
   })
   return (
-    <Modal abierto titulo={`Devolución del pedido #${p.numero}`} onCerrar={onCerrar}>
+    <Modal abierto titulo={t("Devolución del pedido #{{v0}}", { v0: p.numero })} onCerrar={onCerrar}>
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -568,14 +576,14 @@ function Devolver({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: ()
         }}
       >
         <p className="text-sm text-slate-600">
-          Lo devuelto vuelve al stock de {p.ubicacion.nombre} y se descuenta del ingreso del pedido. Si llegó dañado, regístrelo luego como merma.
+          {t("Lo devuelto vuelve al stock de")} {p.ubicacion.nombre} {t("y se descuenta del ingreso del pedido. Si llegó dañado, regístrelo luego como merma.")}
         </p>
         {lineas.map((l) => (
           <div key={l.id} className="flex items-center gap-3">
             <span className="flex-1 text-sm">
               {l.producto?.nombre ?? l.descripcion_cliente}
               <span className="block text-xs text-slate-500">
-                Entregado: {formatearCantidad(Number(l.cantidad_alistada) - Number(l.cantidad_devuelta))}
+                {t("Entregado:")} {formatearCantidad(Number(l.cantidad_alistada) - Number(l.cantidad_devuelta))}
               </span>
             </span>
             <Entrada
@@ -587,16 +595,16 @@ function Devolver({ pedido: p, onCerrar }: { pedido: PedidoDetalle; onCerrar: ()
             />
           </div>
         ))}
-        <Campo etiqueta="Motivo">
+        <Campo etiqueta={t("Motivo")}>
           <Entrada required minLength={5} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
         </Campo>
         {devolver.isError && <Aviso>{mensajeError(devolver.error)}</Aviso>}
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
+            {t("Cancelar")}
           </Boton>
           <Boton type="submit" disabled={devolver.isPending || !Object.values(cantidades).some((c) => Number(c) > 0)}>
-            Registrar devolución
+            {t("Registrar devolución")}
           </Boton>
         </div>
       </form>

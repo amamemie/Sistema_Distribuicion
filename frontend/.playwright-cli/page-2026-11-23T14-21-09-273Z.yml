@@ -1,0 +1,67 @@
+- generic [ref=f18e2]:
+  - link "Skip to content" [ref=f18e3] [cursor=pointer]:
+    - /url: "#contenido"
+  - generic [ref=f18e4]:
+    - complementary "Main menu" [ref=f18e5]:
+      - generic [ref=f18e12]:
+        - generic [ref=f18e13]: Inventory
+        - generic [ref=f18e14]: Distributor
+      - navigation [ref=f18e15]:
+        - link "Home" [ref=f18e17] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f18e21]:
+          - generic [ref=f18e22]: Operations
+          - link "Orders" [ref=f18e23] [cursor=pointer]:
+            - /url: /pedidos
+          - link "Stock" [ref=f18e27] [cursor=pointer]:
+            - /url: /inventario
+          - link "Restocking" [ref=f18e38] [cursor=pointer]:
+            - /url: /reposicion
+          - link "Purchases" [ref=f18e44] [cursor=pointer]:
+            - /url: /compras
+          - link "Transfers" [ref=f18e50] [cursor=pointer]:
+            - /url: /transferencias
+          - link "Adjustments" [ref=f18e54] [cursor=pointer]:
+            - /url: /ajustes
+          - link "Stock counts" [ref=f18e56] [cursor=pointer]:
+            - /url: /conteos
+        - generic [ref=f18e61]:
+          - generic [ref=f18e62]: Catalog
+          - link "Products" [ref=f18e63] [cursor=pointer]:
+            - /url: /productos
+          - link "Suppliers" [ref=f18e68] [cursor=pointer]:
+            - /url: /proveedores
+          - link "Customers" [ref=f18e74] [cursor=pointer]:
+            - /url: /clientes
+        - generic [ref=f18e79]:
+          - generic [ref=f18e80]: Analytics
+          - link "Reports" [ref=f18e81] [cursor=pointer]:
+            - /url: /reportes
+          - link "Finance" [ref=f18e85] [cursor=pointer]:
+            - /url: /finanzas
+        - generic [ref=f18e89]:
+          - generic [ref=f18e90]: Administration
+          - link "Users" [ref=f18e91] [cursor=pointer]:
+            - /url: /usuarios
+          - link "Roles and permissions" [ref=f18e97] [cursor=pointer]:
+            - /url: /roles
+          - link "Locations" [ref=f18e101] [cursor=pointer]:
+            - /url: /ubicaciones
+          - link "Audit log" [ref=f18e105] [cursor=pointer]:
+            - /url: /auditoria
+    - generic [ref=f18e110]:
+      - banner [ref=f18e111]:
+        - generic [ref=f18e112]:
+          - group "Language" [ref=f18e113]:
+            - button "es" [ref=f18e114]
+            - button "en" [pressed] [ref=f18e115]
+          - button "Light theme. Switch to dark theme" [ref=f18e116]
+          - 'link "Alertas: no hay nuevas" [ref=f18e123] [cursor=pointer]':
+            - /url: /alertas
+          - button "Dueno's menu" [ref=f18e128]:
+            - generic [ref=f18e129]: D
+            - generic [ref=f18e130]:
+              - generic [ref=f18e131]: Dueno
+              - generic [ref=f18e132]: Dueño
+      - main [ref=f18e133]:
+        - paragraph [ref=f18e135]: Cargando…

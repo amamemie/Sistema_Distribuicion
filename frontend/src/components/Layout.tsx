@@ -115,7 +115,7 @@ export function Layout() {
           <aside
             aria-label={t('Menú principal')}
             className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-linea bg-superficie transition-transform duration-200 ease-salida lg:sticky lg:top-0 lg:h-dvh lg:w-auto lg:translate-x-0 ${
-              menuAbierto ? 'translate-x-0 shadow-[var(--sombra-3)]' : '-translate-x-full'
+              menuAbierto ? 'translate-x-0 shadow-(--sombra-3)' : '-translate-x-full'
             }`}
           >
             <div className="flex h-14 shrink-0 items-center gap-2.5 px-4">
@@ -162,9 +162,6 @@ export function Layout() {
                 </div>
               ))}
             </nav>
-            <div className="border-t border-linea p-3 sm:hidden">
-              <SelectorIdioma />
-            </div>
           </aside>
           {menuAbierto && (
             <button
@@ -187,7 +184,7 @@ export function Layout() {
                 <Menu size={20} aria-hidden />
               </button>
               <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
-                <SelectorIdioma className="mr-1 hidden sm:inline-flex" />
+                <SelectorIdioma className="mr-0.5 sm:mr-1" />
                 <BotonTema />
                 <Campana />
                 <MenuUsuario

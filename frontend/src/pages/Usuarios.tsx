@@ -18,6 +18,7 @@ import { api, ErrorApi, mensajeError } from '../lib/api'
 import { formatearFecha } from '../lib/formato'
 import { usePuede } from '../lib/sesion'
 import { NOMBRE_TIPO_UBICACION, type Rol, type Ubicacion, type Usuario } from '../lib/tipos'
+import { useTranslation } from 'react-i18next'
 
 interface Formulario {
   nombre: string
@@ -32,6 +33,7 @@ interface Formulario {
 }
 
 export function Usuarios() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const [editando, setEditando] = useState<Usuario | 'nuevo' | null>(null)
   const [restableciendo, setRestableciendo] = useState<Usuario | null>(null)
@@ -40,12 +42,12 @@ export function Usuarios() {
   return (
     <>
       <Encabezado
-        titulo="Usuarios"
-        descripcion="Trabajadores con acceso al sistema, sus roles y ubicaciones."
+        titulo={t("Usuarios")}
+        descripcion={t("Trabajadores con acceso al sistema, sus roles y ubicaciones.")}
         acciones={
           puede('usuarios.gestionar') && (
             <Boton onClick={() => setEditando('nuevo')}>
-              <Plus size={16} /> Nuevo usuario
+              <Plus size={16} /> {t("Nuevo usuario")}
             </Boton>
           )
         }
@@ -54,11 +56,11 @@ export function Usuarios() {
       <Tabla>
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
-            <th>Nombre</th>
-            <th>Roles</th>
-            <th className="hidden md:table-cell">Ubicaciones</th>
-            <th>Estado</th>
-            <th className="hidden md:table-cell">Último acceso</th>
+            <th>{t("Nombre")}</th>
+            <th>{t("Roles")}</th>
+            <th className="hidden md:table-cell">{t("Ubicaciones")}</th>
+            <th>{t("Estado")}</th>
+            <th className="hidden md:table-cell">{t("Último acceso")}</th>
             <th />
           </tr>
         </thead>
@@ -84,17 +86,17 @@ export function Usuarios() {
                 {u.ubicaciones.map((x) => x.nombre).join(', ') || '—'}
               </td>
               <td>
-                {u.activo ? <Insignia tono="verde">Activo</Insignia> : <Insignia tono="rojo">Inactivo</Insignia>}
+                {u.activo ? <Insignia tono="verde">{t("Activo")}</Insignia> : <Insignia tono="rojo">{t("Inactivo")}</Insignia>}
               </td>
               <td className="hidden text-slate-600 md:table-cell">{formatearFecha(u.ultimo_acceso)}</td>
               <td className="text-right whitespace-nowrap">
                 {puede('usuarios.gestionar') && (
                   <>
                     <Boton variante="fantasma" onClick={() => setEditando(u)}>
-                      Editar
+                      {t("Editar")}
                     </Boton>
                     <Boton variante="fantasma" onClick={() => setRestableciendo(u)}>
-                      Clave
+                      {t("Clave")}
                     </Boton>
                   </>
                 )}
@@ -112,6 +114,7 @@ export function Usuarios() {
 }
 
 function FormularioUsuario({ usuario, onCerrar }: { usuario: Usuario | null; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const roles = useQuery({ queryKey: ['roles'], queryFn: () => api<Rol[]>('/roles') })
   const ubicaciones = useQuery({
@@ -165,25 +168,25 @@ function FormularioUsuario({ usuario, onCerrar }: { usuario: Usuario | null; onC
   const errores = form.formState.errors
 
   return (
-    <Modal abierto titulo={usuario ? 'Editar usuario' : 'Nuevo usuario'} onCerrar={onCerrar}>
+    <Modal abierto titulo={usuario ? t("Editar usuario") : t("Nuevo usuario")} onCerrar={onCerrar}>
       <form onSubmit={form.handleSubmit((d) => guardar.mutate(d))} className="space-y-4">
         {guardar.isError && <Aviso>{mensajeError(guardar.error)}</Aviso>}
         <div className="grid gap-4 sm:grid-cols-2">
-          <Campo etiqueta="Nombre" error={errores.nombre?.message}>
+          <Campo etiqueta={t("Nombre")} error={errores.nombre?.message}>
             <Entrada {...form.register('nombre', { required: 'Obligatorio.' })} />
           </Campo>
-          <Campo etiqueta="Apellido" error={errores.apellido?.message}>
+          <Campo etiqueta={t("Apellido")} error={errores.apellido?.message}>
             <Entrada {...form.register('apellido', { required: 'Obligatorio.' })} />
           </Campo>
         </div>
-        <Campo etiqueta="Correo (usuario de acceso)" error={errores.correo?.message}>
+        <Campo etiqueta={t("Correo (usuario de acceso)")} error={errores.correo?.message}>
           <Entrada type="email" {...form.register('correo', { required: 'Obligatorio.' })} />
         </Campo>
-        <Campo etiqueta="Teléfono" error={errores.telefono?.message}>
+        <Campo etiqueta={t("Teléfono")} error={errores.telefono?.message}>
           <Entrada type="tel" {...form.register('telefono')} />
         </Campo>
         {!usuario && (
-          <Campo etiqueta="Contraseña inicial" error={errores.password?.message} ayuda="Mínimo 10 caracteres.">
+          <Campo etiqueta={t("Contraseña inicial")} error={errores.password?.message} ayuda={t("Mínimo 10 caracteres.")}>
             <Entrada
               type="password"
               autoComplete="new-password"
@@ -192,7 +195,7 @@ function FormularioUsuario({ usuario, onCerrar }: { usuario: Usuario | null; onC
           </Campo>
         )}
         <fieldset>
-          <legend className="text-sm font-medium text-slate-700">Roles</legend>
+          <legend className="text-sm font-medium text-slate-700">{t("Roles")}</legend>
           {roles.data?.map((r) => (
             <Casilla
               key={r.id}
@@ -202,23 +205,23 @@ function FormularioUsuario({ usuario, onCerrar }: { usuario: Usuario | null; onC
               {...form.register('rol_ids', { validate: (v) => v.length > 0 || 'Elija al menos un rol.' })}
             />
           ))}
-          {errores.rol_ids && <p className="text-xs text-red-600">{errores.rol_ids.message}</p>}
+          {errores.rol_ids && <p className="text-xs text-red-600">{t(errores.rol_ids.message ?? '')}</p>}
         </fieldset>
         <fieldset>
-          <legend className="text-sm font-medium text-slate-700">Ubicaciones donde trabaja</legend>
+          <legend className="text-sm font-medium text-slate-700">{t("Ubicaciones donde trabaja")}</legend>
           {ubicaciones.data?.map((u) => (
             <Casilla
               key={u.id}
               etiqueta={u.nombre}
-              descripcion={NOMBRE_TIPO_UBICACION[u.tipo]}
+              descripcion={t(NOMBRE_TIPO_UBICACION[u.tipo])}
               value={u.id}
               {...form.register('ubicacion_ids')}
             />
           ))}
         </fieldset>
-        <Campo etiqueta="Ubicación predeterminada" error={errores.ubicacion_predeterminada_id?.message}>
+        <Campo etiqueta={t("Ubicación predeterminada")} error={errores.ubicacion_predeterminada_id?.message}>
           <Selector {...form.register('ubicacion_predeterminada_id')}>
-            <option value="">Ninguna</option>
+            <option value="">{t("Ninguna")}</option>
             {ubicaciones.data
               ?.filter((u) => seleccionadas.includes(u.id))
               .map((u) => (
@@ -228,13 +231,13 @@ function FormularioUsuario({ usuario, onCerrar }: { usuario: Usuario | null; onC
               ))}
           </Selector>
         </Campo>
-        {usuario && <Casilla etiqueta="Cuenta activa" {...form.register('activo')} />}
+        {usuario && <Casilla etiqueta={t("Cuenta activa")} {...form.register('activo')} />}
         <div className="flex justify-end gap-2 pt-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
+            {t("Cancelar")}
           </Boton>
           <Boton type="submit" disabled={guardar.isPending}>
-            Guardar
+            {t("Guardar")}
           </Boton>
         </div>
       </form>
@@ -243,6 +246,7 @@ function FormularioUsuario({ usuario, onCerrar }: { usuario: Usuario | null; onC
 }
 
 function RestablecerClave({ usuario, onCerrar }: { usuario: Usuario; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const form = useForm<{ password: string }>()
   const restablecer = useMutation({
     mutationFn: (d: { password: string }) =>
@@ -250,14 +254,13 @@ function RestablecerClave({ usuario, onCerrar }: { usuario: Usuario; onCerrar: (
     onSuccess: onCerrar,
   })
   return (
-    <Modal abierto titulo={`Restablecer contraseña de ${usuario.nombre}`} onCerrar={onCerrar}>
+    <Modal abierto titulo={t("Restablecer contraseña de {{v0}}", { v0: usuario.nombre })} onCerrar={onCerrar}>
       <form onSubmit={form.handleSubmit((d) => restablecer.mutate(d))} className="space-y-4">
         {restablecer.isError && <Aviso>{mensajeError(restablecer.error)}</Aviso>}
         <p className="text-sm text-slate-600">
-          Se cerrarán todas las sesiones abiertas del usuario. Comuníquele la nueva contraseña por un
-          medio seguro.
+          {t("Se cerrarán todas las sesiones abiertas del usuario. Comuníquele la nueva contraseña por un medio seguro.")}
         </p>
-        <Campo etiqueta="Nueva contraseña" error={form.formState.errors.password?.message}>
+        <Campo etiqueta={t("Nueva contraseña")} error={form.formState.errors.password?.message}>
           <Entrada
             type="password"
             autoComplete="new-password"
@@ -266,10 +269,10 @@ function RestablecerClave({ usuario, onCerrar }: { usuario: Usuario; onCerrar: (
         </Campo>
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
+            {t("Cancelar")}
           </Boton>
           <Boton type="submit" disabled={restablecer.isPending}>
-            Restablecer
+            {t("Restablecer")}
           </Boton>
         </div>
       </form>

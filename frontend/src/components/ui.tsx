@@ -73,6 +73,7 @@ export function Campo({
   ayuda?: string
   children: ReactNode
 }) {
+  const { t } = useTranslation()
   return (
     <label className="block space-y-1.5">
       <span className="text-[13px] font-medium text-tinta-2">{etiqueta}</span>
@@ -80,7 +81,7 @@ export function Campo({
       {ayuda && !error && <span className="block text-xs text-tinta-3">{ayuda}</span>}
       {error && (
         <span className="block text-xs font-medium text-peligro" role="alert">
-          {error}
+          {t(error)}
         </span>
       )}
     </label>
@@ -190,7 +191,7 @@ export function Modal({
       ref={ref}
       onClose={onCerrar}
       aria-label={titulo}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-linea bg-superficie p-0 text-tinta shadow-[var(--sombra-3)]"
+      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-linea bg-superficie p-0 text-tinta shadow-(--sombra-3)"
     >
       {abierto && (
         <div>
@@ -214,7 +215,7 @@ export function Casilla({
 }: InputHTMLAttributes<HTMLInputElement> & { etiqueta: string; descripcion?: string }) {
   return (
     <label className="flex cursor-pointer items-start gap-2.5 py-1 text-sm">
-      <input type="checkbox" className="mt-0.5 size-4 shrink-0 rounded border-linea-fuerte accent-[var(--t-acento)]" {...props} />
+      <input type="checkbox" className="mt-0.5 size-4 shrink-0 rounded border-linea-fuerte accent-(--t-acento)" {...props} />
       <span>
         <span className="text-tinta">{etiqueta}</span>
         {descripcion && <span className="block text-xs text-tinta-3">{descripcion}</span>}

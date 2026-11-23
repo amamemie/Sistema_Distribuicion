@@ -10,6 +10,7 @@ import { useCadenas, useUbicaciones } from '../../lib/consultas'
 import { formatearBs, formatearDia, formatearFecha, formatearPorcentaje } from '../../lib/formato'
 import { usePuede, useYo } from '../../lib/sesion'
 import { NOMBRE_ESTADO_PEDIDO, type EstadoPedido, type Pagina, type PedidoDetalle, type PedidoResumen } from '../../lib/tipos'
+import { useTranslation } from 'react-i18next'
 
 const TAMANO = 30
 
@@ -22,12 +23,14 @@ const TONO_ESTADO: Record<EstadoPedido, 'gris' | 'azul' | 'ambar' | 'verde' | 'r
 }
 
 export function InsigniaEstado({ estado }: { estado: EstadoPedido }) {
-  return <Insignia tono={TONO_ESTADO[estado]}>{NOMBRE_ESTADO_PEDIDO[estado]}</Insignia>
+  const { t } = useTranslation()
+  return <Insignia tono={TONO_ESTADO[estado]}>{t(NOMBRE_ESTADO_PEDIDO[estado])}</Insignia>
 }
 
 const ESTADOS: (EstadoPedido | '')[] = ['', 'BORRADOR', 'CONFIRMADO', 'ALISTADO', 'ENTREGADO', 'ANULADO']
 
 export function Pedidos() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const queryClient = useQueryClient()
   const cadenas = useCadenas()
@@ -52,13 +55,13 @@ export function Pedidos() {
   return (
     <>
       <Encabezado
-        titulo="Pedidos"
-        descripcion="Órdenes de compra de los supermercados: revisión, reserva, alistado y entrega."
+        titulo={t("Pedidos")}
+        descripcion={t("Órdenes de compra de los supermercados: revisión, reserva, alistado y entrega.")}
         acciones={
           puede('pedidos.escanear') && (
             <Link to="/pedidos/nuevo">
               <Boton>
-                <Plus size={16} /> Nuevo pedido
+                <Plus size={16} /> {t("Nuevo pedido")}
               </Boton>
             </Link>
           )
@@ -69,25 +72,25 @@ export function Pedidos() {
         <Tarjeta className="mb-4 border-amber-300 bg-amber-50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-sm font-medium text-amber-900">
-              <CloudOff size={18} /> {cola.pendientes.length} documento(s) guardado(s) en este dispositivo, pendientes de subir
+              <CloudOff size={18} /> {cola.pendientes.length} {t("documento(s) guardado(s) en este dispositivo, pendientes de subir")}
             </p>
             <Boton variante="secundario" disabled={cola.subiendo} onClick={() => void cola.reintentar()}>
-              <RefreshCw size={16} className={cola.subiendo ? 'animate-spin' : ''} /> {cola.subiendo ? 'Subiendo…' : 'Subir ahora'}
+              <RefreshCw size={16} className={cola.subiendo ? 'animate-spin' : ''} /> {cola.subiendo ? t("Subiendo…") : t("Subir ahora")}
             </Boton>
           </div>
           <ul className="mt-2 space-y-1 text-sm text-amber-900">
             {cola.pendientes.map((e) => (
               <li key={e.id} className="flex items-center justify-between gap-2">
                 <span>
-                  {e.ubicacion_nombre} · {e.archivos.length} archivo(s) · {formatearFecha(new Date(e.creado).toISOString())}
-                  {e.error && <span className="block text-xs text-red-700">Último intento: {e.error}</span>}
+                  {e.ubicacion_nombre} · {e.archivos.length} {t("archivo(s) ·")} {formatearFecha(new Date(e.creado).toISOString())}
+                  {e.error && <span className="block text-xs text-red-700">{t("Último intento:")} {e.error}</span>}
                 </span>
                 <Boton
                   variante="fantasma"
                   className="min-h-8 px-2 text-red-600"
-                  aria-label="Descartar"
+                  aria-label={t("Descartar")}
                   onClick={() => {
-                    if (confirm('¿Descartar estas fotos? No se podrán recuperar.')) void cola.descartar(e.id)
+                    if (confirm(t('¿Descartar estas fotos? No se podrán recuperar.'))) void cola.descartar(e.id)
                   }}
                 >
                   <Trash2 size={16} />
@@ -99,12 +102,12 @@ export function Pedidos() {
       )}
 
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <Campo etiqueta="Buscar">
+        <Campo etiqueta={t("Buscar")}>
           <div className="relative">
             <Search size={16} className="pointer-events-none absolute top-3 left-3 text-slate-400" />
             <Entrada
               className="pl-9"
-              placeholder="N.º de OC o de pedido"
+              placeholder={t("N.º de OC o de pedido")}
               value={buscar}
               onChange={(e) => {
                 setBuscar(e.target.value)
@@ -113,7 +116,7 @@ export function Pedidos() {
             />
           </div>
         </Campo>
-        <Campo etiqueta="Estado">
+        <Campo etiqueta={t("Estado")}>
           <Selector
             value={estado}
             onChange={(e) => {
@@ -123,12 +126,12 @@ export function Pedidos() {
           >
             {ESTADOS.map((e) => (
               <option key={e} value={e}>
-                {e ? NOMBRE_ESTADO_PEDIDO[e] : 'Todos'}
+                {e ? t(NOMBRE_ESTADO_PEDIDO[e]) : t("Todos")}
               </option>
             ))}
           </Selector>
         </Campo>
-        <Campo etiqueta="Cadena">
+        <Campo etiqueta={t("Cadena")}>
           <Selector
             value={cadena}
             onChange={(e) => {
@@ -136,7 +139,7 @@ export function Pedidos() {
               setPagina(1)
             }}
           >
-            <option value="">Todas</option>
+            <option value="">{t("Todas")}</option>
             {cadenas.data?.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.nombre}
@@ -147,7 +150,7 @@ export function Pedidos() {
       </div>
 
       {pedidos.isError && <Aviso>{mensajeError(pedidos.error)}</Aviso>}
-      {pedidos.data?.items.length === 0 && <Vacio>No hay pedidos con esos filtros.</Vacio>}
+      {pedidos.data?.items.length === 0 && <Vacio>{t("No hay pedidos con esos filtros.")}</Vacio>}
       {!!pedidos.data?.items.length && (
         <>
           {/* Celular: tarjetas */}
@@ -158,10 +161,10 @@ export function Pedidos() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-medium">
-                        #{p.numero} {p.numero_oc && <span className="text-slate-500">· OC {p.numero_oc}</span>}
+                        #{p.numero} {p.numero_oc && <span className="text-slate-500">{t("· OC")} {p.numero_oc}</span>}
                       </p>
                       <p className="truncate text-sm text-slate-600">
-                        {p.cadena ? `${p.cadena.nombre} · ${p.sucursal_cliente?.nombre ?? '—'}` : 'Sin datos del cliente'}
+                        {p.cadena ? `${p.cadena.nombre} · ${p.sucursal_cliente?.nombre ?? '—'}` : t("Sin datos del cliente")}
                       </p>
                     </div>
                     <InsigniaEstado estado={p.estado} />
@@ -181,15 +184,15 @@ export function Pedidos() {
             <Tabla>
               <thead className={CABECERA_TABLA}>
                 <tr>
-                  <th>N.º</th>
-                  <th>OC</th>
-                  <th>Cliente</th>
-                  <th>Despacha</th>
-                  <th>Fecha</th>
-                  <th className="text-right">Total</th>
-                  {verGanancia && <th className="text-right">Margen</th>}
-                  <th>Estado</th>
-                  <th>Responsable</th>
+                  <th>{t('N.º')}</th>
+                  <th>{t('OC')}</th>
+                  <th>{t("Cliente")}</th>
+                  <th>{t("Despacha")}</th>
+                  <th>{t("Fecha")}</th>
+                  <th className="text-right">{t("Total")}</th>
+                  {verGanancia && <th className="text-right">{t("Margen")}</th>}
+                  <th>{t("Estado")}</th>
+                  <th>{t("Responsable")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -227,6 +230,7 @@ export function Pedidos() {
 
 /** Paso 1: elegir la sucursal que despacha y adjuntar la nota de recepción o cargar a mano. */
 export function NuevoPedido() {
+  const { t } = useTranslation()
   const navegar = useNavigate()
   const queryClient = useQueryClient()
   const { data: yo } = useYo()
@@ -247,10 +251,10 @@ export function NuevoPedido() {
   const enviar = async () => {
     setError(null)
     const sucursal = sucursales.find((s) => s.id === ubicacion)
-    if (!sucursal) return setError('Elija la sucursal que despacha el pedido.')
+    if (!sucursal) return setError(t('Elija la sucursal que despacha el pedido.'))
     if (modo === 'manual') {
       // D-20: pedido sin documento; los datos se cargan a mano en la revisión.
-      setProgreso('Creando el pedido…')
+      setProgreso(t('Creando el pedido…'))
       try {
         const pedido = await api<PedidoDetalle>('/pedidos', { metodo: 'POST', cuerpo: { ubicacion_id: sucursal.id } })
         await queryClient.invalidateQueries({ queryKey: ['pedidos'] })
@@ -261,7 +265,7 @@ export function NuevoPedido() {
       }
       return
     }
-    if (!archivos.length) return setError('Adjunte al menos una foto o PDF de la nota de recepción.')
+    if (!archivos.length) return setError(t('Adjunte al menos una foto o PDF de la nota de recepción.'))
     const envio = nuevoEnvio(sucursal, archivos)
     try {
       // Primero se guarda en el dispositivo: si se corta la señal, no se pierde nada.
@@ -286,13 +290,13 @@ export function NuevoPedido() {
   return (
     <>
       <Link to="/pedidos" className="mb-2 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
-        <ArrowLeft size={16} /> Pedidos
+        <ArrowLeft size={16} /> {t("Pedidos")}
       </Link>
-      <Encabezado titulo="Nuevo pedido" descripcion="Adjunte la nota de recepción (PDF o fotos) para que se lea sola, o cargue el pedido a mano." />
+      <Encabezado titulo={t("Nuevo pedido")} descripcion={t("Adjunte la nota de recepción (PDF o fotos) para que se lea sola, o cargue el pedido a mano.")} />
       <div className="max-w-2xl space-y-5">
-        <Campo etiqueta="Sucursal que despacha">
+        <Campo etiqueta={t("Sucursal que despacha")}>
           <Selector value={ubicacion} onChange={(e) => setElegida(e.target.value)}>
-            <option value="">Elegir…</option>
+            <option value="">{t("Elegir…")}</option>
             {sucursales.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.nombre}
@@ -300,26 +304,26 @@ export function NuevoPedido() {
             ))}
           </Selector>
         </Campo>
-        <div role="radiogroup" aria-label="Cómo cargar el pedido" className="grid gap-3 sm:grid-cols-2">
-          <OpcionModo activo={modo === 'documento'} onClick={() => setModo('documento')} icono={<FileUp size={18} />} titulo="Subir nota de recepción">
-            PDF, foto o galería. El sistema lee los datos y usted los revisa.
+        <div role="radiogroup" aria-label={t("Cómo cargar el pedido")} className="grid gap-3 sm:grid-cols-2">
+          <OpcionModo activo={modo === 'documento'} onClick={() => setModo('documento')} icono={<FileUp size={18} />} titulo={t("Subir nota de recepción")}>
+            {t("PDF, foto o galería. El sistema lee los datos y usted los revisa.")}
           </OpcionModo>
-          <OpcionModo activo={modo === 'manual'} onClick={() => setModo('manual')} icono={<PencilLine size={18} />} titulo="Cargar a mano">
-            Usted escribe la cadena, la sucursal, la fecha y los productos.
+          <OpcionModo activo={modo === 'manual'} onClick={() => setModo('manual')} icono={<PencilLine size={18} />} titulo={t("Cargar a mano")}>
+            {t("Usted escribe la cadena, la sucursal, la fecha y los productos.")}
           </OpcionModo>
         </div>
         {modo === 'documento' && (
           <>
             <SelectorArchivos archivos={archivos} onCambio={setArchivos} onError={setError} ocupado={setPreparando} />
             <p className="text-xs text-slate-500">
-              Si no hay señal, el documento queda guardado en este dispositivo y se sube solo al recuperar la conexión.
+              {t("Si no hay señal, el documento queda guardado en este dispositivo y se sube solo al recuperar la conexión.")}
             </p>
           </>
         )}
         {error && <Aviso>{error}</Aviso>}
         {progreso && <Aviso tipo="exito">{progreso}</Aviso>}
         <Boton className="w-full sm:w-auto" disabled={preparando || !!progreso} onClick={() => void enviar()}>
-          {preparando ? 'Preparando fotos…' : progreso ? 'Un momento…' : modo === 'manual' ? 'Crear pedido y cargar datos' : 'Crear pedido y revisar'}
+          {preparando ? t("Preparando fotos…") : progreso ? t("Un momento…") : modo === 'manual' ? t("Crear pedido y cargar datos") : t("Crear pedido y revisar")}
         </Boton>
       </div>
     </>

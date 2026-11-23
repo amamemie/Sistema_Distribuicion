@@ -1,9 +1,11 @@
 import { Eraser } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Boton } from '../ui'
+import { useTranslation } from 'react-i18next'
 
 /** Recuadro para firmar con el dedo. Entrega la firma como PNG (o null si está vacío). */
 export function FirmaCanvas({ onCambio }: { onCambio: (firma: Blob | null) => void }) {
+  const { t } = useTranslation()
   const lienzo = useRef<HTMLCanvasElement>(null)
   const dibujando = useRef(false)
   const [vacio, setVacio] = useState(true)
@@ -45,7 +47,7 @@ export function FirmaCanvas({ onCambio }: { onCambio: (firma: Blob | null) => vo
     <div className="space-y-1">
       <canvas
         ref={lienzo}
-        aria-label="Recuadro de firma"
+        aria-label={t("Recuadro de firma")}
         className="h-36 w-full touch-none rounded-md border border-dashed border-slate-400"
         style={{ background: '#ffffff' }} // la firma se dibuja en tinta oscura: fondo blanco también en modo oscuro
         onPointerDown={(e) => {
@@ -68,9 +70,9 @@ export function FirmaCanvas({ onCambio }: { onCambio: (firma: Blob | null) => vo
         onPointerCancel={terminar}
       />
       <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>{vacio ? 'Firme dentro del recuadro (opcional).' : 'Firma registrada.'}</span>
+        <span>{vacio ? t("Firme dentro del recuadro (opcional).") : t("Firma registrada.")}</span>
         <Boton variante="fantasma" className="min-h-7 px-2" onClick={limpiar} disabled={vacio}>
-          <Eraser size={14} /> Borrar
+          <Eraser size={14} /> {t("Borrar")}
         </Boton>
       </div>
     </div>

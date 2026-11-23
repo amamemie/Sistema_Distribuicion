@@ -1,0 +1,28 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e89]: Inventario
+    - generic [ref=e96]:
+      - heading "Stock, pedidos y cobros de la distribuidora, al día." [level=1] [ref=e97]
+      - paragraph [ref=e98]: "Del pedido del supermercado a la transferencia cobrada: todo queda registrado, con su responsable."
+      - list [ref=e99]:
+        - listitem [ref=e100]: Lee sola las notas de recepción
+        - listitem [ref=e106]: Avisa cuando algo se acaba
+        - listitem [ref=e112]: Cobros por empresa
+  - generic [ref=e116]:
+    - generic [ref=e117]:
+      - group "Idioma" [ref=e118]:
+        - button "es" [pressed] [ref=e119]
+        - button "en" [ref=e120]
+      - button "Tema del sistema. Cambiar a tema claro" [ref=e121]
+    - generic [ref=e124]:
+      - heading "Ingresar" [level=2] [ref=e125]
+      - paragraph [ref=e126]: Con su cuenta de trabajo.
+      - generic [ref=e127]:
+        - generic [ref=e128]:
+          - text: Correo
+          - textbox "Correo" [ref=e129]
+        - generic [ref=e130]:
+          - text: Contraseña
+          - textbox "Contraseña" [ref=e131]
+        - button "Ingresar" [ref=e132]
+    - paragraph [ref=e133]: Distribuidora · La Paz

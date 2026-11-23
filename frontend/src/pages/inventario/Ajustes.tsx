@@ -10,11 +10,13 @@ import { useUbicaciones } from '../../lib/consultas'
 import { formatearBs, formatearCantidad, formatearDia, formatearFecha } from '../../lib/formato'
 import { usePuede } from '../../lib/sesion'
 import { NOMBRE_MOTIVO, type Ajuste, type EstadoAjuste, type MotivoAjuste, type Pagina } from '../../lib/tipos'
+import { useTranslation } from 'react-i18next'
 
 const TAMANO = 50
 const TONO_ESTADO = { PENDIENTE: 'ambar', APLICADO: 'verde', RECHAZADO: 'rojo' } as const
 
 export function Ajustes() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const [estado, setEstado] = useState<EstadoAjuste | ''>('')
   const [pagina, setPagina] = useState(1)
@@ -28,13 +30,13 @@ export function Ajustes() {
   return (
     <>
       <Encabezado
-        titulo="Ajustes de inventario"
-        descripcion="Mermas, roturas, vencimientos y correcciones. Los ajustes sensibles requieren aprobación."
+        titulo={t("Ajustes de inventario")}
+        descripcion={t("Mermas, roturas, vencimientos y correcciones. Los ajustes sensibles requieren aprobación.")}
         acciones={
           puede('inventario.ajustar') && (
             <Link to="/ajustes/nuevo">
               <Boton>
-                <Plus size={16} /> Nuevo ajuste
+                <Plus size={16} /> {t("Nuevo ajuste")}
               </Boton>
             </Link>
           )
@@ -51,22 +53,22 @@ export function Ajustes() {
               setPagina(1)
             }}
           >
-            {e === '' ? 'Todos' : e === 'PENDIENTE' ? 'Pendientes' : e === 'APLICADO' ? 'Aplicados' : 'Rechazados'}
+            {e === '' ? t("Todos") : e === 'PENDIENTE' ? t("Pendientes") : e === 'APLICADO' ? t("Aplicados") : t("Rechazados")}
           </Boton>
         ))}
       </div>
       {ajustes.isError && <Aviso>{mensajeError(ajustes.error)}</Aviso>}
-      {ajustes.data?.items.length === 0 && <Vacio>No hay ajustes para este filtro.</Vacio>}
+      {ajustes.data?.items.length === 0 && <Vacio>{t("No hay ajustes para este filtro.")}</Vacio>}
       {!!ajustes.data?.items.length && (
         <Tabla>
           <thead className={CABECERA_TABLA}>
             <tr>
-              <th>N.º</th>
-              <th>Fecha</th>
-              <th>Ubicación</th>
-              <th className="hidden sm:table-cell">Motivo</th>
-              {puede('costos.ver') && <th className="hidden text-right md:table-cell">Valor</th>}
-              <th>Estado</th>
+              <th>{t('N.º')}</th>
+              <th>{t("Fecha")}</th>
+              <th>{t("Ubicación")}</th>
+              <th className="hidden sm:table-cell">{t("Motivo")}</th>
+              {puede('costos.ver') && <th className="hidden text-right md:table-cell">{t("Valor")}</th>}
+              <th>{t("Estado")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -79,7 +81,7 @@ export function Ajustes() {
                 </td>
                 <td className="whitespace-nowrap text-slate-600">{formatearFecha(a.fecha)}</td>
                 <td>{a.ubicacion.nombre}</td>
-                <td className="hidden sm:table-cell">{NOMBRE_MOTIVO[a.motivo]}</td>
+                <td className="hidden sm:table-cell">{t(NOMBRE_MOTIVO[a.motivo])}</td>
                 {puede('costos.ver') && <td className="hidden text-right md:table-cell">{formatearBs(a.valor_total)}</td>}
                 <td>
                   <Insignia tono={TONO_ESTADO[a.estado]}>{a.estado.charAt(0) + a.estado.slice(1).toLowerCase()}</Insignia>
@@ -96,6 +98,7 @@ export function Ajustes() {
 }
 
 function DetalleAjuste({ ajuste: a, onCerrar }: { ajuste: Ajuste; onCerrar: () => void }) {
+  const { t } = useTranslation()
   const puede = usePuede()
   const queryClient = useQueryClient()
   const [nota, setNota] = useState('')
@@ -108,15 +111,15 @@ function DetalleAjuste({ ajuste: a, onCerrar }: { ajuste: Ajuste; onCerrar: () =
     },
   })
   return (
-    <Modal abierto titulo={`Ajuste #${a.numero}`} onCerrar={onCerrar}>
+    <Modal abierto titulo={t("Ajuste #{{v0}}", { v0: a.numero })} onCerrar={onCerrar}>
       <div className="space-y-4 text-sm">
         <p>
-          <strong>{NOMBRE_MOTIVO[a.motivo]}</strong> en {a.ubicacion.nombre}
+          <strong>{t(NOMBRE_MOTIVO[a.motivo])}</strong> {t("en")} {a.ubicacion.nombre}
           <br />
           <span className="text-slate-600">{a.observacion}</span>
           <br />
           <span className="text-slate-500">
-            Solicitado por {a.solicitado_por} · {formatearFecha(a.fecha)}
+            {t("Solicitado por")} {a.solicitado_por} · {formatearFecha(a.fecha)}
           </span>
         </p>
         <ul className="divide-y divide-slate-100 rounded border border-slate-200">
@@ -124,7 +127,7 @@ function DetalleAjuste({ ajuste: a, onCerrar }: { ajuste: Ajuste; onCerrar: () =
             <li key={i} className="flex justify-between gap-2 px-3 py-2">
               <span>
                 {l.producto_nombre}
-                {l.lote_codigo && <span className="block text-xs text-slate-500">Lote {l.lote_codigo} · vence {formatearDia(l.lote_vencimiento)}</span>}
+                {l.lote_codigo && <span className="block text-xs text-slate-500">{t("Lote")} {l.lote_codigo} {t("· vence")} {formatearDia(l.lote_vencimiento)}</span>}
               </span>
               <span className={`text-right whitespace-nowrap ${l.sentido === 'AUMENTO' ? 'text-emerald-700' : 'text-red-700'}`}>
                 {l.sentido === 'AUMENTO' ? '+' : '−'}
@@ -136,27 +139,27 @@ function DetalleAjuste({ ajuste: a, onCerrar }: { ajuste: Ajuste; onCerrar: () =
         </ul>
         {a.valor_total !== null && (
           <p className="text-right">
-            Valor total: <strong>{formatearBs(a.valor_total)}</strong>
+            {t("Valor total:")} <strong>{formatearBs(a.valor_total)}</strong>
           </p>
         )}
         {a.resuelto_por && (
           <p className="text-slate-500">
-            {a.estado === 'RECHAZADO' ? 'Rechazado' : 'Aplicado'} por {a.resuelto_por} · {formatearFecha(a.resuelto_at)}
+            {a.estado === 'RECHAZADO' ? t("Rechazado") : t("Aplicado")} {t("por")} {a.resuelto_por} · {formatearFecha(a.resuelto_at)}
             {a.resolucion_nota && ` — ${a.resolucion_nota}`}
           </p>
         )}
         {a.estado === 'PENDIENTE' && puede('inventario.aprobar_ajuste') && (
           <div className="space-y-2 border-t border-slate-200 pt-4">
             {resolver.isError && <Aviso>{mensajeError(resolver.error)}</Aviso>}
-            <Campo etiqueta="Nota (opcional)">
+            <Campo etiqueta={t("Nota (opcional)")}>
               <Entrada value={nota} onChange={(e) => setNota(e.target.value)} />
             </Campo>
             <div className="flex justify-end gap-2">
               <Boton variante="secundario" disabled={resolver.isPending} onClick={() => resolver.mutate('rechazar')}>
-                Rechazar
+                {t("Rechazar")}
               </Boton>
               <Boton disabled={resolver.isPending} onClick={() => resolver.mutate('aprobar')}>
-                Aprobar y aplicar
+                {t("Aprobar y aplicar")}
               </Boton>
             </div>
           </div>
@@ -176,6 +179,7 @@ interface LineaAjuste extends LineaBase {
 const MOTIVOS_DISMINUCION: MotivoAjuste[] = ['MERMA', 'ROTURA', 'VENCIMIENTO']
 
 export function NuevoAjuste() {
+  const { t } = useTranslation()
   const navegar = useNavigate()
   const queryClient = useQueryClient()
   const ubicaciones = useUbicaciones()
@@ -229,9 +233,9 @@ export function NuevoAjuste() {
   return (
     <>
       <Link to="/ajustes" className="mb-2 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
-        <ArrowLeft size={16} /> Ajustes
+        <ArrowLeft size={16} /> {t("Ajustes")}
       </Link>
-      <Encabezado titulo="Nuevo ajuste" descripcion="Si no tiene permiso para aprobar ajustes, quedará pendiente hasta que el dueño lo apruebe." />
+      <Encabezado titulo={t("Nuevo ajuste")} descripcion={t("Si no tiene permiso para aprobar ajustes, quedará pendiente hasta que el dueño lo apruebe.")} />
       <form
         className="space-y-6"
         onSubmit={(e) => {
@@ -240,9 +244,9 @@ export function NuevoAjuste() {
         }}
       >
         <Tarjeta className="grid gap-4 p-4 sm:grid-cols-3">
-          <Campo etiqueta="Ubicación">
+          <Campo etiqueta={t("Ubicación")}>
             <Selector required value={ubicacion} onChange={(e) => setUbicacion(e.target.value)}>
-              <option value="">Elegir…</option>
+              <option value="">{t("Elegir…")}</option>
               {ubicaciones.data?.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.nombre}
@@ -250,17 +254,17 @@ export function NuevoAjuste() {
               ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="Motivo">
+          <Campo etiqueta={t("Motivo")}>
             <Selector value={motivo} onChange={(e) => setMotivo(e.target.value as MotivoAjuste)}>
               {(['MERMA', 'ROTURA', 'VENCIMIENTO', 'CORRECCION', 'OTRO'] as const).map((m) => (
                 <option key={m} value={m}>
-                  {NOMBRE_MOTIVO[m]}
+                  {t(NOMBRE_MOTIVO[m])}
                 </option>
               ))}
             </Selector>
           </Campo>
-          <Campo etiqueta="Detalle (obligatorio)">
-            <Entrada required minLength={3} value={observacion} onChange={(e) => setObservacion(e.target.value)} placeholder="Qué pasó" />
+          <Campo etiqueta={t("Detalle (obligatorio)")}>
+            <Entrada required minLength={3} value={observacion} onChange={(e) => setObservacion(e.target.value)} placeholder={t("Qué pasó")} />
           </Campo>
         </Tarjeta>
         <EditorLineas
@@ -269,26 +273,26 @@ export function NuevoAjuste() {
           nueva={lineaVacia}
           extra={(linea, actualizar) =>
             soloDisminuir ? (
-              <p className="text-xs text-slate-500">Se descontará del stock (primero los lotes que vencen antes).</p>
+              <p className="text-xs text-slate-500">{t("Se descontará del stock (primero los lotes que vencen antes).")}</p>
             ) : (
               <div className="grid gap-3 sm:grid-cols-4">
-                <Campo etiqueta="Tipo">
+                <Campo etiqueta={t("Tipo")}>
                   <Selector value={linea.sentido} onChange={(e) => actualizar({ sentido: e.target.value as LineaAjuste['sentido'] })}>
-                    <option value="DISMINUCION">Disminuir</option>
-                    <option value="AUMENTO">Aumentar</option>
+                    <option value="DISMINUCION">{t("Disminuir")}</option>
+                    <option value="AUMENTO">{t("Aumentar")}</option>
                   </Selector>
                 </Campo>
                 {linea.sentido === 'AUMENTO' && (
                   <>
-                    <Campo etiqueta="Costo unit. (Bs)" ayuda="Vacío = costo promedio actual">
+                    <Campo etiqueta={t("Costo unit. (Bs)")} ayuda={t("Vacío = costo promedio actual")}>
                       <Entrada inputMode="decimal" value={linea.costo_unitario} onChange={(e) => actualizar({ costo_unitario: e.target.value.replace(',', '.') })} />
                     </Campo>
                     {linea.producto?.controla_vencimiento && (
                       <>
-                        <Campo etiqueta="Lote">
+                        <Campo etiqueta={t("Lote")}>
                           <Entrada value={linea.lote_codigo} onChange={(e) => actualizar({ lote_codigo: e.target.value })} />
                         </Campo>
-                        <Campo etiqueta="Vence">
+                        <Campo etiqueta={t("Vence")}>
                           <Entrada type="date" required value={linea.lote_vencimiento} onChange={(e) => actualizar({ lote_vencimiento: e.target.value })} />
                         </Campo>
                       </>
@@ -302,7 +306,7 @@ export function NuevoAjuste() {
         {guardar.isError && <Aviso>{mensajeError(guardar.error)}</Aviso>}
         <div className="flex justify-end">
           <Boton type="submit" disabled={guardar.isPending || !lineas.some((l) => l.producto)}>
-            Registrar ajuste
+            {t("Registrar ajuste")}
           </Boton>
         </div>
       </form>
