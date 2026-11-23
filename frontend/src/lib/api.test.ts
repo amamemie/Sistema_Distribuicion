@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
+import i18n from '../i18n'
 import { construirUrl, leerCookie } from './api'
 import { formatearFecha } from './formato'
+
+// El idioma detectado depende del entorno (en CI, Node informa inglés): se fija en español.
+beforeAll(() => i18n.changeLanguage('es'))
 
 describe('construirUrl', () => {
   it('antepone /api y omite parámetros vacíos', () => {
