@@ -50,7 +50,7 @@ interface Opciones {
 }
 
 /** Demo pública (GitHub Pages): sin servidor, responde con datos de ejemplo de solo lectura. */
-export const MODO_DEMO = import.meta.env.VITE_DEMO === '1'
+export const MODO_DEMO = import.meta.env.MODE === 'demo'
 
 async function apiDemo<T>(ruta: string, metodo: string, params?: Params): Promise<T> {
   const { responder, ErrorDemo } = await import('../demo/servidor')

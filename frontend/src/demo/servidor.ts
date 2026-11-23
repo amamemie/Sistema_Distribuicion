@@ -1,6 +1,6 @@
 /** Servidor simulado de la demo pública (GitHub Pages): responde con datos de ejemplo grabados
  * de una instancia de prueba. Solo lectura: los cambios devuelven un aviso. Nunca se incluye en
- * el build normal (se importa de forma diferida solo cuando VITE_DEMO=1). */
+ * el build normal (se importa de forma diferida solo en `vite build --mode demo`). */
 import i18n from '../i18n'
 import datos from './datos.json'
 
