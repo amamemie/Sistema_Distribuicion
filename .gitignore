@@ -24,3 +24,6 @@ dev-dist/
 
 # Paquetes de migración (contienen .env y datos)
 migracion_*.tar.gz
+
+# Capturas de la herramienta de pruebas en navegador
+.playwright-cli/
