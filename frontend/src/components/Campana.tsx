@@ -20,13 +20,13 @@ export function Campana() {
       to="/alertas"
       aria-label={texto}
       title={texto}
-      className="relative inline-flex min-h-10 items-center rounded-md px-2 text-slate-700 hover:bg-slate-100"
+      className="relative inline-grid size-9 place-items-center rounded-lg text-tinta-2 transition-colors hover:bg-superficie-2 hover:text-tinta"
     >
-      <Bell size={18} />
+      <Bell size={18} aria-hidden />
       {n > 0 && (
         <span
-          className={`absolute top-1 right-0.5 min-w-4 rounded-full px-1 text-center text-[10px] leading-4 font-semibold text-white ${
-            criticas ? 'bg-red-600' : 'bg-marca-600'
+          className={`absolute -top-0.5 -right-0.5 min-w-4 rounded-full px-1 text-center text-[10px] leading-4 font-semibold tabular-nums ring-2 ring-superficie ${
+            criticas ? 'bg-peligro text-white dark:text-[#2e1517]' : 'bg-acento text-sobre-acento'
           }`}
         >
           {n > 99 ? '99+' : n}

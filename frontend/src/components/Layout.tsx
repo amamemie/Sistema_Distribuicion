@@ -7,50 +7,35 @@ import {
   ClipboardList,
   History,
   House,
-  KeyRound,
-  LogOut,
   MapPin,
   Menu,
-  Monitor,
-  Moon,
   Package,
   PackageCheck,
   ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
   Store,
-  Sun,
   Truck,
   Users,
   Wallet,
+  X,
   type LucideIcon,
 } from 'lucide-react'
+import { domAnimation, LazyMotion, m, MotionConfig } from 'motion/react'
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { api } from '../lib/api'
-import { siguienteTema, useTema, type Tema } from '../lib/tema'
 import { CLAVE_YO, PERMISOS_PEDIDOS, PERMISOS_REPORTES, PERMISOS_REPOSICION, usePuedeAlguno, useYo } from '../lib/sesion'
 import { Campana } from './Campana'
 import { CambiarPassword } from './CambiarPassword'
-import { Boton } from './ui'
-
-const TEMAS: Record<Tema, { icono: LucideIcon; texto: string }> = {
-  claro: { icono: Sun, texto: 'Tema claro' },
-  oscuro: { icono: Moon, texto: 'Tema oscuro' },
-  sistema: { icono: Monitor, texto: 'Tema del sistema' },
-}
-
-/** Iniciales para el avatar del usuario. */
-function iniciales(nombre?: string, apellido?: string): string {
-  return `${nombre?.[0] ?? ''}${apellido?.[0] ?? ''}`.toUpperCase() || '?'
-}
+import { BotonTema, Marca, MenuUsuario, SelectorIdioma } from './Controles'
 
 interface Enlace {
   a: string
   texto: string
   icono: LucideIcon
   permiso?: string | string[]
-  proximamente?: boolean
 }
 
 const SECCIONES: { titulo?: string; enlaces: Enlace[] }[] = [
@@ -94,12 +79,12 @@ const SECCIONES: { titulo?: string; enlaces: Enlace[] }[] = [
 ]
 
 export function Layout() {
+  const { t } = useTranslation()
   const { data: yo } = useYo()
   const puede = usePuedeAlguno()
+  const ubicacion = useLocation()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [cambiandoClave, setCambiandoClave] = useState(false)
-  const [tema, setTema] = useTema()
-  const IconoTema = TEMAS[tema].icono
   const queryClient = useQueryClient()
   const navegar = useNavigate()
 
@@ -116,130 +101,118 @@ export function Layout() {
     (s) => s.enlaces.length > 0,
   )
 
-  const navegacion = (
-    <nav className="flex flex-col gap-1 overflow-y-auto p-3">
-      {secciones.map((s) => (
-        <div key={s.titulo ?? 'inicio'} className="mb-2">
-          {s.titulo && <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-slate-400 uppercase">{s.titulo}</div>}
-      {s.enlaces.map((e) =>
-        e.proximamente ? (
-          <span
-            key={e.a}
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-400"
-            title="Disponible en próximas fases"
-          >
-            <e.icono size={18} />
-            {e.texto}
-            <span className="ml-auto text-[10px] uppercase">pronto</span>
-          </span>
-        ) : (
-          <NavLink
-            key={e.a}
-            to={e.a}
-            end={e.a === '/'}
-            onClick={() => setMenuAbierto(false)}
-            className={({ isActive }) =>
-              `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-marca-50 text-marca-800 before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-marca-600'
-                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-              }`
-            }
-          >
-            <e.icono size={18} />
-            {e.texto}
-          </NavLink>
-        ),
-      )}
-        </div>
-      ))}
-    </nav>
-  )
-
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
-      {/* Barra lateral (escritorio) / cajón (móvil) */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 transform flex-col border-r border-slate-200 bg-white
-          transition-transform lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 ${menuAbierto ? 'translate-x-0' : '-translate-x-full'}`}
-      >
-        <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
-          <img src="/icono.svg" alt="" className="size-9 rounded-lg shadow-sm" />
-          <div className="leading-tight">
-            <div className="font-semibold tracking-tight">Inventario</div>
-            <div className="text-xs text-slate-500">Distribuidora</div>
-          </div>
-        </div>
-        {navegacion}
-      </aside>
-      {menuAbierto && (
-        <button
-          aria-label="Cerrar menú"
-          className="fixed inset-0 z-20 bg-slate-900/40 lg:hidden"
-          onClick={() => setMenuAbierto(false)}
-        />
-      )}
-
-      <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur">
-          <Boton
-            variante="fantasma"
-            className="px-2 lg:hidden"
-            onClick={() => setMenuAbierto(true)}
-            aria-label="Abrir menú"
+    <MotionConfig reducedMotion="user">
+      <LazyMotion features={domAnimation} strict>
+        <a
+          href="#contenido"
+          className="fixed top-2 left-2 z-50 -translate-y-16 rounded-lg bg-acento px-3 py-2 text-sm font-medium text-sobre-acento shadow-lg transition-transform focus-visible:translate-y-0"
+        >
+          {t('Saltar al contenido')}
+        </a>
+        <div className="min-h-dvh lg:grid lg:grid-cols-[15.5rem_1fr]">
+          {/* Barra lateral (escritorio) / cajón (móvil) */}
+          <aside
+            aria-label={t('Menú principal')}
+            className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-linea bg-superficie transition-transform duration-200 ease-salida lg:sticky lg:top-0 lg:h-dvh lg:w-auto lg:translate-x-0 ${
+              menuAbierto ? 'translate-x-0 shadow-[var(--sombra-3)]' : '-translate-x-full'
+            }`}
           >
-            <Menu size={20} />
-          </Boton>
-          <div className="ml-auto flex items-center gap-1 sm:gap-2">
-            <Boton
-              variante="fantasma"
-              className="px-2"
-              onClick={() => setTema(siguienteTema(tema))}
-              aria-label={`${TEMAS[tema].texto}. Cambiar a ${TEMAS[siguienteTema(tema)].texto.toLowerCase()}`}
-              title={`${TEMAS[tema].texto} (tocar para cambiar)`}
-            >
-              <IconoTema size={18} />
-            </Boton>
-            <Campana />
-            <div className="ml-1 hidden items-center gap-2 sm:flex">
-              <span
-                aria-hidden
-                className="inline-flex size-9 items-center justify-center rounded-full bg-marca-100 text-sm font-semibold text-marca-800"
-              >
-                {iniciales(yo?.nombre, yo?.apellido)}
-              </span>
-              <div className="text-left leading-tight">
-                <div className="text-sm font-medium">
-                  {yo?.nombre} {yo?.apellido}
-                </div>
-                <div className="text-xs text-slate-500">{yo?.roles.map((r) => r.nombre).join(', ')}</div>
+            <div className="flex h-14 shrink-0 items-center gap-2.5 px-4">
+              <Marca tamano={30} />
+              <div className="min-w-0 leading-tight">
+                <div className="truncate text-[15px] font-semibold tracking-[-0.2px]">{t('Inventario')}</div>
+                <div className="truncate text-xs text-tinta-3">{t('Distribuidora')}</div>
               </div>
+              <button
+                type="button"
+                className="ml-auto inline-grid size-9 place-items-center rounded-lg text-tinta-2 hover:bg-superficie-2 lg:hidden"
+                onClick={() => setMenuAbierto(false)}
+                aria-label={t('Cerrar menú')}
+              >
+                <X size={18} aria-hidden />
+              </button>
             </div>
-            <Boton
-              variante="fantasma"
-              className="px-2"
-              onClick={() => setCambiandoClave(true)}
-              aria-label="Cambiar contraseña"
-              title="Cambiar contraseña"
-            >
-              <KeyRound size={18} />
-            </Boton>
-            <Boton
-              variante="fantasma"
-              className="px-2"
-              onClick={() => salir.mutate()}
-              aria-label="Cerrar sesión"
-              title="Cerrar sesión"
-            >
-              <LogOut size={18} />
-            </Boton>
+            <nav className="flex flex-1 flex-col overflow-y-auto overscroll-contain px-3 pt-1 pb-4">
+              {secciones.map((s) => (
+                <div key={s.titulo ?? 'inicio'} className="mb-1">
+                  {s.titulo && <div className="px-2.5 pt-4 pb-1.5 text-[11px] font-semibold tracking-[0.6px] text-tinta-3 uppercase">{t(s.titulo)}</div>}
+                  {s.enlaces.map((e) => (
+                    <NavLink
+                      key={e.a}
+                      to={e.a}
+                      end={e.a === '/'}
+                      onClick={() => setMenuAbierto(false)}
+                      className={({ isActive }) =>
+                        `group relative flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-acento-suave text-acento before:absolute before:inset-y-2 before:-left-3 before:w-[3px] before:rounded-r-full before:bg-acento'
+                            : 'text-tinta-2 hover:bg-superficie-2 hover:text-tinta'
+                        }`
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <e.icono size={17} aria-hidden className={isActive ? '' : 'text-tinta-3 group-hover:text-tinta-2'} />
+                          {t(e.texto)}
+                        </>
+                      )}
+                    </NavLink>
+                  ))}
+                </div>
+              ))}
+            </nav>
+            <div className="border-t border-linea p-3 sm:hidden">
+              <SelectorIdioma />
+            </div>
+          </aside>
+          {menuAbierto && (
+            <button
+              type="button"
+              aria-label={t('Cerrar menú')}
+              className="fixed inset-0 z-20 bg-slate-900/40 backdrop-blur-[1px] lg:hidden"
+              onClick={() => setMenuAbierto(false)}
+            />
+          )}
+
+          <div className="flex min-w-0 flex-col">
+            <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-linea bg-superficie/85 px-3 backdrop-blur-md sm:px-5">
+              <button
+                type="button"
+                className="inline-grid size-9 place-items-center rounded-lg text-tinta-2 hover:bg-superficie-2 lg:hidden"
+                onClick={() => setMenuAbierto(true)}
+                aria-label={t('Abrir menú')}
+                aria-expanded={menuAbierto}
+              >
+                <Menu size={20} aria-hidden />
+              </button>
+              <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+                <SelectorIdioma className="mr-1 hidden sm:inline-flex" />
+                <BotonTema />
+                <Campana />
+                <MenuUsuario
+                  nombre={yo?.nombre}
+                  apellido={yo?.apellido}
+                  roles={yo?.roles.map((r) => r.nombre).join(', ') ?? ''}
+                  onCambiarClave={() => setCambiandoClave(true)}
+                  onSalir={() => salir.mutate()}
+                />
+              </div>
+            </header>
+            <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 p-4 outline-none sm:p-6">
+              <m.div
+                key={ubicacion.pathname}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+              >
+                <Outlet />
+              </m.div>
+            </main>
           </div>
-        </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6">
-          <Outlet />
-        </main>
-      </div>
-      <CambiarPassword abierto={cambiandoClave} onCerrar={() => setCambiandoClave(false)} />
-    </div>
+          <CambiarPassword abierto={cambiandoClave} onCerrar={() => setCambiandoClave(false)} />
+        </div>
+      </LazyMotion>
+    </MotionConfig>
   )
 }
