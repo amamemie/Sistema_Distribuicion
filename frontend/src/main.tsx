@@ -3,6 +3,7 @@ import { lazy, StrictMode, Suspense, type ComponentType, type ReactNode } from '
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, Link, RouterProvider } from 'react-router'
 import { registerSW } from 'virtual:pwa-register'
+import { ConIdioma } from './components/ConIdioma'
 import { RequierePermiso, RequiereSesion } from './components/Guardias'
 import { Layout } from './components/Layout'
 import './index.css'
@@ -138,7 +139,9 @@ const router = createBrowserRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <ConIdioma>
+        <RouterProvider router={router} />
+      </ConIdioma>
     </QueryClientProvider>
   </StrictMode>,
 )

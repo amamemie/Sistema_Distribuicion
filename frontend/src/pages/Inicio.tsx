@@ -14,6 +14,7 @@ import {
   MapPin,
   Package,
   PackageCheck,
+  Plus,
   Receipt,
   ShoppingCart,
   Store,
@@ -23,10 +24,13 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
-import { Tarjeta } from '../components/ui'
+import { CifraAnimada } from '../components/Cifra'
+import { Escena } from '../components/escena/Escena'
+import { Insignia, Tarjeta } from '../components/ui'
 import { api } from '../lib/api'
-import { formatearBs, formatearDia, hoyLaPaz } from '../lib/formato'
+import { fechaLargaHoy, formatearBs, formatearCantidad, formatearDia, hoyLaPaz } from '../lib/formato'
 import { PERMISOS_PEDIDOS, usePuede, usePuedeAlguno, useYo } from '../lib/sesion'
 import {
   NOMBRE_ESTADO_PEDIDO,
@@ -44,56 +48,36 @@ import {
   type Usuario,
 } from '../lib/tipos'
 
-const zona = 'America/La_Paz'
-const fechaLarga = new Intl.DateTimeFormat('es-BO', { timeZone: zona, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-
 function saludo(): string {
-  const hora = Number(new Intl.DateTimeFormat('en-GB', { timeZone: zona, hour: 'numeric', hourCycle: 'h23' }).format(new Date()))
+  const hora = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'America/La_Paz', hour: 'numeric', hourCycle: 'h23' }).format(new Date()))
   return hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches'
 }
 
 /** Pantalla de inicio: lo que hay que atender hoy, accesos rápidos y primeros pasos. */
 export function Inicio() {
+  const { t } = useTranslation()
   const { data: yo } = useYo()
   const puede = usePuede()
   const puedeAlguno = usePuedeAlguno()
   const verPedidos = puedeAlguno(PERMISOS_PEDIDOS)
   const alertas = useQuery({ queryKey: ['alertas', 'resumen'], queryFn: () => api<ResumenAlertas>('/alertas/resumen') })
-  // Se calculan una vez al abrir la pantalla.
-  const [{ fecha, hola }] = useState(() => ({ fecha: fechaLarga.format(new Date()), hola: saludo() }))
+  // El saludo se calcula una vez al abrir la pantalla.
+  const [hola] = useState(saludo)
 
   return (
-    <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1d4ed8] to-[#1e3a8a] p-6 text-white shadow-sm sm:p-8">
-        <div aria-hidden className="absolute -top-16 -right-10 size-56 rounded-full bg-white/10" />
-        <div aria-hidden className="absolute -right-24 -bottom-24 size-64 rounded-full bg-white/5" />
-        <p className="relative text-sm text-blue-100 first-letter:uppercase">{fecha}</p>
-        <h1 className="relative mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-          {hola}, {yo?.nombre ?? ''}
-        </h1>
-        <p className="relative mt-2 max-w-xl text-sm text-blue-100">
-          Este es el resumen de hoy: pedidos por atender, avisos del sistema y lo que falta cobrar.
-        </p>
-        {(alertas.data?.criticas ?? 0) > 0 && (
-          <Link
-            to="/alertas"
-            className="relative mt-4 inline-flex items-center gap-2 rounded-lg bg-white/15 px-3 py-2 text-sm font-medium hover:bg-white/25"
-          >
-            <AlertTriangle size={16} /> Hay {alertas.data?.criticas} alerta(s) crítica(s) por revisar
-            <ArrowRight size={14} />
-          </Link>
-        )}
-      </section>
+    <div className="space-y-5">
+      <Portada nombre={yo?.nombre ?? ''} hola={t(hola)} criticas={alertas.data?.criticas ?? 0} verPedidos={verPedidos} />
 
       <PrimerosPasos />
 
-      <section aria-label="Resumen" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {verPedidos && <CifraPedidos estado="BORRADOR" titulo="Por revisar y confirmar" icono={ClipboardList} />}
-        {verPedidos && <CifraPedidos estado="CONFIRMADO" titulo="Por alistar" icono={PackageCheck} />}
-        {verPedidos && <CifraPedidos estado="ALISTADO" titulo="Por entregar" icono={Truck} />}
+      <section aria-label={t('Resumen')} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {verPedidos && <CifraPedidos estado="BORRADOR" titulo={t('Por revisar y confirmar')} icono={ClipboardList} />}
+        {verPedidos && <CifraPedidos estado="CONFIRMADO" titulo={t('Por alistar')} icono={PackageCheck} />}
+        {verPedidos && <CifraPedidos estado="ALISTADO" titulo={t('Por entregar')} icono={Truck} />}
         <Cifra
-          titulo="Alertas sin leer"
-          valor={alertas.data ? String(alertas.data.no_leidas) : '…'}
+          titulo={t('Alertas sin leer')}
+          numero={alertas.data?.no_leidas}
+          formato={formatearCantidad}
           icono={Bell}
           a="/alertas"
           tono={(alertas.data?.criticas ?? 0) > 0 ? 'rojo' : undefined}
@@ -102,10 +86,67 @@ export function Inicio() {
         {puede('reportes.rentabilidad') && <CifraVentasMes />}
       </section>
 
-      <AccesosRapidos />
-
-      {verPedidos && <UltimosPedidos />}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        {verPedidos && <UltimosPedidos />}
+        <AccesosRapidos />
+      </div>
     </div>
+  )
+}
+
+// ================================================================ portada
+
+function Portada({ nombre, hola, criticas, verPedidos }: { nombre: string; hola: string; criticas: number; verPedidos: boolean }) {
+  const { t } = useTranslation()
+  const puede = usePuede()
+  const porEntregar = useQuery({
+    queryKey: ['inicio', 'pedidos', 'ALISTADO'],
+    queryFn: () => api<Pagina<PedidoResumen>>('/pedidos', { params: { estado: 'ALISTADO', tamano: 1 } }),
+    enabled: verPedidos,
+  })
+  const deuda = useQuery({
+    queryKey: ['por-cobrar', '', false],
+    queryFn: () => api<PorCobrar>('/finanzas/por-cobrar'),
+    enabled: puede('finanzas.ver'),
+  })
+  const partes: string[] = []
+  if (porEntregar.data) partes.push(t('{{n}} pedido(s) por entregar', { n: porEntregar.data.total }))
+  if (deuda.data && Number(deuda.data.total_pendiente) > 0) partes.push(t('{{monto}} por cobrar', { monto: formatearBs(deuda.data.total_pendiente) }))
+
+  return (
+    <section
+      className="relative isolate overflow-hidden rounded-2xl border border-linea"
+      style={{ background: 'radial-gradient(120% 120% at 10% 0%, var(--escena-fondo-1) 0%, var(--escena-fondo-2) 50%, var(--escena-fondo-3) 100%)' }}
+    >
+      <Escena variante="portada" className="pointer-events-none absolute inset-y-0 right-0 -z-10 hidden w-[58%] sm:block" />
+      <div className="max-w-xl animate-[entra_.5s_var(--ease-entrada)_both] p-6 sm:p-8">
+        <p className="text-[13px] text-tinta-3 first-letter:uppercase">{fechaLargaHoy()}</p>
+        <h1 className="mt-1 text-[28px] leading-tight font-semibold tracking-[-0.8px] sm:text-[34px]">
+          {hola}, {nombre}
+        </h1>
+        <p className="mt-2 text-[15px] text-tinta-2">
+          {partes.length > 0 ? t('Hoy: {{resumen}}.', { resumen: partes.join(t(' y ')) }) : t('Este es el resumen de hoy: pedidos por atender, avisos y lo que falta cobrar.')}
+        </p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {puede('pedidos.escanear') && (
+            <Link to="/pedidos/nuevo" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-acento px-4 text-sm font-medium text-sobre-acento shadow-sm transition-colors hover:bg-acento-hover active:translate-y-px">
+              <Plus size={16} aria-hidden /> {t('Nuevo pedido')}
+            </Link>
+          )}
+          {puede('finanzas.cobros') && (
+            <Link to="/finanzas/cobros/nuevo" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-linea bg-superficie px-4 text-sm font-medium text-tinta shadow-sm transition-colors hover:bg-superficie-2 active:translate-y-px">
+              {t('Registrar cobro')}
+            </Link>
+          )}
+        </div>
+        {criticas > 0 && (
+          <Link to="/alertas" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-peligro-suave px-3 py-2 text-sm font-medium text-peligro transition-colors hover:brightness-95">
+            <AlertTriangle size={16} aria-hidden /> {t('Hay {{n}} alerta(s) crítica(s) por revisar', { n: criticas })}
+            <ArrowRight size={14} aria-hidden />
+          </Link>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -113,30 +154,34 @@ export function Inicio() {
 
 function Cifra({
   titulo,
-  valor,
+  numero,
+  formato,
   detalle,
   icono: Icono,
   a,
   tono,
 }: {
   titulo: string
-  valor: string
+  numero: number | undefined
+  formato: (n: number) => string
   detalle?: string
   icono: LucideIcon
   a: string
   tono?: 'rojo'
 }) {
   return (
-    <Link to={a} className="group block focus-visible:outline-2 focus-visible:outline-marca-600">
-      <Tarjeta className="h-full p-4 transition-colors group-hover:border-marca-200">
+    <Link to={a} className="group block rounded-xl">
+      <Tarjeta className="h-full p-4 transition-[transform,box-shadow,border-color] duration-150 ease-salida group-hover:-translate-y-0.5 group-hover:border-linea-fuerte/40 group-hover:shadow-[var(--sombra-2)]">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-xs font-medium text-slate-500">{titulo}</p>
-          <span className={`rounded-lg p-1.5 ${tono === 'rojo' ? 'bg-red-50 text-red-700' : 'bg-marca-50 text-marca-700'}`}>
-            <Icono size={16} aria-hidden />
+          <p className="text-xs font-medium text-tinta-3">{titulo}</p>
+          <span className={`inline-grid size-7 shrink-0 place-items-center rounded-lg ${tono === 'rojo' ? 'bg-peligro-suave text-peligro' : 'bg-acento-suave text-acento'}`}>
+            <Icono size={15} aria-hidden />
           </span>
         </div>
-        <p className={`mt-2 text-2xl font-semibold tabular-nums ${tono === 'rojo' ? 'text-red-700' : 'text-slate-900'}`}>{valor}</p>
-        {detalle && <p className="mt-1 text-xs text-slate-500">{detalle}</p>}
+        <p className={`mt-2 text-[26px] leading-tight font-semibold tracking-[-0.6px] ${tono === 'rojo' ? 'text-peligro' : 'text-tinta'}`}>
+          {numero === undefined ? <span className="esqueleto inline-block h-7 w-16 rounded-md align-middle" /> : <CifraAnimada valor={numero} formato={formato} />}
+        </p>
+        {detalle && <p className={`mt-1 text-xs ${tono === 'rojo' ? 'text-peligro' : 'text-tinta-3'}`}>{detalle}</p>}
       </Tarjeta>
     </Link>
   )
@@ -147,17 +192,19 @@ function CifraPedidos({ estado, titulo, icono }: { estado: EstadoPedido; titulo:
     queryKey: ['inicio', 'pedidos', estado],
     queryFn: () => api<Pagina<PedidoResumen>>('/pedidos', { params: { estado, tamano: 1 } }),
   })
-  return <Cifra titulo={titulo} valor={datos.data ? String(datos.data.total) : '…'} icono={icono} a={`/pedidos?estado=${estado}`} />
+  return <Cifra titulo={titulo} numero={datos.data?.total} formato={(n) => formatearCantidad(Math.round(n))} icono={icono} a={`/pedidos?estado=${estado}`} />
 }
 
 function CifraPorCobrar() {
+  const { t } = useTranslation()
   const datos = useQuery({ queryKey: ['por-cobrar', '', false], queryFn: () => api<PorCobrar>('/finanzas/por-cobrar') })
   const vencido = Number(datos.data?.total_vencido ?? 0)
   return (
     <Cifra
-      titulo="Por cobrar a supermercados"
-      valor={datos.data ? formatearBs(datos.data.total_pendiente) : '…'}
-      detalle={vencido > 0 ? `Vencido: ${formatearBs(vencido)}` : 'Nada vencido'}
+      titulo={t('Por cobrar a supermercados')}
+      numero={datos.data ? Number(datos.data.total_pendiente) : undefined}
+      formato={formatearBs}
+      detalle={datos.data ? (vencido > 0 ? t('Vencido: {{monto}}', { monto: formatearBs(vencido) }) : t('Nada vencido')) : undefined}
       icono={Wallet}
       a="/finanzas"
       tono={vencido > 0 ? 'rojo' : undefined}
@@ -166,6 +213,7 @@ function CifraPorCobrar() {
 }
 
 function CifraVentasMes() {
+  const { t } = useTranslation()
   const hoy = hoyLaPaz()
   const datos = useQuery({
     queryKey: ['inicio', 'ventas-mes', hoy],
@@ -175,9 +223,10 @@ function CifraVentasMes() {
   const ganancia = kpi('ganancia')
   return (
     <Cifra
-      titulo="Ventas de este mes"
-      valor={datos.data ? formatearBs(kpi('ingreso') ?? 0) : '…'}
-      detalle={ganancia !== undefined && ganancia !== null ? `Ganancia: ${formatearBs(ganancia)}` : undefined}
+      titulo={t('Ventas de este mes')}
+      numero={datos.data ? Number(kpi('ingreso') ?? 0) : undefined}
+      formato={formatearBs}
+      detalle={ganancia !== undefined && ganancia !== null ? t('Ganancia: {{monto}}', { monto: formatearBs(ganancia) }) : undefined}
       icono={ChartLine}
       a="/reportes?r=ganancias"
     />
@@ -197,6 +246,7 @@ interface Paso {
 
 /** Lista para empezar a usar el sistema con datos reales. Desaparece cuando todo está hecho. */
 function PrimerosPasos() {
+  const { t } = useTranslation()
   const puede = usePuede()
   const ubicaciones = useQuery({ queryKey: ['ubicaciones'], queryFn: () => api<Ubicacion[]>('/ubicaciones') })
   const proveedores = useQuery({ queryKey: ['proveedores'], queryFn: () => api<Proveedor[]>('/proveedores') })
@@ -273,15 +323,13 @@ function PrimerosPasos() {
     <Tarjeta className="p-5">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="font-semibold">Primeros pasos</h2>
-          <p className="text-sm text-slate-500">Para empezar a trabajar con los datos de la empresa.</p>
+          <h2 className="text-[17px] font-semibold tracking-[-0.2px]">{t('Primeros pasos')}</h2>
+          <p className="text-sm text-tinta-3">{t('Para empezar a trabajar con los datos de la empresa.')}</p>
         </div>
-        <p className="text-sm font-medium text-slate-600">
-          {hechos} de {pasos.length} listos
-        </p>
+        <p className="text-sm font-medium text-tinta-2 tabular-nums">{t('{{hechos}} de {{total}} listos', { hechos, total: pasos.length })}</p>
       </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={hechos} aria-valuemin={0} aria-valuemax={pasos.length}>
-        <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${(hechos / pasos.length) * 100}%` }} />
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-superficie-2" role="progressbar" aria-valuenow={hechos} aria-valuemin={0} aria-valuemax={pasos.length} aria-label={t('Primeros pasos')}>
+        <div className="h-full rounded-full bg-acento transition-[width] duration-500 ease-salida" style={{ width: `${(hechos / pasos.length) * 100}%` }} />
       </div>
       <ol className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {pasos.map((p) => (
@@ -289,17 +337,17 @@ function PrimerosPasos() {
             <Link
               to={p.a}
               className={`flex h-full items-start gap-3 rounded-lg border p-3 transition-colors ${
-                p.hecho ? 'border-slate-200 bg-slate-50' : 'border-slate-200 hover:border-marca-200 hover:bg-marca-50'
+                p.hecho ? 'border-linea bg-superficie-2/60' : 'border-linea hover:border-acento/40 hover:bg-acento-suave'
               }`}
             >
               {p.hecho ? (
-                <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-600" aria-label="Listo" />
+                <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-exito" aria-label={t('Listo')} />
               ) : (
-                <Circle size={20} className="mt-0.5 shrink-0 text-slate-400" aria-label="Pendiente" />
+                <Circle size={20} className="mt-0.5 shrink-0 text-tinta-3" aria-label={t('Pendiente')} />
               )}
               <span>
-                <span className={`block text-sm font-medium ${p.hecho ? 'text-slate-500 line-through' : 'text-slate-900'}`}>{p.titulo}</span>
-                <span className="block text-xs text-slate-500">{p.detalle}</span>
+                <span className={`block text-sm font-medium ${p.hecho ? 'text-tinta-3 line-through' : 'text-tinta'}`}>{t(p.titulo)}</span>
+                <span className="block text-xs text-tinta-3">{t(p.detalle)}</span>
               </span>
             </Link>
           </li>
@@ -330,23 +378,24 @@ const ACCESOS: Acceso[] = [
 ]
 
 function AccesosRapidos() {
+  const { t } = useTranslation()
   const puedeAlguno = usePuedeAlguno()
   const accesos = ACCESOS.filter((a) => puedeAlguno(a.permiso))
   if (accesos.length === 0) return null
   return (
     <section>
-      <h2 className="mb-2 text-sm font-semibold text-slate-800">Accesos rápidos</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <h2 className="mb-2 text-sm font-semibold text-tinta">{t('Accesos rápidos')}</h2>
+      <div className="grid grid-cols-2 gap-2.5">
         {accesos.map((a) => (
           <Link
             key={a.a}
             to={a.a}
-            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-marca-200 hover:bg-marca-50"
+            className="group flex min-h-12 items-center gap-3 rounded-xl border border-linea bg-superficie p-2.5 text-sm font-medium text-tinta transition-[transform,box-shadow,border-color] duration-150 ease-salida hover:-translate-y-0.5 hover:border-linea-fuerte/40 hover:shadow-[var(--sombra-2)]"
           >
-            <span className="rounded-lg bg-marca-50 p-2 text-marca-700">
-              <a.icono size={18} aria-hidden />
+            <span className="inline-grid size-8 shrink-0 place-items-center rounded-lg bg-acento-suave text-acento">
+              <a.icono size={17} aria-hidden />
             </span>
-            {a.texto}
+            {t(a.texto)}
           </Link>
         ))}
       </div>
@@ -356,15 +405,16 @@ function AccesosRapidos() {
 
 // ================================================================ últimos pedidos
 
-const TONO_ESTADO: Record<EstadoPedido, string> = {
-  BORRADOR: 'bg-slate-100 text-slate-700',
-  CONFIRMADO: 'bg-marca-100 text-marca-800',
-  ALISTADO: 'bg-amber-100 text-amber-800',
-  ENTREGADO: 'bg-emerald-100 text-emerald-800',
-  ANULADO: 'bg-red-100 text-red-800',
+const TONO_ESTADO: Record<EstadoPedido, 'gris' | 'azul' | 'ambar' | 'verde' | 'rojo'> = {
+  BORRADOR: 'gris',
+  CONFIRMADO: 'azul',
+  ALISTADO: 'ambar',
+  ENTREGADO: 'verde',
+  ANULADO: 'rojo',
 }
 
 function UltimosPedidos() {
+  const { t } = useTranslation()
   const pedidos = useQuery({
     queryKey: ['inicio', 'ultimos-pedidos'],
     queryFn: () => api<Pagina<PedidoResumen>>('/pedidos', { params: { tamano: 6 } }),
@@ -372,34 +422,46 @@ function UltimosPedidos() {
   return (
     <section>
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-800">Últimos pedidos</h2>
-        <Link to="/pedidos" className="inline-flex items-center gap-1 text-sm text-marca-700 hover:underline">
-          Ver todos <ArrowRight size={14} />
+        <h2 className="text-sm font-semibold text-tinta">{t('Últimos pedidos')}</h2>
+        <Link to="/pedidos" className="inline-flex items-center gap-1 text-sm font-medium text-acento hover:underline">
+          {t('Ver todos')} <ArrowRight size={14} aria-hidden />
         </Link>
       </div>
       {pedidos.data?.items.length === 0 ? (
-        <Tarjeta className="p-6 text-center text-sm text-slate-500">
-          Todavía no hay pedidos. Cuando llegue una nota de recepción, súbala desde{' '}
-          <Link to="/pedidos/nuevo" className="text-marca-700 underline">
-            Nuevo pedido
+        <Tarjeta className="p-6 text-center text-sm text-tinta-3">
+          {t('Todavía no hay pedidos. Cuando llegue una nota de recepción, súbala desde')}{' '}
+          <Link to="/pedidos/nuevo" className="font-medium text-acento underline">
+            {t('Nuevo pedido')}
           </Link>
           .
         </Tarjeta>
       ) : (
-        <Tarjeta className="divide-y divide-slate-100">
-          {pedidos.data?.items.map((p) => (
-            <Link key={p.id} to={`/pedidos/${p.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
+        <Tarjeta className="divide-y divide-linea overflow-hidden">
+          {!pedidos.data &&
+            Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+                <span className="esqueleto h-4 flex-1 rounded" />
+                <span className="esqueleto h-4 w-20 rounded" />
+              </div>
+            ))}
+          {pedidos.data?.items.map((p, i) => (
+            <Link
+              key={p.id}
+              to={`/pedidos/${p.id}`}
+              className="flex animate-[entra_.35s_var(--ease-entrada)_both] items-center gap-3 px-4 py-3 transition-colors hover:bg-superficie-2/60"
+              style={{ animationDelay: `${Math.min(i, 7) * 30}ms` }}
+            >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-slate-900">
-                  #{p.numero} · {p.sucursal_cliente?.nombre ?? p.cadena?.nombre ?? 'Sin cliente'}
+                <p className="truncate text-sm font-medium text-tinta">
+                  #{p.numero} · <span translate="no">{p.sucursal_cliente?.nombre ?? p.cadena?.nombre ?? t('Sin cliente')}</span>
                 </p>
-                <p className="truncate text-xs text-slate-500">
+                <p className="truncate text-xs text-tinta-3">
                   {p.numero_oc ? `O/C ${p.numero_oc} · ` : ''}
                   {formatearDia(p.fecha_oc ?? p.created_at.slice(0, 10))}
                 </p>
               </div>
-              <span className="hidden text-sm tabular-nums text-slate-700 sm:inline">{formatearBs(p.total_oc ?? p.total_calculado)}</span>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TONO_ESTADO[p.estado]}`}>{NOMBRE_ESTADO_PEDIDO[p.estado]}</span>
+              <span className="hidden text-sm text-tinta-2 tabular-nums sm:inline">{formatearBs(p.total_oc ?? p.total_calculado)}</span>
+              <Insignia tono={TONO_ESTADO[p.estado]}>{t(NOMBRE_ESTADO_PEDIDO[p.estado])}</Insignia>
             </Link>
           ))}
         </Tarjeta>

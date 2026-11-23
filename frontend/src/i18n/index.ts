@@ -30,7 +30,7 @@ void i18n
   })
 
 function alCambiar(idioma: string) {
-  document.documentElement.lang = idioma
+  if (typeof document !== 'undefined') document.documentElement.lang = idioma
 }
 alCambiar(i18n.resolvedLanguage ?? 'es')
 i18n.on('languageChanged', alCambiar)

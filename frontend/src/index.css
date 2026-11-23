@@ -272,6 +272,12 @@ dialog::backdrop {
     transform: translateY(8px) scale(0.97);
   }
 }
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
 @keyframes menu-entra {
   from {
     opacity: 0;
